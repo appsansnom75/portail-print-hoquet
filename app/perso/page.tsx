@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 
+// --- CONFIGURATION DE TOUS LES PRODUITS ---
 const PRODUCTS_CONFIG = [
   {
     id: 'voeux',
@@ -18,17 +19,16 @@ const PRODUCTS_CONFIG = [
       'sans': [30.90, 30.90, 30.90, 30.90, 30.90, 30.90, 30.90],
       'clear': [61.80, 61.80, 61.80, 61.80, 61.80, 61.80, 61.80]
     },
-    // Mise à jour enveloppes : 9.90€ par lot de 50
     extraOptions: { id: 'enveloppe', name: 'Option Enveloppes 16x16', pricePerLot: 9.90 }
   },
   {
     id: 'agenda',
     name: 'Agendas Agence',
     image: '/agenda-detoure.png',
-    isUnitBased: true, // Pour afficher "Exemplaires" au lieu de "Lots"
+    isUnitBased: true,
     units: [10, 25, 50, 100, 150, 200, 300, 400],
-    unitPrices: [9.90, 9.50, 9.00, 8.50, 8.00, 7.80, 7.50, 7.20], // 9.90 * 10 = 99€
-    prices: { default: [] } // Non utilisé ici
+    unitPrices: [9.90, 9.50, 9.00, 8.50, 8.00, 7.80, 7.50, 7.20],
+    prices: { default: [] }
   },
   {
     id: 'flyer',
@@ -98,8 +98,8 @@ export default function PersoPage() {
     PRODUCTS_CONFIG.reduce((acc, p) => ({
       ...acc, 
       [p.id]: { 
-        lot: p.isUnitBased ? p.units![0] : p.lots![0], 
-        variant: p.hasVariants ? p.variants![0].id : 'default', 
+        lot: p.isUnitBased ? (p.units ? p.units[0] : 1) : (p.lots ? p.lots[0] : 1), 
+        variant: p.hasVariants ? (p.variants ? p.variants[0].id : 'default') : 'default', 
         extra: false 
       }
     }), {})
@@ -111,13 +111,11 @@ export default function PersoPage() {
 
   const calculatePrice = (product: any) => {
     const sel = selections[product.id];
-    
-    if (product.isUnitBased) {
+    if (product.isUnitBased && product.units && product.unitPrices) {
       const unitIndex = product.units.indexOf(sel.lot);
       return product.unitPrices[unitIndex] * sel.lot;
     }
-
-    const lotIndex = product.lots.indexOf(sel.lot);
+    const lotIndex = product.lots ? product.lots.indexOf(sel.lot) : 0;
     const priceList = product.prices[sel.variant] || product.prices.default;
     let base = (priceList[lotIndex] || priceList[0]) * sel.lot;
     if (sel.extra && product.extraOptions) base += product.extraOptions.pricePerLot * sel.lot;
@@ -127,7 +125,7 @@ export default function PersoPage() {
   const addToCart = (product: any) => {
     const price = calculatePrice(product);
     const sel = selections[product.id];
-    const variantLabel = product.hasVariants ? product.variants.find((v:any) => v.id === sel.variant)?.name : "";
+    const variantLabel = product.hasVariants ? product.variants?.find((v:any) => v.id === sel.variant)?.name : "";
     
     setCart([...cart, {
       id: Date.now(),
@@ -164,7 +162,7 @@ export default function PersoPage() {
                 <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 shadow-xl flex flex-col h-full">
                   <div className="flex justify-between items-start mb-4">
                     <h3 className="font-black text-xl uppercase tracking-tighter text-blue-500 leading-tight w-2/3">{product.name}</h3>
-                    {!product.isUnitBased && (
+                    {product.baseQty && !product.isUnitBased && (
                       <span className="bg-white/10 text-white/60 text-[7px] font-black px-2 py-1 rounded uppercase border border-white/10">
                         {product.baseQty} ex. / lot
                       </span>
@@ -176,11 +174,11 @@ export default function PersoPage() {
                       <p className="text-[8px] font-black text-white/40 uppercase mb-2 tracking-widest">Options</p>
                       {product.useDropdown ? (
                         <select value={sel.variant} onChange={(e) => updateSelection(product.id, 'variant', e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-[10px] font-black uppercase outline-none focus:border-blue-500">
-                          {product.variants?.map(v => <option key={v.id} value={v.id} className="bg-[#0f092e]">{v.name}</option>)}
+                          {product.variants?.map((v: any) => <option key={v.id} value={v.id} className="bg-[#0f092e]">{v.name}</option>)}
                         </select>
                       ) : (
                         <div className="grid grid-cols-1 gap-1">
-                          {product.variants?.map(v => (
+                          {product.variants?.map((v: any) => (
                             <button key={v.id} onClick={() => updateSelection(product.id, 'variant', v.id)} className={`p-2 rounded border text-[9px] font-black uppercase transition-all ${sel.variant === v.id ? 'border-blue-500 bg-blue-500/20 text-blue-400' : 'border-white/10 bg-white/5'}`}>{v.name}</button>
                           ))}
                         </div>
@@ -194,8 +192,12 @@ export default function PersoPage() {
                     </p>
                     <select value={sel.lot} onChange={(e) => updateSelection(product.id, 'lot', Number(e.target.value))} className="w-full bg-white/5 border border-white/10 rounded p-2 text-[10px] font-black uppercase outline-none focus:border-blue-500">
                       {product.isUnitBased 
-                        ? product.units!.map(q => <option key={q} value={q} className="bg-[#0f092e]">{q} exemplaires</option>)
-                        : product.lots!.map(qty => <option key={qty} value={qty} className="bg-[#0f092e]">{qty} {qty > 1 ? 'lots' : 'lot'} ({qty * product.baseQty} ex.)</option>)
+                        ? product.units?.map(q => <option key={q} value={q} className="bg-[#0f092e]">{q} exemplaires</option>)
+                        : product.lots?.map(qty => (
+                            <option key={qty} value={qty} className="bg-[#0f092e]">
+                              {qty} {qty > 1 ? 'lots' : 'lot'} {product.baseQty ? `(${qty * product.baseQty} ex.)` : ''}
+                            </option>
+                          ))
                       }
                     </select>
                   </div>
@@ -212,7 +214,7 @@ export default function PersoPage() {
 
                   <div className="mt-auto pt-4 border-t border-white/5 text-center">
                     <p className="font-black text-2xl mb-3 tracking-tighter text-white">{currentTotal.toFixed(2)}€ <span className="text-[10px] text-white/40">HT</span></p>
-                    <button onClick={() => addToCart(product)} className="w-full bg-white text-[#0f092e] py-3 rounded-lg font-black uppercase text-[10px] tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-lg">Ajouter au panier</button>
+                    <button onClick={() => addToCart(product)} className="w-full bg-white text-[#0f092e] py-3 rounded-lg font-black uppercase text-[10px] tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-lg active:scale-95">Ajouter au panier</button>
                   </div>
                 </div>
               </div>
@@ -228,7 +230,7 @@ export default function PersoPage() {
         </button>
         {isCartOpen && (
           <div className="absolute bottom-16 left-0 w-80 bg-white rounded-2xl shadow-2xl text-[#0f092e] overflow-hidden">
-            <div className="bg-slate-100 p-4 border-b flex justify-between items-center"><span className="font-black text-[9px] uppercase tracking-widest text-slate-500">Panier</span><button onClick={() => setIsCartOpen(false)} className="text-red-500 font-black text-[9px]">FERMER</button></div>
+            <div className="bg-slate-100 p-4 border-b flex justify-between items-center"><span className="font-black text-[9px] uppercase tracking-widest text-slate-500">Récapitulatif HT</span><button onClick={() => setIsCartOpen(false)} className="text-red-500 font-black text-[9px]">FERMER</button></div>
             <div className="max-h-80 overflow-y-auto p-4 space-y-4">
               {cart.length === 0 ? <p className="text-[10px] font-bold text-slate-400 uppercase text-center py-4">Vide</p> : cart.map((item, idx) => (
                 <div key={item.id} className="border-b border-slate-100 pb-3 flex justify-between items-start">
@@ -248,7 +250,7 @@ export default function PersoPage() {
             {cart.length > 0 && (
               <div className="p-5 bg-slate-50 border-t">
                 <div className="flex justify-between items-center mb-4"><span className="font-black text-[10px] uppercase text-slate-400">Total HT</span><span className="font-black text-xl text-blue-600">{cart.reduce((a, b) => a + b.totalPrice, 0).toFixed(2)}€</span></div>
-                <button className="w-full bg-[#0f092e] text-white py-4 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-blue-600 transition-all">Commander</button>
+                <button className="w-full bg-[#0f092e] text-white py-4 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-blue-600 transition-all">Valider la commande</button>
               </div>
             )}
           </div>
