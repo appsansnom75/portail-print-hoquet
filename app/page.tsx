@@ -64,15 +64,15 @@ export default function HomePage() {
 
           <Link href="/stock" className="group">
             <div className="h-24 md:h-28 bg-white rounded-lg flex flex-col items-center justify-center text-center p-3 shadow-xl transition-all hover:scale-[1.01]">
-              <span className="font-black text-xs md:text-sm uppercase text-[#0f092e]">Produits en stock</span>
-              <span className="mt-2 text-[8px] font-black text-green-600 uppercase tracking-widest opacity-80">Expédition immédiate</span>
+              <span className="font-black text-xs md:text-sm uppercase text-[#0f092e]">Produits sans personnalisation </span>
+              <span className="mt-2 text-[8px] font-black text-green-600 uppercase tracking-widest opacity-80">Catalogue en ligne</span>
             </div>
           </Link>
 
           <Link href="/hoquet" className="group">
             <div className="h-24 md:h-28 bg-white rounded-lg flex flex-col items-center justify-center text-center p-3 shadow-xl transition-all hover:scale-[1.01]">
-              <span className="font-black text-xs md:text-sm uppercase text-[#0f092e]">Gamme Business</span>
-              <span className="mt-2 text-[8px] font-black text-orange-500 uppercase tracking-widest opacity-80">Accès réservé</span>
+              <span className="font-black text-xs md:text-sm uppercase text-[#0f092e]">Gamme Hoquet Business</span>
+              <span className="mt-2 text-[8px] font-black text-orange-500 uppercase tracking-widest opacity-80">Découvrir la gamme</span>
             </div>
           </Link>
         </div>
