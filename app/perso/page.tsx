@@ -1,37 +1,16 @@
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 
-// On définit quelques produits de démo pour ton client
-const products = [
-  {
-    id: 1,
-    title: "Cartes de Visite",
-    description: "Finition Soft Touch - Recto/Verso",
-    image: "/produit-carte.jpg", // Prépare une image ou laisse le placeholder
-    badge: "Populaire"
-  },
-  {
-    id: 2,
-    title: "Panneaux Immobiliers",
-    description: "Akilux 3.5mm - Pose œillets",
-    image: "/produit-panneau.jpg",
-    badge: "Sur-mesure"
-  },
-  {
-    id: 3,
-    title: "Flyers A5 Agence",
-    description: "Papier 135g brillant - 100% Custom",
-    image: "/produit-flyer.jpg",
-    badge: "Indispensable"
-  }
-];
-
 export default function PersoPage() {
+  // État pour les options de la carte de voeux
+  const [vernis, setVernis] = useState('sans'); // 'sans' ou 'clear'
+  const [enveloppe, setEnveloppe] = useState(false);
+
   return (
     <div className="min-h-screen bg-[#0f092e] text-white font-sans flex flex-col">
       
-      {/* HEADER NAVIGATION */}
+      {/* HEADER NAVIGATION - Même style que Home */}
       <header className="py-6 px-6 border-b border-white/10 flex justify-between items-center bg-[#0f092e]/80 backdrop-blur-md sticky top-0 z-50">
         <Link href="/" className="text-[10px] font-black uppercase tracking-widest text-white/50 hover:text-white transition-colors">
           ← Retour Accueil
@@ -41,49 +20,92 @@ export default function PersoPage() {
       </header>
 
       <main className="max-w-6xl mx-auto w-full py-12 px-6">
-        {/* TITRE DE SECTION */}
+        
+        {/* TITRE DE SECTION - Pas d'italique */}
         <div className="mb-12">
-          <h2 className="text-3xl font-black uppercase tracking-tighter italic">Configurez vos supports</h2>
-          <p className="text-blue-300/60 text-xs font-bold uppercase tracking-widest mt-2">Éléments de personnalisation automatique inclus</p>
-        </div>
-
-        {/* GRILLE DE PRODUITS */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {products.map((product) => (
-            <div key={product.id} className="group bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden hover:border-blue-500/50 transition-all duration-500 shadow-2xl">
-              
-              {/* IMAGE PRODUIT */}
-              <div className="h-56 bg-gradient-to-br from-slate-800 to-slate-900 relative flex items-center justify-center overflow-hidden">
-                <span className="text-[10px] font-black uppercase text-white/10 tracking-[1em] rotate-12 absolute">Aperçu</span>
-                <div className="absolute top-4 left-4 bg-blue-600 text-[8px] font-black uppercase px-2 py-1 rounded">
-                  {product.badge}
-                </div>
-                {/* Une fois que tu auras les images, décommente la ligne suivante : */}
-                {/* <img src={product.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={product.title} /> */}
-              </div>
-
-              {/* INFOS PRODUIT */}
-              <div className="p-6">
-                <h3 className="font-black text-xl uppercase tracking-tight">{product.title}</h3>
-                <p className="text-white/40 text-xs mt-2 font-medium">{product.description}</p>
-                
-                <button className="w-full mt-6 bg-white text-[#0f092e] py-3 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-500 hover:text-white transition-all transform group-hover:translate-y-[-2px]">
-                  Lancer le configurateur
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* INFO BOX */}
-        <div className="mt-16 bg-blue-600/10 border border-blue-500/20 rounded-2xl p-8 flex flex-col md:flex-row items-center gap-6">
-          <div className="text-3xl italic font-black text-blue-500">i</div>
-          <p className="text-xs font-bold leading-relaxed text-blue-200/70 uppercase tracking-wide text-center md:text-left">
-            Vos coordonnées (Logo agence, téléphone, adresse) sont automatiquement récupérées depuis votre <Link href="/profil" className="text-blue-400 underline">Profil Agence</Link> pour gagner du temps lors de la création.
+          <h2 className="text-3xl md:text-4xl font-black uppercase tracking-tighter text-white">
+            Configurez vos supports
+          </h2>
+          <p className="text-blue-300/60 text-[10px] font-bold uppercase tracking-[0.2em] mt-2">
+            Personnalisation automatique via profil agence
           </p>
         </div>
-      </main>
 
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          
+          {/* CARTE PRODUIT : CARTE DE VOEUX */}
+          <div className="bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+            {/* Visuel */}
+            <div className="h-64 bg-gradient-to-br from-slate-800 to-slate-900 relative flex items-center justify-center">
+               <div className="absolute inset-0 opacity-20 bg-[url('/pattern.png')] bg-grid"></div>
+               <span className="text-[12px] font-black uppercase text-white/20 tracking-[1em]">Aperçu Voeux</span>
+            </div>
+
+            {/* Configuration */}
+            <div className="p-8">
+              <h3 className="font-black text-2xl uppercase tracking-tight mb-6">Carte de Vœux 2026</h3>
+              
+              {/* Option Vernis */}
+              <div className="space-y-4 mb-8">
+                <p className="text-[10px] font-black uppercase text-white/40 tracking-widest">Sélectionnez la finition :</p>
+                
+                <label className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all ${vernis === 'sans' ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 bg-white/5 hover:border-white/30'}`}>
+                  <div className="flex items-center gap-3">
+                    <input type="radio" name="vernis" checked={vernis === 'sans'} onChange={() => setVernis('sans')} className="hidden" />
+                    <span className="text-xs font-black uppercase">Carte sans vernis "clear"</span>
+                  </div>
+                  {vernis === 'sans' && <span className="text-blue-400 text-xs">✓</span>}
+                </label>
+
+                <label className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all ${vernis === 'clear' ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 bg-white/5 hover:border-white/30'}`}>
+                  <div className="flex items-center gap-3">
+                    <input type="radio" name="vernis" checked={vernis === 'clear'} onChange={() => setVernis('clear')} className="hidden" />
+                    <span className="text-xs font-black uppercase">Vernis sélectif (Gui et Confettis)</span>
+                  </div>
+                  {vernis === 'clear' && <span className="text-blue-400 text-xs">✓</span>}
+                </label>
+              </div>
+
+              {/* Option Supplément Enveloppe */}
+              <div className="mb-8">
+                <p className="text-[10px] font-black uppercase text-white/40 tracking-widest mb-4">Options supplémentaires :</p>
+                <label className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all ${enveloppe ? 'border-green-500 bg-green-500/10' : 'border-white/10 bg-white/5 hover:border-white/30'}`}>
+                  <div className="flex items-center gap-3">
+                    <input type="checkbox" checked={enveloppe} onChange={() => setEnveloppe(!enveloppe)} className="w-4 h-4 accent-green-500" />
+                    <span className="text-xs font-black uppercase">Enveloppes carte de voeux 16x16</span>
+                  </div>
+                  <span className="text-[10px] font-black text-green-500 uppercase">Supplément</span>
+                </label>
+              </div>
+
+              <button className="w-full bg-white text-[#0f092e] py-4 rounded-xl font-black uppercase text-xs tracking-[0.2em] hover:bg-blue-600 hover:text-white transition-all shadow-xl">
+                Personnaliser ce produit
+              </button>
+            </div>
+          </div>
+
+          {/* AUTRE PRODUIT (EXEMPLE RAPIDE) */}
+          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-8 flex flex-col justify-between opacity-50">
+            <div>
+              <h3 className="font-black text-2xl uppercase tracking-tight">Panneaux Akilux</h3>
+              <p className="text-[10px] font-black uppercase text-blue-400 mt-2 tracking-widest">Bientôt disponible</p>
+            </div>
+            <div className="h-px bg-white/10 my-6"></div>
+            <p className="text-xs font-bold text-white/40 uppercase leading-relaxed">
+              La configuration des panneaux immobiliers avec pose d'oeillets sera disponible prochainement.
+            </p>
+          </div>
+
+        </div>
+
+        {/* FOOTER INFO - Même style que Profil */}
+        <div className="mt-16 bg-white/[0.03] border border-white/10 rounded-2xl p-8">
+          <p className="text-[10px] font-bold leading-loose text-white/40 uppercase tracking-widest text-center">
+            Note : Les visuels de vos cartes de voeux incluront automatiquement le logo de l'agence configuré dans votre espace profil.
+          </p>
+        </div>
+
+      </main>
     </div>
   );
 }
