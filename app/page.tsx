@@ -42,7 +42,6 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto px-6 py-6 md:py-3">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 md:gap-4">
             
-            {/* Infos Agence : Gauche sur PC, Centre sur Mobile */}
             <div className="flex items-center gap-3 justify-center md:justify-start">
               <span className="h-1 w-1 rounded-full bg-green-500"></span>
               <div className="flex flex-col md:flex-row md:items-center md:gap-2">
@@ -51,7 +50,6 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Boutons : Droite sur PC, Colonne sur Mobile */}
             <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
               <Link href="/profil" className="text-center bg-white/10 border border-white/10 hover:bg-white/20 text-white text-[9px] font-black uppercase tracking-widest px-6 py-2.5 transition-all">
                 Profil Agence
@@ -63,33 +61,38 @@ export default function HomePage() {
                 Déconnexion
               </button>
             </div>
-
           </div>
         </div>
       </div>
 
-      {/* --- GRILLE DE NAVIGATION (ENCORE PLUS PLATE) --- */}
+      {/* --- GRILLE DE NAVIGATION (AVEC TRAITS COLORÉS) --- */}
       <main className="flex-grow flex items-center py-12">
         <div className="max-w-6xl mx-auto w-full px-6 grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
           
           <Link href="/perso" className="group">
             <div className="h-20 md:h-28 bg-white/5 border border-white/5 rounded-sm flex flex-col items-center justify-center p-4 text-center transition-all duration-300 hover:bg-blue-600/10 hover:border-blue-500/30">
-              <span className="font-black text-[11px] md:text-xs uppercase tracking-[0.15em] text-white/80 group-hover:text-blue-400">Produit Sur-Mesure</span>
-              <span className="mt-1 text-[7px] font-bold text-white/20 uppercase tracking-[0.2em] group-hover:text-blue-500/50">Configurateur</span>
+              <span className="font-black text-[11px] md:text-xs uppercase tracking-[0.15em] text-white/80 group-hover:text-blue-400 transition-colors">Produit Sur-Mesure</span>
+              {/* Trait Bleu */}
+              <div className="h-[1px] w-6 bg-blue-500/50 my-2 group-hover:w-12 transition-all duration-500"></div>
+              <span className="text-[7px] font-bold text-white/20 uppercase tracking-[0.2em] group-hover:text-blue-500/50">Configurateur</span>
             </div>
           </Link>
 
           <Link href="/stock" className="group">
             <div className="h-20 md:h-28 bg-white/5 border border-white/5 rounded-sm flex flex-col items-center justify-center p-4 text-center transition-all duration-300 hover:bg-green-600/10 hover:border-green-500/30">
-              <span className="font-black text-[11px] md:text-xs uppercase tracking-[0.15em] text-white/80 group-hover:text-green-400">Produit standard </span>
-              <span className="mt-1 text-[7px] font-bold text-white/20 uppercase tracking-[0.2em] group-hover:text-green-500/50">catalogue</span>
+              <span className="font-black text-[11px] md:text-xs uppercase tracking-[0.15em] text-white/80 group-hover:text-green-400 transition-colors">Produit standard</span>
+              {/* Trait Vert */}
+              <div className="h-[1px] w-6 bg-green-500/50 my-2 group-hover:w-12 transition-all duration-500"></div>
+              <span className="text-[7px] font-bold text-white/20 uppercase tracking-[0.2em] group-hover:text-green-500/50">catalogue</span>
             </div>
           </Link>
 
           <Link href="/hoquet" className="group">
             <div className="h-20 md:h-28 bg-white/5 border border-white/5 rounded-sm flex flex-col items-center justify-center p-4 text-center transition-all duration-300 hover:bg-orange-600/10 hover:border-orange-500/30">
-              <span className="font-black text-[11px] md:text-xs uppercase tracking-[0.15em] text-white/80 group-hover:text-orange-400">produit Business</span>
-              <span className="mt-1 text-[7px] font-bold text-white/20 uppercase tracking-[0.2em] group-hover:text-orange-500/50">Gamme guy hoquet</span>
+              <span className="font-black text-[11px] md:text-xs uppercase tracking-[0.15em] text-white/80 group-hover:text-orange-400 transition-colors">produit Business</span>
+              {/* Trait Orange */}
+              <div className="h-[1px] w-6 bg-orange-500/50 my-2 group-hover:w-12 transition-all duration-500"></div>
+              <span className="text-[7px] font-bold text-white/20 uppercase tracking-[0.2em] group-hover:text-orange-500/50">Gamme guy hoquet</span>
             </div>
           </Link>
 
