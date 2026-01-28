@@ -2,7 +2,20 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 
-const BUSINESS_CONFIG = [
+// On définit une structure précise pour éviter les erreurs "any"
+interface Product {
+  id: string;
+  name: string;
+  image: string;
+  baseQty: number;
+  hasVariants?: boolean;
+  variants?: { id: string; name: string }[];
+  lots?: number[];
+  lotsByVariant?: { [key: string]: number[] }; // Cette ligne règle ton erreur
+  prices: { [key: string]: number[] };
+}
+
+const BUSINESS_CONFIG: Product[] = [
   { id: 'pochette', name: 'Pochette à rabat', image: '/pochette.png', baseQty: 100, lots: [1], prices: { default: [25.99] } },
   { id: 'carte_visite', name: 'Carte de visite', image: '/carte.png', baseQty: 100, lots: [1], prices: { default: [8.25] } },
   { id: 'entete', name: 'En-tête de lettre', image: '/entete.png', baseQty: 500, lots: [1, 20, 30, 40, 60, 80], prices: { default: [12.85] } },
@@ -35,27 +48,32 @@ export default function BusinessPage() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [selections, setSelections] = useState<any>(
     BUSINESS_CONFIG.reduce((acc, p) => ({
-      ...acc, [p.id]: { lot: p.lots ? p.lots[0] : (p.lotsByVariant ? p.lotsByVariant['250g'][0] : 1), variant: p.hasVariants ? p.variants![0].id : 'default' }
+      ...acc, [p.id]: { 
+        lot: p.lots ? p.lots[0] : (p.lotsByVariant ? p.lotsByVariant['250g'][0] : 1), 
+        variant: p.hasVariants ? p.variants![0].id : 'default' 
+      }
     }), {})
   );
 
   const updateSelection = (id: string, field: string, val: any) => {
     setSelections((prev: any) => {
       const newSel = { ...prev, [id]: { ...prev[id], [field]: val } };
-      if (field === 'variant' && BUSINESS_CONFIG.find(p => p.id === id)?.lotsByVariant) {
-        newSel[id].lot = BUSINESS_CONFIG.find(p => p.id === id)!.lotsByVariant![val][0];
+      const product = BUSINESS_CONFIG.find(p => p.id === id);
+      // Correction de l'erreur d'indexation ici
+      if (field === 'variant' && product?.lotsByVariant) {
+        newSel[id].lot = product.lotsByVariant[val as string][0];
       }
       return newSel;
     });
   };
 
-  const calculatePrice = (product: any) => {
+  const calculatePrice = (product: Product) => {
     const sel = selections[product.id];
     const priceList = product.prices[sel.variant] || product.prices.default;
     return priceList[0] * sel.lot;
   };
 
-  const addToCart = (product: any) => {
+  const addToCart = (product: Product) => {
     const price = calculatePrice(product);
     const sel = selections[product.id];
     setCart([...cart, { id: Date.now(), name: product.name, variant: sel.variant !== 'default' ? sel.variant : '', quantity: sel.lot, totalPrice: price }]);
@@ -75,7 +93,8 @@ export default function BusinessPage() {
           {BUSINESS_CONFIG.map((product) => {
             const currentTotal = calculatePrice(product);
             const sel = selections[product.id];
-            const availableLots = product.lotsByVariant ? product.lotsByVariant[sel.variant] : product.lots;
+            // Sécurisation de l'accès aux lots
+            const availableLots = product.lotsByVariant ? product.lotsByVariant[sel.variant as string] : product.lots;
 
             return (
               <div key={product.id} className="flex flex-col group">
@@ -93,7 +112,7 @@ export default function BusinessPage() {
                     <div className="mb-4">
                       <p className="text-[8px] font-black text-white/40 uppercase mb-2 tracking-widest">Type</p>
                       <div className="grid grid-cols-2 gap-1">
-                        {product.variants?.map((v: any) => (
+                        {product.variants?.map((v) => (
                           <button key={v.id} onClick={() => updateSelection(product.id, 'variant', v.id)} className={`p-2 rounded border text-[9px] font-black uppercase transition-all ${sel.variant === v.id ? 'border-orange-500 bg-orange-500/20 text-orange-400' : 'border-white/10 bg-white/5'}`}>{v.name}</button>
                         ))}
                       </div>
@@ -120,6 +139,7 @@ export default function BusinessPage() {
         </div>
       </main>
 
+      {/* PANIER ORANGE */}
       <div className="fixed bottom-8 left-8 z-[100]">
         <button onClick={() => setIsCartOpen(!isCartOpen)} className="bg-white text-[#0f092e] px-8 py-4 rounded-full font-black uppercase text-[10px] tracking-widest shadow-2xl flex items-center gap-4 hover:bg-orange-500 hover:text-white transition-all">
           Panier Business {cart.length > 0 && <span className="bg-orange-500 text-white px-2 py-0.5 rounded text-[9px]">{cart.length}</span>}
