@@ -1,134 +1,89 @@
 'use client';
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 
-// --- EXTRACTION DES TARIFS DEPUIS TES CAPTURES ---
-const PRODUITS_PERSO = [
+// On définit quelques produits de démo pour ton client
+const products = [
   {
-    id: 'CALENDRIER_A4',
-    nom: 'Calendrier format A4',
-    options: [
-      { qte: 500, prix: 73.50 }, { qte: 1000, prix: 55.13 }, { qte: 2000, prix: 49.35 },
-      { qte: 3000, prix: 47.25 }, { qte: 5000, prix: 45.68 }, { qte: 10000, prix: 44.57 },
-      { qte: 15000, prix: 44.17 }, { qte: 20000, prix: 43.97 }
-    ]
+    id: 1,
+    title: "Cartes de Visite",
+    description: "Finition Soft Touch - Recto/Verso",
+    image: "/produit-carte.jpg", // Prépare une image ou laisse le placeholder
+    badge: "Populaire"
   },
   {
-    id: 'CALENDRIER_A5',
-    nom: 'Calendrier format A5',
-    options: [
-      { qte: 500, prix: 51.52 }, { qte: 1000, prix: 37.45 }, { qte: 2000, prix: 32.10 },
-      { qte: 3000, prix: 26.75 }, { qte: 5000, prix: 19.25 }, { qte: 10000, prix: 17.30 },
-      { qte: 15000, prix: 16.50 }, { qte: 20000, prix: 15.39 }
-    ]
+    id: 2,
+    title: "Panneaux Immobiliers",
+    description: "Akilux 3.5mm - Pose œillets",
+    image: "/produit-panneau.jpg",
+    badge: "Sur-mesure"
   },
   {
-    id: 'CARTE_VOEUX_SIMPLE',
-    nom: 'Carte de voeux (sans vernis)',
-    options: [
-      { qte: 50, prix: 30.90 }, { qte: 100, prix: 32.70 }, { qte: 200, prix: 40.00 },
-      { qte: 300, prix: 44.50 }, { qte: 400, prix: 47.50 }, { qte: 500, prix: 56.20 }, { qte: 1000, prix: 82.70 }
-    ]
-  },
-  {
-    id: 'DEPLIANT_MT',
-    nom: 'Dépliant Meilleur Taux',
-    options: [
-      { qte: 100, prix: 45.82 }, { qte: 200, prix: 26.69 }, { qte: 500, prix: 15.55 },
-      { qte: 1000, prix: 11.81 }, { qte: 3000, prix: 9.97 }
-    ]
-  },
-  {
-    id: 'NOTES_PROPRO',
-    nom: 'Notes aux propriétaires',
-    options: [
-      { qte: 100, prix: 9.90 }, { qte: 200, prix: 9.00 }, { qte: 300, prix: 8.50 },
-      { qte: 400, prix: 8.00 }, { qte: 500, prix: 7.50 }
-    ]
+    id: 3,
+    title: "Flyers A5 Agence",
+    description: "Papier 135g brillant - 100% Custom",
+    image: "/produit-flyer.jpg",
+    badge: "Indispensable"
   }
 ];
 
 export default function PersoPage() {
-  const [panier, setPanier] = useState<any[]>([]);
-
-  const ajouterAuPanier = (produit: string, qte: number, prix: number) => {
-    setPanier([...panier, { produit, qte, prix }]);
-  };
-
-  const totalHT = panier.reduce((acc, item) => acc + item.prix, 0);
-  const totalTTC = totalHT * 1.20;
-
   return (
-    <div className="min-h-screen bg-[#1e3a8a] text-white font-sans p-6 md:p-12">
-      <div className="max-w-7xl mx-auto">
-        
-        {/* RETOUR & TITRE */}
-        <div className="flex justify-between items-center mb-12">
-          <Link href="/" className="text-[10px] font-black uppercase tracking-widest border-b-2 border-white/20 pb-1 hover:border-white transition-all">
-            ← Retour Accueil
-          </Link>
-          <h1 className="text-2xl font-black uppercase tracking-tighter">Produits Personnalisables</h1>
+    <div className="min-h-screen bg-[#0f092e] text-white font-sans flex flex-col">
+      
+      {/* HEADER NAVIGATION */}
+      <header className="py-6 px-6 border-b border-white/10 flex justify-between items-center bg-[#0f092e]/80 backdrop-blur-md sticky top-0 z-50">
+        <Link href="/" className="text-[10px] font-black uppercase tracking-widest text-white/50 hover:text-white transition-colors">
+          ← Retour Accueil
+        </Link>
+        <h1 className="text-xs font-black uppercase tracking-[0.3em]">Produits Personnalisables</h1>
+        <div className="w-20"></div>
+      </header>
+
+      <main className="max-w-6xl mx-auto w-full py-12 px-6">
+        {/* TITRE DE SECTION */}
+        <div className="mb-12">
+          <h2 className="text-3xl font-black uppercase tracking-tighter italic">Configurez vos supports</h2>
+          <p className="text-blue-300/60 text-xs font-bold uppercase tracking-widest mt-2">Éléments de personnalisation automatique inclus</p>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-12">
-          
-          {/* LISTE DES PRODUITS */}
-          <div className="lg:col-span-2 space-y-8">
-            {PRODUITS_PERSO.map((prod) => (
-              <div key={prod.id} className="bg-white/5 border border-white/10 rounded-[2rem] p-8 backdrop-blur-md">
-                <h2 className="text-xl font-black uppercase mb-6 tracking-tight">{prod.nom}</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {prod.options.map((opt, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => ajouterAuPanier(prod.nom, opt.qte, opt.prix)}
-                      className="bg-white/10 hover:bg-white hover:text-[#1e3a8a] py-4 rounded-xl transition-all flex flex-col items-center justify-center border border-white/5"
-                    >
-                      <span className="text-[10px] font-black uppercase opacity-60">Qté: {opt.qte}</span>
-                      <span className="text-lg font-black">{opt.prix.toFixed(2)}€ <small className="text-[10px]">HT</small></span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* RÉCAPITULATIF COMMANDE */}
-          <div className="relative">
-            <div className="sticky top-12 bg-white text-slate-900 p-8 rounded-[2.5rem] shadow-2xl">
-              <h2 className="text-[10px] font-bold text-slate-400 tracking-[0.3em] uppercase mb-8 border-b pb-4 text-center">Votre Sélection</h2>
+        {/* GRILLE DE PRODUITS */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {products.map((product) => (
+            <div key={product.id} className="group bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden hover:border-blue-500/50 transition-all duration-500 shadow-2xl">
               
-              {panier.length === 0 ? (
-                <p className="text-center py-10 text-slate-300 italic text-sm">Aucun produit sélectionné</p>
-              ) : (
-                <div className="space-y-4">
-                  {panier.map((item, i) => (
-                    <div key={i} className="flex justify-between items-center text-[10px] font-black uppercase border-b border-slate-100 pb-2">
-                      <div className="flex flex-col">
-                        <span>{item.produit}</span>
-                        <span className="text-blue-600">Quantité: {item.qte}</span>
-                      </div>
-                      <span>{item.prix.toFixed(2)}€</span>
-                    </div>
-                  ))}
-
-                  <div className="mt-8 pt-6 border-t-4 border-slate-100 text-center">
-                    <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Total à régler TTC</p>
-                    <div className="text-5xl font-black tracking-tighter mb-8">{totalTTC.toFixed(2)}€</div>
-                    <button className="w-full bg-[#1e3a8a] text-white py-6 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:scale-[1.02] transition-all shadow-lg">
-                      Passer la commande
-                    </button>
-                    <button onClick={() => setPanier([])} className="mt-4 text-[9px] font-bold text-slate-300 uppercase hover:text-red-500 transition-colors">
-                      Vider le panier
-                    </button>
-                  </div>
+              {/* IMAGE PRODUIT */}
+              <div className="h-56 bg-gradient-to-br from-slate-800 to-slate-900 relative flex items-center justify-center overflow-hidden">
+                <span className="text-[10px] font-black uppercase text-white/10 tracking-[1em] rotate-12 absolute">Aperçu</span>
+                <div className="absolute top-4 left-4 bg-blue-600 text-[8px] font-black uppercase px-2 py-1 rounded">
+                  {product.badge}
                 </div>
-              )}
-            </div>
-          </div>
+                {/* Une fois que tu auras les images, décommente la ligne suivante : */}
+                {/* <img src={product.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={product.title} /> */}
+              </div>
 
+              {/* INFOS PRODUIT */}
+              <div className="p-6">
+                <h3 className="font-black text-xl uppercase tracking-tight">{product.title}</h3>
+                <p className="text-white/40 text-xs mt-2 font-medium">{product.description}</p>
+                
+                <button className="w-full mt-6 bg-white text-[#0f092e] py-3 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-500 hover:text-white transition-all transform group-hover:translate-y-[-2px]">
+                  Lancer le configurateur
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
-      </div>
+
+        {/* INFO BOX */}
+        <div className="mt-16 bg-blue-600/10 border border-blue-500/20 rounded-2xl p-8 flex flex-col md:flex-row items-center gap-6">
+          <div className="text-3xl italic font-black text-blue-500">i</div>
+          <p className="text-xs font-bold leading-relaxed text-blue-200/70 uppercase tracking-wide text-center md:text-left">
+            Vos coordonnées (Logo agence, téléphone, adresse) sont automatiquement récupérées depuis votre <Link href="/profil" className="text-blue-400 underline">Profil Agence</Link> pour gagner du temps lors de la création.
+          </p>
+        </div>
+      </main>
+
     </div>
   );
 }
