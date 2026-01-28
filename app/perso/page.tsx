@@ -13,7 +13,7 @@ export default function PersoPage() {
   const [agendaLot, setAgendaLot] = useState(1);
 
   const prices = {
-    voeux: 125.00, // Exemple prix pour 1 lot de 50
+    voeux: 125.00,
     enveloppe: 25.00,
     agenda: 450.00
   };
@@ -47,30 +47,37 @@ export default function PersoPage() {
 
       <main className="max-w-6xl mx-auto w-full py-12 px-6 pb-40">
         <div className="mb-12">
-          <h2 className="text-3xl md:text-4xl font-black uppercase tracking-tighter text-white">Personnalisation</h2>
-          <p className="text-blue-300/60 text-[10px] font-bold uppercase tracking-[0.2em] mt-2">Configuration de vos supports print</p>
+          <h2 className="text-3xl md:text-4xl font-black uppercase tracking-tighter text-white text-center md:text-left">Personnalisation</h2>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-20">
           
           {/* 1. CARTE DE VOEUX */}
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden shadow-2xl flex flex-col">
-            <div className="h-40 bg-slate-800 flex items-center justify-center font-black text-white/5 uppercase tracking-widest text-xs">Visuel Vœux</div>
-            <div className="p-8">
-              <h3 className="font-black text-2xl uppercase tracking-tight mb-6">Carte de Vœux 2026</h3>
+          <div className="flex flex-col group">
+            {/* ZONE IMAGE SANS FOND (DÉTOURÉE) */}
+            <div className="h-64 w-full flex items-center justify-center relative mb-4">
+              <img 
+                src="/voeux-detoure.png" 
+                alt="Carte de Voeux" 
+                className="max-h-full max-w-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform group-hover:scale-105 transition-transform duration-500"
+                onError={(e) => { e.currentTarget.style.display = 'none' }} // Cache si l'image n'existe pas encore
+              />
+              {/* Placeholder text si pas d'image */}
+              <span className="absolute -z-10 text-[60px] font-black text-white/[0.02] uppercase select-none">Voeux</span>
+            </div>
+
+            <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-8 shadow-2xl">
+              <h3 className="font-black text-2xl uppercase tracking-tight mb-6 text-blue-500">Carte de Vœux 2026</h3>
               
               <div className="space-y-3 mb-6">
                 <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">Finition</p>
                 <div className="grid grid-cols-1 gap-2">
-                  <button onClick={() => setVoeuxVernis('sans')} className={`p-4 rounded-lg border text-[10px] font-black uppercase transition-all text-left flex justify-between items-center ${voeuxVernis === 'sans' ? 'border-blue-500 bg-blue-500/20 text-blue-400' : 'border-white/10 bg-white/5'}`}>
+                  <button onClick={() => setVoeuxVernis('sans')} className={`p-4 rounded-lg border text-[10px] font-black uppercase transition-all flex justify-between items-center ${voeuxVernis === 'sans' ? 'border-blue-500 bg-blue-500/20 text-blue-400' : 'border-white/10 bg-white/5'}`}>
                     Sans Vernis
                     {voeuxVernis === 'sans' && <span>●</span>}
                   </button>
-                  <button onClick={() => setVoeuxVernis('clear')} className={`p-4 rounded-lg border text-[10px] font-black uppercase transition-all text-left flex justify-between items-center group relative ${voeuxVernis === 'clear' ? 'border-blue-500 bg-blue-500/20 text-blue-400' : 'border-white/10 bg-white/5'}`}>
-                    <div className="flex items-center gap-2">
-                      Avec vernis "clear"
-                      <span className="bg-blue-500/30 text-blue-400 w-4 h-4 rounded-full flex items-center justify-center text-[8px] cursor-help" title="Le vernis est appliqué sur le gui et les confettis">i</span>
-                    </div>
+                  <button onClick={() => setVoeuxVernis('clear')} className={`p-4 rounded-lg border text-[10px] font-black uppercase transition-all flex justify-between items-center ${voeuxVernis === 'clear' ? 'border-blue-500 bg-blue-500/20 text-blue-400' : 'border-white/10 bg-white/5'}`}>
+                    Gui et confettis vernis clear
                     {voeuxVernis === 'clear' && <span>●</span>}
                   </button>
                 </div>
@@ -79,22 +86,18 @@ export default function PersoPage() {
               <div className="mb-6">
                 <div className="flex justify-between items-end mb-3">
                   <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">Nombre de lots</p>
-                  <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Quantité par lot : 50</p>
+                  <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest text-[8px]">Lot de 50</p>
                 </div>
                 <select 
                   value={voeuxLot} 
                   onChange={(e) => setVoeuxLot(Number(e.target.value))}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-[10px] font-black uppercase outline-none focus:border-blue-500 cursor-pointer"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-[10px] font-black uppercase outline-none focus:border-blue-500"
                 >
-                  {lotOptions.map(qty => (
-                    <option key={qty} value={qty} className="bg-[#0f092e] text-white">
-                      {qty} {qty > 1 ? 'lots' : 'lot'}
-                    </option>
-                  ))}
+                  {lotOptions.map(qty => <option key={qty} value={qty} className="bg-[#0f092e] text-white">{qty} {qty > 1 ? 'lots' : 'lot'}</option>)}
                 </select>
               </div>
 
-              <label className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer mb-8 transition-all ${voeuxEnveloppe ? 'border-green-500 bg-green-500/10' : 'border-white/10 bg-white/5'}`}>
+              <label className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer mb-8 transition-all ${voeuxEnveloppe ? 'border-green-500 bg-green-500/10 text-green-400' : 'border-white/10 bg-white/5'}`}>
                 <div className="flex items-center gap-3">
                   <input type="checkbox" checked={voeuxEnveloppe} onChange={() => setVoeuxEnveloppe(!voeuxEnveloppe)} className="accent-green-500" />
                   <span className="text-[10px] font-black uppercase tracking-widest">Option Enveloppes 16x16</span>
@@ -103,7 +106,7 @@ export default function PersoPage() {
 
               <button 
                 onClick={() => addToCart("Carte de Voeux", prices.voeux + (voeuxEnveloppe ? prices.enveloppe : 0), voeuxLot, `Vernis: ${voeuxVernis}`)}
-                className="w-full bg-white text-[#0f092e] py-4 rounded-xl font-black uppercase text-[10px] tracking-[0.2em] hover:bg-blue-600 hover:text-white transition-all shadow-lg active:scale-[0.98]"
+                className="w-full bg-white text-[#0f092e] py-4 rounded-xl font-black uppercase text-[10px] tracking-[0.2em] hover:bg-blue-600 hover:text-white transition-all shadow-lg"
               >
                 Ajouter au panier
               </button>
@@ -111,36 +114,42 @@ export default function PersoPage() {
           </div>
 
           {/* 2. AGENDAS */}
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden shadow-2xl flex flex-col">
-            <div className="h-40 bg-slate-800 flex items-center justify-center font-black text-white/5 uppercase tracking-widest text-xs">Visuel Agenda</div>
-            <div className="p-8 flex-grow">
-              <h3 className="font-black text-2xl uppercase tracking-tight mb-6">Agendas Agence</h3>
+          <div className="flex flex-col group">
+            {/* ZONE IMAGE SANS FOND (DÉTOURÉE) */}
+            <div className="h-64 w-full flex items-center justify-center relative mb-4">
+              <img 
+                src="/agenda-detoure.png" 
+                alt="Agenda" 
+                className="max-h-full max-w-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform group-hover:scale-105 transition-transform duration-500"
+                onError={(e) => { e.currentTarget.style.display = 'none' }}
+              />
+              <span className="absolute -z-10 text-[60px] font-black text-white/[0.02] uppercase select-none">Agenda</span>
+            </div>
+
+            <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-8 flex-grow">
+              <h3 className="font-black text-2xl uppercase tracking-tight mb-6 text-blue-500">Agendas Agence</h3>
               
-              <div className="mb-8">
+              <div className="mb-6">
                 <div className="flex justify-between items-end mb-3">
                   <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">Nombre de lots</p>
-                  <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Quantité par lot : 10</p>
+                  <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest text-[8px]">Lot de 50</p>
                 </div>
                 <select 
                   value={agendaLot} 
                   onChange={(e) => setAgendaLot(Number(e.target.value))}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-[10px] font-black uppercase outline-none focus:border-blue-500 cursor-pointer"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-[10px] font-black uppercase outline-none focus:border-blue-500"
                 >
-                  {lotOptions.map(qty => (
-                    <option key={qty} value={qty} className="bg-[#0f092e] text-white">
-                      {qty} {qty > 1 ? 'lots' : 'lot'}
-                    </option>
-                  ))}
+                  {lotOptions.map(qty => <option key={qty} value={qty} className="bg-[#0f092e] text-white">{qty} {qty > 1 ? 'lots' : 'lot'}</option>)}
                 </select>
               </div>
 
-              <div className="bg-blue-500/5 p-4 rounded-xl border border-blue-500/20 mb-10">
-                <p className="text-[10px] font-black uppercase tracking-widest text-blue-400 text-center">Finition unique : Couverture Rigide</p>
+              <div className="bg-blue-500/5 p-4 rounded-xl border border-blue-500/20 mb-10 text-center">
+                <p className="text-[10px] font-black uppercase tracking-widest text-blue-400">Couverture Rigide Premium</p>
               </div>
 
               <button 
                 onClick={() => addToCart("Agenda Agence", prices.agenda, agendaLot, "Couverture Rigide")}
-                className="w-full bg-white text-[#0f092e] py-4 rounded-xl font-black uppercase text-[10px] tracking-[0.2em] hover:bg-blue-600 hover:text-white transition-all shadow-lg active:scale-[0.98]"
+                className="w-full bg-white text-[#0f092e] py-4 rounded-xl font-black uppercase text-[10px] tracking-[0.2em] hover:bg-blue-600 hover:text-white transition-all shadow-lg"
               >
                 Ajouter au panier
               </button>
@@ -150,7 +159,7 @@ export default function PersoPage() {
         </div>
       </main>
 
-      {/* --- BOUTON MON PANIER (BAS GAUCHE) --- */}
+      {/* --- LE PANIER (BAS GAUCHE) --- */}
       <div className="fixed bottom-8 left-8 z-[100]">
         <button 
           onClick={() => setIsCartOpen(!isCartOpen)}
@@ -191,7 +200,7 @@ export default function PersoPage() {
                   <span className="font-black text-[10px] uppercase text-slate-400">Total HT</span>
                   <span className="font-black text-xl text-blue-600">{totalPriceHT.toFixed(2)}€ HT</span>
                 </div>
-                <button className="w-full bg-[#0f092e] text-white py-4 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-600 transition-all active:scale-[0.98]">
+                <button className="w-full bg-[#0f092e] text-white py-4 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-600 transition-all">
                   Valider la commande
                 </button>
               </div>
