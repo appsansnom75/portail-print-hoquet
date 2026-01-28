@@ -15,6 +15,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-[#0f092e] text-white font-sans flex flex-col">
+      {/* --- LOGOS --- */}
       <header className="py-10 px-4">
         <div className="max-w-4xl mx-auto flex items-center justify-center gap-8 md:gap-16">
           <img src="/logo-imprimeur.png" alt="Mon Imprimerie" className="h-9 md:h-14 object-contain" />
@@ -23,8 +24,9 @@ export default function HomePage() {
         </div>
       </header>
 
+      {/* --- BANNIÈRE --- */}
       <section className="w-full relative group overflow-hidden">
-        <div className="h-[220px] md:h-[300px] w-full overflow-hidden border-y border-white/5 relative">
+        <div className="h-[200px] md:h-[300px] w-full overflow-hidden border-y border-white/5 relative">
           <div className="absolute top-6 -right-12 bg-red-600 text-white px-12 py-1 rotate-45 z-10 shadow-lg">
             <span className="text-[9px] font-black uppercase tracking-[0.2em]">Nouveautés</span>
           </div>
@@ -36,9 +38,12 @@ export default function HomePage() {
         </div>
       </section>
 
-      <div className="bg-white/[0.03] border-b border-white/10 py-3 px-6">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-3">
+      {/* --- BARRE DE STATUT RÉORGANISÉE --- */}
+      <div className="bg-white/[0.03] border-b border-white/10 py-4 px-6">
+        <div className="max-w-6xl mx-auto flex flex-col gap-4">
+          
+          {/* Ligne 1 : Nom de l'agence */}
+          <div className="flex items-center justify-center md:justify-start gap-3">
             <div className="flex items-center gap-2">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -46,35 +51,53 @@ export default function HomePage() {
               </span>
               <span className="text-[9px] font-bold uppercase tracking-widest text-white/30">Session :</span>
             </div>
-            <span className="text-[10px] font-black uppercase tracking-tight text-white">{agencyName}</span>
-            <Link href="/profil" className="ml-2 bg-blue-600 hover:bg-blue-500 text-white text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded transition-all">Mon Profil</Link>
+            <span className="text-[10px] md:text-xs font-black uppercase tracking-tight text-white">{agencyName}</span>
           </div>
-          <button onClick={() => alert('Déconnexion...')} className="text-[9px] font-black uppercase tracking-widest text-white/40 border border-white/10 px-3 py-1.5 rounded-md hover:text-red-400 hover:border-red-400/30">Déconnexion</button>
+
+          {/* Ligne 2 : Boutons d'action (Côte à côte sur mobile) */}
+          <div className="flex items-center justify-center md:justify-start gap-2 overflow-x-auto pb-1">
+            <Link href="/profil" className="flex-1 md:flex-none text-center bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[9px] font-black uppercase tracking-widest px-4 py-2.5 rounded transition-all">
+              Mon Profil
+            </Link>
+            <Link href="/panier" className="flex-1 md:flex-none text-center bg-blue-600 hover:bg-blue-500 text-white text-[9px] font-black uppercase tracking-widest px-4 py-2.5 rounded transition-all shadow-lg shadow-blue-500/20">
+              🛒 Mon Panier
+            </Link>
+            <button onClick={() => alert('Déconnexion...')} className="flex-1 md:flex-none text-[9px] font-black uppercase tracking-widest text-white/40 border border-white/5 px-4 py-2.5 rounded hover:text-red-400 hover:bg-red-400/10 transition-all">
+              Quitter
+            </button>
+          </div>
+
         </div>
       </div>
 
-      <main className="flex-grow flex items-center py-10">
-        <div className="max-w-5xl mx-auto w-full px-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* --- BOUTONS NAVIGATION AVEC FONDUS COLORÉS --- */}
+      <main className="flex-grow flex items-center py-12">
+        <div className="max-w-5xl mx-auto w-full px-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          {/* PERSO - DÉGRADÉ BLEU */}
           <Link href="/perso" className="group">
-            <div className="h-24 md:h-28 bg-white rounded-lg flex flex-col items-center justify-center text-center p-3 shadow-xl transition-all hover:scale-[1.01]">
-              <span className="font-black text-xs md:text-sm uppercase text-[#0f092e]">Produits Personnalisables</span>
-              <span className="mt-2 text-[8px] font-black text-blue-600 uppercase tracking-widest opacity-80">Configurateur en ligne</span>
+            <div className="h-28 md:h-32 bg-gradient-to-br from-blue-600/80 to-blue-900/40 rounded-xl flex flex-col items-center justify-center text-center p-4 shadow-xl border border-blue-400/20 transition-all hover:scale-[1.02] hover:border-blue-400/40">
+              <span className="font-black text-sm md:text-base uppercase text-white drop-shadow-md">Produits Personnalisables</span>
+              <span className="mt-2 text-[9px] font-black text-blue-200 uppercase tracking-widest opacity-90 bg-blue-900/50 px-2 py-1 rounded">Configurateur en ligne</span>
             </div>
           </Link>
 
+          {/* STOCK - DÉGRADÉ VERT */}
           <Link href="/stock" className="group">
-            <div className="h-24 md:h-28 bg-white rounded-lg flex flex-col items-center justify-center text-center p-3 shadow-xl transition-all hover:scale-[1.01]">
-              <span className="font-black text-xs md:text-sm uppercase text-[#0f092e]">Produits sans personnalisation </span>
-              <span className="mt-2 text-[8px] font-black text-green-600 uppercase tracking-widest opacity-80">Catalogue en ligne</span>
+            <div className="h-28 md:h-32 bg-gradient-to-br from-green-600/80 to-green-900/40 rounded-xl flex flex-col items-center justify-center text-center p-4 shadow-xl border border-green-400/20 transition-all hover:scale-[1.02] hover:border-green-400/40">
+              <span className="font-black text-sm md:text-base uppercase text-white drop-shadow-md">Produits en stock</span>
+              <span className="mt-2 text-[9px] font-black text-green-100 uppercase tracking-widest opacity-90 bg-green-900/50 px-2 py-1 rounded">Sans personnalisation</span>
             </div>
           </Link>
 
+          {/* BUSINESS - DÉGRADÉ ORANGE */}
           <Link href="/hoquet" className="group">
-            <div className="h-24 md:h-28 bg-white rounded-lg flex flex-col items-center justify-center text-center p-3 shadow-xl transition-all hover:scale-[1.01]">
-              <span className="font-black text-xs md:text-sm uppercase text-[#0f092e]">Gamme Hoquet Business</span>
-              <span className="mt-2 text-[8px] font-black text-orange-500 uppercase tracking-widest opacity-80">Découvrir la gamme</span>
+            <div className="h-28 md:h-32 bg-gradient-to-br from-orange-500/80 to-orange-900/40 rounded-xl flex flex-col items-center justify-center text-center p-4 shadow-xl border border-orange-400/20 transition-all hover:scale-[1.02] hover:border-orange-400/40">
+              <span className="font-black text-sm md:text-base uppercase text-white drop-shadow-md">Gamme Business</span>
+              <span className="mt-2 text-[9px] font-black text-orange-100 uppercase tracking-widest opacity-90 bg-orange-900/50 px-2 py-1 rounded">Découvrir la gamme</span>
             </div>
           </Link>
+
         </div>
       </main>
 
