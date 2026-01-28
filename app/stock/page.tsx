@@ -68,7 +68,7 @@ export default function StockPage() {
     <div className="min-h-screen bg-[#0f092e] text-white font-sans flex flex-col relative">
       <header className="py-6 px-6 border-b border-white/10 flex justify-between items-center bg-[#0f092e]/80 backdrop-blur-md sticky top-0 z-50">
         <Link href="/" className="text-[10px] font-black uppercase tracking-widest text-white/50 hover:text-white transition-colors">← Retour</Link>
-        <h1 className="text-xs font-black uppercase tracking-[0.3em]">Produits en Stock</h1>
+        <h1 className="text-xs font-black uppercase tracking-[0.3em]">Produits standard</h1>
         <div className="w-10"></div>
       </header>
 
