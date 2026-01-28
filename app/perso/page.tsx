@@ -18,15 +18,17 @@ const PRODUCTS_CONFIG = [
       'sans': [30.90, 30.90, 30.90, 30.90, 30.90, 30.90, 30.90],
       'clear': [61.80, 61.80, 61.80, 61.80, 61.80, 61.80, 61.80]
     },
-    extraOptions: { id: 'enveloppe', name: 'Option Enveloppes 16x16', pricePerLot: 25.00 }
+    // Mise à jour enveloppes : 9.90€ par lot de 50
+    extraOptions: { id: 'enveloppe', name: 'Option Enveloppes 16x16', pricePerLot: 9.90 }
   },
   {
     id: 'agenda',
     name: 'Agendas Agence',
     image: '/agenda-detoure.png',
-    baseQty: 50,
-    lots: [1, 5, 10, 50, 100],
-    prices: { default: [450.00, 420.00, 400.00, 380.00, 350.00] }
+    isUnitBased: true, // Pour afficher "Exemplaires" au lieu de "Lots"
+    units: [10, 25, 50, 100, 150, 200, 300, 400],
+    unitPrices: [9.90, 9.50, 9.00, 8.50, 8.00, 7.80, 7.50, 7.20], // 9.90 * 10 = 99€
+    prices: { default: [] } // Non utilisé ici
   },
   {
     id: 'flyer',
@@ -68,16 +70,8 @@ const PRODUCTS_CONFIG = [
     name: 'Carte de visite',
     image: '/carte-visite.png',
     baseQty: 100,
-    hasVariants: true,
-    variants: [
-      { id: 'classique', name: 'Classique' },
-      { id: 'bloc_marque', name: 'Bloc Marque' }
-    ],
     lots: [1],
-    prices: {
-      'classique': [8.25],
-      'bloc_marque': [8.25]
-    }
+    prices: { default: [8.25] }
   },
   {
     id: 'entete_lettre',
@@ -103,7 +97,11 @@ export default function PersoPage() {
   const [selections, setSelections] = useState<any>(
     PRODUCTS_CONFIG.reduce((acc, p) => ({
       ...acc, 
-      [p.id]: { lot: p.lots[0], variant: p.hasVariants ? p.variants[0].id : 'default', extra: false }
+      [p.id]: { 
+        lot: p.isUnitBased ? p.units![0] : p.lots![0], 
+        variant: p.hasVariants ? p.variants![0].id : 'default', 
+        extra: false 
+      }
     }), {})
   );
 
@@ -113,6 +111,12 @@ export default function PersoPage() {
 
   const calculatePrice = (product: any) => {
     const sel = selections[product.id];
+    
+    if (product.isUnitBased) {
+      const unitIndex = product.units.indexOf(sel.lot);
+      return product.unitPrices[unitIndex] * sel.lot;
+    }
+
     const lotIndex = product.lots.indexOf(sel.lot);
     const priceList = product.prices[sel.variant] || product.prices.default;
     let base = (priceList[lotIndex] || priceList[0]) * sel.lot;
@@ -130,6 +134,7 @@ export default function PersoPage() {
       name: product.name,
       variant: variantLabel,
       quantity: sel.lot,
+      isUnit: product.isUnitBased,
       totalPrice: price,
       extra: sel.extra ? product.extraOptions.name : null
     }]);
@@ -151,18 +156,20 @@ export default function PersoPage() {
             const sel = selections[product.id];
 
             return (
-              <div key={product.id} className="flex flex-col group relative">
-                {/* BADGE QUANTITÉ VISIBLE */}
-                <div className="absolute top-2 right-2 z-10 bg-blue-600 text-white text-[8px] font-black px-2 py-1 rounded-full uppercase tracking-tighter shadow-xl">
-                  {product.baseQty} ex. / lot
-                </div>
-
+              <div key={product.id} className="flex flex-col group">
                 <div className="h-48 w-full flex items-center justify-center relative mb-4">
-                  <img src={product.image} alt={product.name} className="max-h-full max-w-full object-contain drop-shadow-2xl group-hover:scale-105 transition-all duration-500" onError={(e) => { e.currentTarget.style.display = 'none' }} />
+                  <img src={product.image} alt={product.name} className="max-h-full max-w-full object-contain drop-shadow-2xl group-hover:scale-105 transition-all duration-500" />
                 </div>
 
                 <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 shadow-xl flex flex-col h-full">
-                  <h3 className="font-black text-xl uppercase tracking-tighter mb-4 text-blue-500 leading-tight">{product.name}</h3>
+                  <div className="flex justify-between items-start mb-4">
+                    <h3 className="font-black text-xl uppercase tracking-tighter text-blue-500 leading-tight w-2/3">{product.name}</h3>
+                    {!product.isUnitBased && (
+                      <span className="bg-white/10 text-white/60 text-[7px] font-black px-2 py-1 rounded uppercase border border-white/10">
+                        {product.baseQty} ex. / lot
+                      </span>
+                    )}
+                  </div>
                   
                   {product.hasVariants && (
                     <div className="mb-4">
@@ -182,9 +189,14 @@ export default function PersoPage() {
                   )}
 
                   <div className="mb-4">
-                    <p className="text-[8px] font-black text-white/40 uppercase mb-2 tracking-widest">Quantité souhaitée</p>
+                    <p className="text-[8px] font-black text-white/40 uppercase mb-2 tracking-widest">
+                      {product.isUnitBased ? 'Quantité' : 'Nombre de lots'}
+                    </p>
                     <select value={sel.lot} onChange={(e) => updateSelection(product.id, 'lot', Number(e.target.value))} className="w-full bg-white/5 border border-white/10 rounded p-2 text-[10px] font-black uppercase outline-none focus:border-blue-500">
-                      {product.lots.map(qty => <option key={qty} value={qty} className="bg-[#0f092e]">{qty} {qty > 1 ? 'lots' : 'lot'} ({qty * product.baseQty} exemplaires)</option>)}
+                      {product.isUnitBased 
+                        ? product.units!.map(q => <option key={q} value={q} className="bg-[#0f092e]">{q} exemplaires</option>)
+                        : product.lots!.map(qty => <option key={qty} value={qty} className="bg-[#0f092e]">{qty} {qty > 1 ? 'lots' : 'lot'} ({qty * product.baseQty} ex.)</option>)
+                      }
                     </select>
                   </div>
 
@@ -194,6 +206,7 @@ export default function PersoPage() {
                         <input type="checkbox" checked={sel.extra} onChange={() => updateSelection(product.id, 'extra', !sel.extra)} className="accent-green-500" />
                         <span className="text-[9px] font-black uppercase">{product.extraOptions.name}</span>
                       </div>
+                      <span className="text-[8px] font-bold opacity-60">+{product.extraOptions.pricePerLot.toFixed(2)}€ / lot</span>
                     </label>
                   )}
 
@@ -215,13 +228,15 @@ export default function PersoPage() {
         </button>
         {isCartOpen && (
           <div className="absolute bottom-16 left-0 w-80 bg-white rounded-2xl shadow-2xl text-[#0f092e] overflow-hidden">
-            <div className="bg-slate-100 p-4 border-b flex justify-between items-center"><span className="font-black text-[9px] uppercase tracking-widest text-slate-500">Récapitulatif HT</span><button onClick={() => setIsCartOpen(false)} className="text-red-500 font-black text-[9px]">FERMER</button></div>
+            <div className="bg-slate-100 p-4 border-b flex justify-between items-center"><span className="font-black text-[9px] uppercase tracking-widest text-slate-500">Panier</span><button onClick={() => setIsCartOpen(false)} className="text-red-500 font-black text-[9px]">FERMER</button></div>
             <div className="max-h-80 overflow-y-auto p-4 space-y-4">
-              {cart.length === 0 ? <p className="text-[10px] font-bold text-slate-400 uppercase text-center py-4">Le panier est vide</p> : cart.map((item, idx) => (
+              {cart.length === 0 ? <p className="text-[10px] font-bold text-slate-400 uppercase text-center py-4">Vide</p> : cart.map((item, idx) => (
                 <div key={item.id} className="border-b border-slate-100 pb-3 flex justify-between items-start">
                   <div>
                     <p className="font-black text-[10px] uppercase leading-tight">{item.name}</p>
-                    <p className="text-[8px] font-bold text-slate-500 uppercase mt-1">{item.variant} {item.extra && `+ ${item.extra}`} • {item.quantity} lot(s)</p>
+                    <p className="text-[8px] font-bold text-slate-500 uppercase mt-1">
+                      {item.variant} {item.extra && `+ ${item.extra}`} • {item.quantity} {item.isUnit ? 'ex.' : 'lot(s)'}
+                    </p>
                   </div>
                   <div className="text-right">
                     <p className="font-black text-[10px]">{item.totalPrice.toFixed(2)}€</p>
