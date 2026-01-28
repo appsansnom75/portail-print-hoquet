@@ -105,7 +105,7 @@ export default function HomePage() {
           <Link href="/stock" className="group">
             <div className="h-24 md:h-28 bg-white rounded-lg flex flex-col items-center justify-center text-center p-3 shadow-xl transition-all duration-300 hover:bg-slate-50 hover:scale-[1.01] border border-white/10">
               <span className="font-black text-xs md:text-sm uppercase tracking-tight text-[#0f092e]">
-                Produits En Stock
+                Produits sans personnalisation
               </span>
               <span className="mt-2 text-[8px] font-black text-green-600 uppercase tracking-widest opacity-80">
                 Catalogue en ligne
