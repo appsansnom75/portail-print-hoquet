@@ -1,11 +1,12 @@
 'use client';
-'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-// Import crucial pour ne pas être déconnecté
 import { createClient } from '@supabase/supabase-js';
+// Ajout du router pour la navigation
+import { useRouter } from 'next/navigation';
 
 export default function GestionEquipe() {
+  const router = useRouter(); // Initialisation du router
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [prenom, setPrenom] = useState('');
@@ -45,74 +46,88 @@ export default function GestionEquipe() {
   }, []);
 
   const creerCompte = async (e: React.FormEvent) => {
-  e.preventDefault();
-  
-  // 1. On crée un client Supabase "jetable" qui ne stocke pas de session
-  // Cela utilise tes variables d'environnement déjà présentes dans ton projet
-  const tempSupabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      auth: {
-        persistSession: false, // C'est CA qui t'empêche d'être déconnecté
-        autoRefreshToken: false,
-        detectSessionInUrl: false
+    e.preventDefault();
+    const tempSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false
+        }
+      }
+    );
+
+    const { data: authData, error: authError } = await tempSupabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { first_name: prenom, last_name: nom }
+      }
+    });
+
+    if (authError) return alert("Erreur Auth : " + authError.message);
+
+    if (authData.user && monAgencyId) {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert([{ 
+            id: authData.user.id, 
+            first_name: prenom, 
+            last_name: nom,
+            full_name: `${prenom} ${nom}`,
+            email: email, 
+            role: roleChoisi, 
+            agency_id: monAgencyId,
+            phone: '', 
+            siret: ''
+        }]);
+
+      if (!profileError) {
+        alert("Membre créé !");
+        setEmail(''); setPassword(''); setPrenom(''); setNom('');
+        chargerEquipe();
+      } else {
+        alert("Erreur Profil : " + profileError.message);
       }
     }
-  );
-
-  // 2. On utilise ce client temporaire pour créer l'accès (Auth)
-  const { data: authData, error: authError } = await tempSupabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: { first_name: prenom, last_name: nom }
-    }
-  });
-
-  if (authError) return alert("Erreur Auth : " + authError.message);
-
-  if (authData.user && monAgencyId) {
-    // 3. On utilise le client 'supabase' NORMAL pour insérer dans ta table profiles
-    // Comme ça, Supabase sait que c'est TOI (l'admin) qui fait l'action
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .insert([{ 
-          id: authData.user.id, 
-          first_name: prenom, 
-          last_name: nom,
-          full_name: `${prenom} ${nom}`,
-          email: email, 
-          role: roleChoisi, 
-          agency_id: monAgencyId,
-          phone: '', 
-          siret: ''
-      }]);
-
-    if (!profileError) {
-      alert("Membre créé avec succès ! Vous êtes toujours sur votre session.");
-      setEmail(''); setPassword(''); setPrenom(''); setNom('');
-      chargerEquipe(); // Rafraîchit la liste en bas
-    } else {
-      alert("Erreur Profil : " + profileError.message);
-    }
-  }
-};
+  };
 
   const supprimerMembre = async (id: string) => {
     if (id === monId) return alert("Opération impossible sur votre compte.");
     if (confirm("Supprimer ce membre définitivement ?")) {
       const { error } = await supabase.from('profiles').delete().eq('id', id);
-      if (!error) chargerEquipe();
+      if (!error) {
+        setMembres(membres.filter(m => m.id !== id));
+      } else {
+        alert("Erreur : " + error.message);
+      }
     }
   };
 
-  if (loading) return <div className="p-20 text-white font-black uppercase text-[10px]">Chargement de l'agence...</div>;
+  if (loading) return <div className="p-20 text-white font-black uppercase text-[10px]">Chargement...</div>;
 
   return (
     <div className="min-h-screen bg-[#0f092e] text-white p-6 md:p-12">
-      <div className="max-w-5xl mx-auto space-y-12">
+      <div className="max-w-5xl mx-auto space-y-8">
         
+        {/* EN-TÊTE AVEC BOUTON RETOUR */}
+        <div className="flex items-center justify-between">
+          <button 
+            onClick={() => router.back()} 
+            className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-blue-400 transition-all group"
+          >
+            <span className="text-lg group-hover:-translate-x-1 transition-transform">←</span> Retour
+          </button>
+          
+          <div className="text-right">
+            <h1 className="text-2xl font-black uppercase italic tracking-tighter text-white">Gestion Equipe</h1>
+            <p className="text-[9px] font-bold text-blue-500 uppercase tracking-[0.3em]">Tableau de bord Admin</p>
+          </div>
+        </div>
+
+        {/* FORMULAIRE D'AJOUT */}
         <div className="bg-white/5 p-8 rounded-[40px] border border-white/10 backdrop-blur-xl shadow-2xl">
           <h2 className="text-xl font-black uppercase mb-6 text-blue-500 tracking-tighter italic">Nouveau Collaborateur</h2>
           <form onSubmit={creerCompte} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -128,6 +143,7 @@ export default function GestionEquipe() {
           </form>
         </div>
 
+        {/* LISTE DÉTAILLÉE */}
         <div className="space-y-6">
           <div className="flex items-center justify-between px-4">
             <h2 className="text-sm font-black uppercase tracking-[0.2em] text-white/30 italic">Répertoire de l'agence</h2>
