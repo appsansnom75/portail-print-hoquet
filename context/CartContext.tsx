@@ -1,7 +1,6 @@
 'use client';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-// 1. On définit ce qu'est un "Produit" dans notre panier
 type CartItem = {
   id: string;
   name: string;
@@ -10,12 +9,11 @@ type CartItem = {
   category: string;
 };
 
-// 2. On définit les actions possibles
 type CartContextType = {
   cart: CartItem[];
-  addToCart: (product: CartItem) => void;
+  addToCart: (item: CartItem) => void;
   removeFromCart: (id: string) => void;
-  updateQty: (id: string, delta: number) => void;
+  clearCart: () => void;
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -23,47 +21,52 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
 
-  // Charger le panier sauvegardé au démarrage
+  // Charger le panier au démarrage
   useEffect(() => {
-    const saved = localStorage.getItem('gh_cart');
-    if (saved) setCart(JSON.parse(saved));
+    const savedCart = localStorage.getItem('cart');
+    if (savedCart) setCart(JSON.parse(savedCart));
   }, []);
 
-  // Sauvegarder automatiquement quand le panier change
+  // Sauvegarder à chaque modif
   useEffect(() => {
-    localStorage.setItem('gh_cart', JSON.stringify(cart));
+    localStorage.setItem('cart', JSON.stringify(cart));
   }, [cart]);
 
-  const addToCart = (product: CartItem) => {
-    setCart(prev => {
-      const exists = prev.find(item => item.id === product.id);
-      if (exists) return prev.map(item => item.id === product.id ? { ...item, qty: item.qty + 1 } : item);
-      return [...prev, product];
+  const addToCart = (newItem: CartItem) => {
+    setCart((prevCart) => {
+      // On cherche si le même produit (même ID et même variante) existe déjà
+      const existingItemIndex = prevCart.findIndex((item) => item.id === newItem.id);
+
+      if (existingItemIndex !== -1) {
+        // LE PRODUIT EXISTE : On additionne les vraies quantités (ex: 500 + 500)
+        const updatedCart = [...prevCart];
+        updatedCart[existingItemIndex] = {
+          ...updatedCart[existingItemIndex],
+          qty: updatedCart[existingItemIndex].qty + newItem.qty, // ICI : Addition des exemplaires réels
+        };
+        return updatedCart;
+      }
+
+      // LE PRODUIT EST NOUVEAU : On l'ajoute normalement
+      return [...prevCart, newItem];
     });
   };
 
-  const updateQty = (id: string, delta: number) => {
-    setCart(prev => prev.map(item => {
-      if (item.id === id) {
-        const newQty = Math.max(1, item.qty + delta);
-        return { ...item, qty: newQty };
-      }
-      return item;
-    }));
+  const removeFromCart = (id: string) => {
+    setCart((prev) => prev.filter((item) => item.id !== id));
   };
 
-  const removeFromCart = (id: string) => setCart(prev => prev.filter(item => item.id !== id));
+  const clearCart = () => setCart([]);
 
   return (
-    <CartContext.Provider value={{ cart, addToCart, removeFromCart, updateQty }}>
+    <CartContext.Provider value={{ cart, addToCart, removeFromCart, clearCart }}>
       {children}
     </CartContext.Provider>
   );
 }
 
-// Le petit "hook" pour utiliser le panier facilement dans les pages
-export const useCart = () => {
+export function useCart() {
   const context = useContext(CartContext);
-  if (!context) throw new Error("useCart must be used within CartProvider");
+  if (!context) throw new Error('useCart must be used within a CartProvider');
   return context;
-};
+}
