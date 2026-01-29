@@ -32,27 +32,22 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const addToCart = (newItem: CartItem) => {
     setCart((prevCart) => {
-      // On cherche si le produit (identifié par son ID unique) est déjà là
       const existingItemIndex = prevCart.findIndex((item) => item.id === newItem.id);
 
       if (existingItemIndex !== -1) {
-        // LE PRODUIT EST DÉJÀ LÀ
         const updatedCart = [...prevCart];
-        const existingItem = updatedCart[existingItemIndex];
-        
-        // LOGIQUE CRUCIALE : On force l'addition des volumes
-        // On utilise Number() pour éviter que JS transforme 500+500 en "500500"
-        const newTotalQty = Number(existingItem.qty) + Number(newItem.qty);
+        const currentQty = Number(updatedCart[existingItemIndex].qty);
+        const qtyToAdd = Number(newItem.qty);
+
+        // DEBUG: Ouvre ta console (F12) pour voir ce message
+        console.log(`PANIER: Reçu ${qtyToAdd} à ajouter aux ${currentQty} existants`);
 
         updatedCart[existingItemIndex] = {
-          ...existingItem,
-          qty: newTotalQty // On remplace par le nouveau total cumulé
+          ...updatedCart[existingItemIndex],
+          qty: currentQty + qtyToAdd
         };
-        
         return updatedCart;
       }
-
-      // NOUVEAU PRODUIT : On l'ajoute tel quel
       return [...prevCart, newItem];
     });
   };

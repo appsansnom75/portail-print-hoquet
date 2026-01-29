@@ -6,7 +6,8 @@ import { useCart } from '@/context/CartContext';
 export default function PanierPage() {
   const { cart, removeFromCart } = useCart();
 
-  const subtotal = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
+  // Le sous-total multiplie le prix unitaire par la quantité cumulée (ex: 1000 ex)
+  const subtotal = cart.reduce((acc, item) => acc + (Number(item.price) * Number(item.qty)), 0);
   const tva = subtotal * 0.20;
   const total = subtotal + tva;
 
@@ -45,15 +46,17 @@ export default function PanierPage() {
                     </div>
 
                     <div className="flex items-center gap-10">
-                      {/* Affichage des exemplaires réels */}
+                      {/* AFFICHAGE DES EXEMPLAIRES (ex: 1000 ex.) */}
                       <div className="bg-black/20 border border-white/10 rounded-full px-6 py-2">
-                        <span className="text-[10px] font-black uppercase tracking-widest">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-blue-400">
                           {item.qty} ex.
                         </span>
                       </div>
 
                       <div className="text-right min-w-[100px]">
-                        <p className="text-sm font-black tracking-tight">{(item.price * item.qty).toFixed(2)}€</p>
+                        <p className="text-sm font-black tracking-tight">
+                          {(Number(item.price) * Number(item.qty)).toFixed(2)}€
+                        </p>
                         <p className="text-[8px] text-white/20 font-bold uppercase tracking-tighter">HT</p>
                       </div>
 
