@@ -2,12 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
-import { supabase } from '@/lib/supabase'; // Import de Supabase
+import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
 export default function HomePage() {
-  const [agencyName, setAgencyName] = useState("Chargement...");
+  const [agencyName, setAgencyName] = useState("");
   const [userName, setUserName] = useState("");
+  const [role, setRole] = useState(""); // Pour stocker le rôle (admin_agence ou collaborateur)
+  const [loading, setLoading] = useState(true);
   const { cart } = useCart();
   const router = useRouter();
   
@@ -15,29 +17,32 @@ export default function HomePage() {
 
   useEffect(() => {
     const fetchUserAndAgency = async () => {
-      // 1. On récupère l'utilisateur connecté
+      // 1. Récupérer l'utilisateur session
       const { data: { user } } = await supabase.auth.getUser();
 
-      if (user) {
-        // 2. On récupère son profil et le nom de son agence liée
-        const { data, error } = await supabase
-          .from('profiles')
-          .select(`
-            full_name,
-            agencies ( name )
-          `)
-          .eq('id', user.id)
-          .single();
-
-        if (data) {
-          setUserName(data.full_name);
-          // @ts-ignore
-          setAgencyName(data.agencies?.name || "Agence Inconnue");
-        }
-      } else {
-        // Si pas de session, on peut rediriger vers login
+      if (!user) {
         router.push('/login');
+        return;
       }
+
+      // 2. Récupérer le profil et l'agence
+      const { data, error } = await supabase
+        .from('profiles')
+        .select(`
+          full_name,
+          role,
+          agencies ( name )
+        `)
+        .eq('id', user.id)
+        .single();
+
+      if (data) {
+        setUserName(data.full_name);
+        setRole(data.role);
+        // @ts-ignore
+        setAgencyName(data.agencies?.name || "Agence Indépendante");
+      }
+      setLoading(false);
     };
 
     fetchUserAndAgency();
@@ -50,6 +55,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-[#0f092e] text-white font-sans flex flex-col">
+      {/* ... (Header et Banner identiques) ... */}
       <header className="py-8 px-4">
         <div className="max-w-4xl mx-auto flex items-center justify-center gap-6 md:gap-12">
           <img src="/logo-imprimeur.png" alt="Mon Imprimerie" className="h-7 md:h-10 object-contain opacity-70" />
@@ -73,20 +79,37 @@ export default function HomePage() {
       <div className="border-b border-white/5 bg-black/20 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-6 py-6 md:py-3">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 md:gap-4">
+            
+            {/* Zone Session */}
             <div className="flex items-center gap-3 justify-center md:justify-start">
-              <span className="h-1 w-1 rounded-full bg-green-500 animate-pulse"></span>
+              <span className={`h-1.5 w-1.5 rounded-full animate-pulse ${loading ? 'bg-white/20' : 'bg-green-500'}`}></span>
               <div className="flex flex-col md:flex-row md:items-baseline md:gap-2">
-                <span className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30">Session :</span>
-                <span className="text-[10px] font-black uppercase text-white/90 tracking-tight">
-                    {userName} <span className="text-white/30 mx-1">—</span> {agencyName}
-                </span>
+                <span className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 italic">Session Active :</span>
+                {loading ? (
+                   <span className="text-[10px] font-black uppercase text-white/20 animate-pulse">Initialisation...</span>
+                ) : (
+                  <span className="text-[10px] font-black uppercase text-white/90 tracking-tight">
+                    {userName} <span className="text-blue-500/50 mx-1">/</span> {agencyName}
+                  </span>
+                )}
               </div>
             </div>
 
             <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
-              <Link href="/dashboard/equipe" className="text-center bg-blue-600/20 border border-blue-500/30 hover:bg-blue-600/40 text-blue-400 text-[9px] font-black uppercase tracking-widest px-6 py-2.5 transition-all">
-                Gérer l'Équipe
-              </Link>
+              {/* AFFICHAGE CONDITIONNEL DES BOUTONS */}
+              {!loading && (
+                <>
+                  {role === 'admin_agence' ? (
+                    <Link href="/dashboard/equipe" className="text-center bg-blue-600/20 border border-blue-500/30 hover:bg-blue-600/40 text-blue-400 text-[9px] font-black uppercase tracking-widest px-6 py-2.5 transition-all">
+                      Gérer l'Équipe
+                    </Link>
+                  ) : (
+                    <Link href="/profil" className="text-center bg-white/5 border border-white/10 hover:bg-white/10 text-white/60 text-[9px] font-black uppercase tracking-widest px-6 py-2.5 transition-all">
+                      Gérer mes infos
+                    </Link>
+                  )}
+                </>
+              )}
               
               <Link href="/panier" className="relative text-center bg-white/10 border border-white/10 hover:bg-white/20 text-white text-[9px] font-black uppercase tracking-widest px-6 py-2.5 transition-all">
                 Mon Panier 
@@ -106,6 +129,7 @@ export default function HomePage() {
         </div>
       </div>
 
+      {/* ... (Main et Footer identiques) ... */}
       <main className="flex-grow flex items-center py-12">
         <div className="max-w-6xl mx-auto w-full px-6 grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
           <Link href="/perso" className="group">
