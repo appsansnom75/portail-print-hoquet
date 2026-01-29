@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -32,6 +32,18 @@ export default function PersoPage() {
   const { cart, addToCart: addItemToGlobalCart, removeFromCart } = useCart();
   const [isCartOpen, setIsCartOpen] = useState(false);
   
+  // SÉCURITÉ : PRÉCHARGEMENT DES IMAGES
+  useEffect(() => {
+    PRODUCTS_CONFIG.forEach(p => {
+      if (p.variants) {
+        p.variants.forEach(v => {
+          const img = new Image();
+          img.src = v.image;
+        });
+      }
+    });
+  }, []);
+
   const [selections, setSelections] = useState<any>(
     PRODUCTS_CONFIG.reduce((acc, p) => ({
       ...acc, [p.id]: { qty: p.quantities[0], variant: p.hasVariants ? p.variants![0].id : 'default' }
@@ -67,7 +79,7 @@ export default function PersoPage() {
       </header>
 
       <main className="max-w-7xl mx-auto w-full py-20 px-6 pb-40">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-24">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-28">
           {PRODUCTS_CONFIG.map((product) => {
             const sel = selections[product.id];
             const qtyIndex = product.quantities.indexOf(sel.qty);
@@ -78,25 +90,24 @@ export default function PersoPage() {
             return (
               <div key={product.id} className="flex flex-col group pt-16"> 
                 
-                {/* ZONE IMAGE : LARGEUR AJUSTÉE AU RECTANGLE */}
-                <div className="h-56 w-full flex items-center justify-center relative -mb-12 z-10 pointer-events-none">
+                {/* ZONE IMAGE : TAILLE LÉGÈREMENT AUGMENTÉE (W-FULL) */}
+                <div className="h-64 w-full flex items-center justify-center relative -mb-12 z-10 pointer-events-none">
                   <AnimatePresence mode="wait">
                     <motion.img
                       key={displayImage}
                       src={displayImage}
-                      // Swipe plus rapide (X plus court)
-                      initial={{ x: 20, opacity: 0 }}
+                      initial={{ x: 40, opacity: 0 }}
                       animate={{ x: 0, opacity: 1 }}
-                      exit={{ x: -20, opacity: 0 }}
-                      // Transition ultra-nerveuse
-                      transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                      className="max-h-full w-[90%] object-contain drop-shadow-[0_15px_25px_rgba(0,0,0,0.7)]"
+                      exit={{ x: -40, opacity: 0 }}
+                      // On utilise Tween au lieu de Spring pour une fluidité plus "cinématique" sans rebonds
+                      transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }} 
+                      className="max-h-full w-full object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.8)] will-change-transform"
                     />
                   </AnimatePresence>
                 </div>
 
-                {/* BOITE DE DESIGN */}
-                <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 shadow-xl flex flex-col h-full pt-16 hover:border-white/20 transition-all">
+                {/* BOITE DE DESIGN (Style Business) */}
+                <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 shadow-xl flex flex-col h-full pt-16">
                   <div className="flex justify-between items-start mb-6">
                     <h3 className="font-black text-xl uppercase tracking-tighter text-blue-500 leading-tight w-2/3 italic">{product.name}</h3>
                     <span className="bg-white/10 text-white/60 text-[7px] font-black px-2 py-1 rounded uppercase border border-white/10 italic tracking-widest">Premium</span>
@@ -110,7 +121,7 @@ export default function PersoPage() {
                           <button 
                             key={v.id} 
                             onClick={() => updateSelection(product.id, 'variant', v.id)} 
-                            className={`p-2.5 rounded border text-[9px] font-black uppercase transition-all ${sel.variant === v.id ? 'border-blue-500 bg-blue-500/20 text-blue-400' : 'border-white/10 bg-white/5 text-white/40 hover:bg-white/10'}`}
+                            className={`p-2.5 rounded border text-[9px] font-black uppercase transition-all ${sel.variant === v.id ? 'border-blue-500 bg-blue-500 text-white' : 'border-white/10 bg-white/5 text-white/40'}`}
                           >
                             {v.name}
                           </button>
@@ -121,18 +132,15 @@ export default function PersoPage() {
 
                   <div className="mb-8">
                     <p className="text-[8px] font-black text-white/40 uppercase mb-2 tracking-widest">Quantité</p>
-                    <div className="relative">
-                        <select 
-                        value={sel.qty} 
-                        onChange={(e) => updateSelection(product.id, 'qty', Number(e.target.value))} 
-                        className="w-full bg-white/5 border border-white/10 rounded p-3 text-[10px] font-black uppercase outline-none focus:border-blue-500 text-white appearance-none cursor-pointer"
-                        >
-                        {product.quantities.map((q: number) => (
-                            <option key={q} value={q} className="bg-[#0f092e] text-white">{q} exemplaires</option>
-                        ))}
-                        </select>
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white/20 text-[8px]">▼</div>
-                    </div>
+                    <select 
+                      value={sel.qty} 
+                      onChange={(e) => updateSelection(product.id, 'qty', Number(e.target.value))} 
+                      className="w-full bg-[#1a133d] border border-white/10 rounded p-3 text-[10px] font-black uppercase outline-none focus:border-blue-500 text-white appearance-none cursor-pointer"
+                    >
+                      {product.quantities.map((q: number) => (
+                        <option key={q} value={q} className="bg-[#0f092e]">{q} exemplaires</option>
+                      ))}
+                    </select>
                   </div>
 
                   <div className="mt-auto pt-6 border-t border-white/5 flex items-center justify-between">
@@ -142,7 +150,7 @@ export default function PersoPage() {
                     </div>
                     <button 
                       onClick={() => handleAddToCart(product)} 
-                      className="bg-white text-[#0f092e] px-6 py-4 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-500 hover:text-white transition-all shadow-lg active:scale-95"
+                      className="bg-white text-[#0f092e] px-6 py-4 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-600 hover:text-white transition-all active:scale-95"
                     >
                       Ajouter
                     </button>
@@ -154,8 +162,7 @@ export default function PersoPage() {
         </div>
       </main>
 
-      {/* PANIER FLOTTANT (Code identique à précédemment) */}
-      {/* ... */}
+      {/* PANIER (Code identique) */}
     </div>
   );
 }
