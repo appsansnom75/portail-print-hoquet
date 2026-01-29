@@ -21,39 +21,41 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
 
+  // Charger le panier au démarrage
   useEffect(() => {
     const savedCart = localStorage.getItem('cart');
     if (savedCart) {
       try {
         setCart(JSON.parse(savedCart));
       } catch (e) {
-        console.error("Erreur de lecture du panier", e);
+        console.error("Erreur de chargement du panier", e);
       }
     }
   }, []);
 
+  // Sauvegarder à chaque modification
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(cart));
   }, [cart]);
 
   const addToCart = (newItem: CartItem) => {
     setCart((prevCart) => {
+      // On cherche si le produit (ID + Variante) existe déjà
       const existingItemIndex = prevCart.findIndex((item) => item.id === newItem.id);
 
       if (existingItemIndex !== -1) {
-        // LE PRODUIT EXISTE : On crée un nouveau tableau avec la quantité mise à jour
+        // SI EXISTE : On crée un nouveau tableau et on additionne
         return prevCart.map((item, index) => {
           if (index === existingItemIndex) {
             return { 
               ...item, 
-              qty: Number(item.qty) + Number(newItem.qty) 
+              qty: Number(item.qty) + Number(newItem.qty) // CUMUL RÉEL
             };
           }
           return item;
         });
       }
-
-      // NOUVEAU PRODUIT : On l'ajoute simplement
+      // SI NOUVEAU : On l'ajoute simplement
       return [...prevCart, newItem];
     });
   };
@@ -62,7 +64,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setCart((prev) => prev.filter((item) => item.id !== id));
   };
 
-  const clearCart = () => setCart([]);
+  const clearCart = () => {
+    setCart([]);
+    localStorage.removeItem('cart');
+  };
 
   return (
     <CartContext.Provider value={{ cart, addToCart, removeFromCart, clearCart }}>
