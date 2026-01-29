@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// DUPLICATION DES PRODUITS (3x le Flyer et 3x la Carte de visite)
 const ORIGINAL_PRODUCTS = [
   {
     id: 'flyer',
@@ -29,7 +28,6 @@ const ORIGINAL_PRODUCTS = [
   }
 ];
 
-// On génère 6 produits avec des IDs uniques pour que React ne s'emmêle pas les pinceaux
 const PRODUCTS_CONFIG = [
   ...ORIGINAL_PRODUCTS.map(p => ({ ...p, id: `${p.id}-1` })),
   ...ORIGINAL_PRODUCTS.map(p => ({ ...p, id: `${p.id}-2` })),
@@ -43,8 +41,7 @@ export default function PersoPage() {
   
   useEffect(() => {
     PRODUCTS_CONFIG.forEach(p => {
-      const imgDefault = new Image();
-      imgDefault.src = p.image;
+      const imgDefault = new Image(); imgDefault.src = p.image;
       if (p.variants) p.variants.forEach(v => { const img = new Image(); img.src = v.image; });
     });
   }, []);
@@ -83,8 +80,9 @@ export default function PersoPage() {
         <div className="w-10"></div>
       </header>
 
-      <main className="max-w-7xl mx-auto w-full py-20 px-6 pb-40">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-28">
+      <main className="max-w-7xl mx-auto w-full py-12 px-6 pb-40">
+        {/* GAP-Y RÉDUIT À 12 POUR RAPPROCHER LES LIGNES */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-12">
           {PRODUCTS_CONFIG.map((product) => {
             const sel = selections[product.id];
             const qtyIndex = product.quantities.indexOf(sel.qty);
@@ -93,10 +91,10 @@ export default function PersoPage() {
             const isOpen = openConfigId === product.id;
 
             return (
-              <div key={product.id} className="flex flex-col pt-16 relative group"> 
+              <div key={product.id} className="flex flex-col pt-10 relative group"> 
                 
-                {/* L'IMAGE QUI VOLAILLE */}
-                <div className="h-64 w-full flex items-center justify-center relative -mb-12 z-20 pointer-events-none px-4 transition-transform duration-500 group-hover:scale-110">
+                {/* ZONE IMAGE : HAUTEUR RÉDUITE POUR RESSERRER LE TOUT */}
+                <div className="h-52 w-full flex items-center justify-center relative -mb-10 z-20 pointer-events-none px-4 transition-transform duration-500 group-hover:scale-110">
                   <AnimatePresence mode="wait">
                     <motion.img
                       key={displayImage}
@@ -105,19 +103,19 @@ export default function PersoPage() {
                       animate={{ x: 0, opacity: 1 }}
                       exit={{ x: -20, opacity: 0 }}
                       transition={{ duration: 0.2 }}
-                      className="max-h-full w-full object-contain drop-shadow-[0_15px_20px_rgba(0,0,0,0.6)]"
+                      className="max-h-full w-full object-contain drop-shadow-[0_12px_15px_rgba(0,0,0,0.5)]"
                     />
                   </AnimatePresence>
                 </div>
 
-                {/* LA BOX FERMÉE / OUVERTE */}
-                <div className={`bg-white/[0.03] border border-white/10 rounded-2xl p-6 shadow-xl flex flex-col pt-16 transition-all duration-300 ${isOpen ? 'ring-2 ring-blue-500/50 bg-white/[0.05]' : ''}`}>
+                {/* LA BOX */}
+                <div className={`bg-white/[0.03] border border-white/10 rounded-2xl p-6 shadow-xl flex flex-col pt-14 transition-all duration-300 ${isOpen ? 'ring-2 ring-blue-500/50 bg-white/[0.05]' : ''}`}>
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-black text-lg uppercase tracking-tighter text-blue-500 leading-tight">{product.name}</h3>
+                    <h3 className="font-black text-base uppercase tracking-tighter text-blue-500 leading-tight">{product.name}</h3>
                     {!isOpen && (
                         <button 
                             onClick={() => setOpenConfigId(product.id)}
-                            className="text-[8px] font-black uppercase bg-blue-500 px-4 py-2 rounded-full hover:bg-blue-400 transition-all shadow-lg shadow-blue-500/20 active:scale-90"
+                            className="text-[8px] font-black uppercase bg-blue-500 px-4 py-2 rounded-full hover:bg-blue-400 transition-all shadow-lg active:scale-90"
                         >
                             Configurer
                         </button>
@@ -141,7 +139,7 @@ export default function PersoPage() {
                                   <button 
                                     key={v.id} 
                                     onClick={() => updateSelection(product.id, 'variant', v.id)} 
-                                    className={`p-2.5 rounded border text-[8px] font-black uppercase transition-all ${sel.variant === v.id ? 'border-blue-500 bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'border-white/10 bg-white/5 text-white/40 hover:bg-white/10'}`}
+                                    className={`p-2 rounded border text-[8px] font-black uppercase transition-all ${sel.variant === v.id ? 'border-blue-500 bg-blue-500 text-white' : 'border-white/10 bg-white/5 text-white/40 hover:bg-white/10'}`}
                                   >
                                     {v.name}
                                   </button>
@@ -152,16 +150,13 @@ export default function PersoPage() {
 
                           <div>
                             <p className="text-[7px] font-black text-white/30 uppercase mb-2 tracking-widest">Quantité</p>
-                            <div className="relative">
-                                <select 
-                                    value={sel.qty} 
-                                    onChange={(e) => updateSelection(product.id, 'qty', Number(e.target.value))} 
-                                    className="w-full bg-[#1a133d] border border-white/10 rounded p-3 text-[9px] font-black uppercase text-white appearance-none outline-none focus:border-blue-500"
-                                >
-                                    {product.quantities.map((q: number) => <option key={q} value={q}>{q} exemplaires</option>)}
-                                </select>
-                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white/20 text-[8px]">▼</div>
-                            </div>
+                            <select 
+                                value={sel.qty} 
+                                onChange={(e) => updateSelection(product.id, 'qty', Number(e.target.value))} 
+                                className="w-full bg-[#1a133d] border border-white/10 rounded p-3 text-[9px] font-black uppercase text-white outline-none focus:border-blue-500 appearance-none"
+                            >
+                                {product.quantities.map((q: number) => <option key={q} value={q}>{q} ex.</option>)}
+                            </select>
                           </div>
 
                           <div className="flex items-center justify-between pt-6 border-t border-white/5">
@@ -170,18 +165,8 @@ export default function PersoPage() {
                                 <p className="font-black text-xl text-white tracking-tighter">{currentTotal.toFixed(2)}€</p>
                             </div>
                             <div className="flex gap-2">
-                                <button 
-                                    onClick={() => setOpenConfigId(null)}
-                                    className="bg-white/5 border border-white/10 text-white/40 px-3 py-3 rounded-xl font-black uppercase text-[8px] hover:text-white transition-all"
-                                >
-                                    Annuler
-                                </button>
-                                <button 
-                                    onClick={() => handleAddToCart(product)} 
-                                    className="bg-white text-[#0f092e] px-5 py-3 rounded-xl font-black uppercase text-[8px] tracking-widest hover:bg-blue-600 hover:text-white transition-all active:scale-95 shadow-xl shadow-white/5"
-                                >
-                                    Ajouter
-                                </button>
+                                <button onClick={() => setOpenConfigId(null)} className="bg-white/5 border border-white/10 text-white/40 px-3 py-3 rounded-xl font-black uppercase text-[8px] hover:text-white transition-all">Annuler</button>
+                                <button onClick={() => handleAddToCart(product)} className="bg-white text-[#0f092e] px-5 py-3 rounded-xl font-black uppercase text-[8px] tracking-widest hover:bg-blue-600 hover:text-white transition-all">Ajouter</button>
                             </div>
                           </div>
                         </div>
@@ -194,8 +179,6 @@ export default function PersoPage() {
           })}
         </div>
       </main>
-      
-      {/* Panier etc... */}
     </div>
   );
 }
