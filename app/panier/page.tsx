@@ -45,10 +45,10 @@ export default function PanierPage() {
                     </div>
 
                     <div className="flex items-center gap-10">
-                      {/* MODIFICATION : Quantité bloquée (affichage seul) */}
+                      {/* AFFICHAGE QUANTITÉ EN EXEMPLAIRES (Bloquée) */}
                       <div className="bg-black/20 border border-white/10 rounded-full px-6 py-2">
                         <span className="text-[10px] font-black uppercase tracking-widest">
-                          Qté : {item.qty}
+                          {item.qty} ex.
                         </span>
                       </div>
 
