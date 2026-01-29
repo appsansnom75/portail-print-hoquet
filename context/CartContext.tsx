@@ -13,6 +13,7 @@ type CartContextType = {
   cart: CartItem[];
   addToCart: (item: CartItem) => void;
   removeFromCart: (id: string) => void;
+  updateQty: (id: string, newQty: number) => void; // Ajouté pour corriger l'erreur de build
   clearCart: () => void;
 };
 
@@ -40,24 +41,30 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const addToCart = (newItem: CartItem) => {
     setCart((prevCart) => {
-      // On cherche si le produit (ID + Variante) existe déjà
       const existingItemIndex = prevCart.findIndex((item) => item.id === newItem.id);
 
       if (existingItemIndex !== -1) {
-        // SI EXISTE : On crée un nouveau tableau et on additionne
         return prevCart.map((item, index) => {
           if (index === existingItemIndex) {
             return { 
               ...item, 
-              qty: Number(item.qty) + Number(newItem.qty) // CUMUL RÉEL
+              qty: Number(item.qty) + Number(newItem.qty)
             };
           }
           return item;
         });
       }
-      // SI NOUVEAU : On l'ajoute simplement
       return [...prevCart, newItem];
     });
+  };
+
+  // Ajout de la fonction updateQty demandée par la page /stock
+  const updateQty = (id: string, newQty: number) => {
+    setCart((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, qty: Math.max(1, newQty) } : item
+      )
+    );
   };
 
   const removeFromCart = (id: string) => {
@@ -70,7 +77,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <CartContext.Provider value={{ cart, addToCart, removeFromCart, clearCart }}>
+    <CartContext.Provider value={{ cart, addToCart, removeFromCart, updateQty, clearCart }}>
       {children}
     </CartContext.Provider>
   );
