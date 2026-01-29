@@ -74,7 +74,6 @@ export default function PersoPage() {
   const handleAddToCart = (product: any) => {
     const sel = selections[product.id];
     const qtyIndex = product.quantities.indexOf(sel.qty);
-    // Correction de l'erreur TypeScript avec "as any"
     const priceList = (product.prices as any)[sel.variant] || (product.prices as any).default;
     const totalPrice = priceList[qtyIndex];
     
@@ -83,10 +82,12 @@ export default function PersoPage() {
       : "";
 
     addItemToGlobalCart({
-      id: `${product.id}-${sel.variant}-${sel.qty}`,
+      // IMPORTANT : L'ID ne contient QUE le produit et la variante. 
+      // Si l'utilisateur change la quantité, l'ID reste le même, donc le Context additionne.
+      id: `${product.id}-${sel.variant}`, 
       name: `${product.name}${variantLabel}`,
-      price: totalPrice / sel.qty, // Prix unitaire stocké
-      qty: sel.qty, // Quantité réelle envoyée
+      price: totalPrice / sel.qty, 
+      qty: sel.qty,
       category: 'Impression'
     });
     
@@ -106,7 +107,6 @@ export default function PersoPage() {
           {PRODUCTS_CONFIG.map((product) => {
             const sel = selections[product.id];
             const qtyIndex = product.quantities.indexOf(sel.qty);
-            // Correction de l'erreur TypeScript avec "as any"
             const priceList = (product.prices as any)[sel.variant] || (product.prices as any).default;
             const currentTotal = priceList[qtyIndex];
 
@@ -137,7 +137,7 @@ export default function PersoPage() {
 
                   <div className="mt-auto pt-4 border-t border-white/5 text-center">
                     <p className="font-black text-2xl mb-3">{currentTotal.toFixed(2)}€ <span className="text-[10px] text-white/40">HT</span></p>
-                    <button onClick={() => handleAddToCart(product)} className="w-full bg-white text-[#0f092e] py-3 rounded-lg font-black uppercase text-[10px] tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-lg">Ajouter au panier</button>
+                    <button onClick={() => handleAddToCart(product)} className="w-full bg-white text-[#0f092e] py-3 rounded-lg font-black uppercase text-[10px] tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-lg active:scale-95">Ajouter au panier</button>
                   </div>
                 </div>
               </div>
@@ -146,32 +146,31 @@ export default function PersoPage() {
         </div>
       </main>
 
-      {/* PANIER FLOTTANT */}
+      {/* PANIER FLOTTANT RÉACTIF */}
       <div className="fixed bottom-8 left-8 z-[100]">
         <button onClick={() => setIsCartOpen(!isCartOpen)} className="bg-white text-[#0f092e] px-8 py-4 rounded-full font-black uppercase text-[10px] tracking-widest shadow-2xl flex items-center gap-4 hover:bg-blue-600 hover:text-white transition-all">
-          Panier {cart.length > 0 && <span className="bg-blue-500 text-white px-2 py-0.5 rounded text-[9px]">{cart.length}</span>}
+          Récapitulatif {cart.length > 0 && <span className="bg-blue-500 text-white px-2 py-0.5 rounded text-[9px]">{cart.length}</span>}
         </button>
         {isCartOpen && (
           <div className="absolute bottom-16 left-0 w-80 bg-white rounded-2xl shadow-2xl text-[#0f092e] overflow-hidden">
-             <div className="bg-slate-100 p-4 border-b flex justify-between items-center"><span className="font-black text-[9px] uppercase tracking-widest text-slate-500">Récapitulatif</span><button onClick={() => setIsCartOpen(false)} className="text-red-500 font-black text-[9px]">FERMER</button></div>
+             <div className="bg-slate-100 p-4 border-b flex justify-between items-center"><span className="font-black text-[9px] uppercase tracking-widest text-slate-500">Détails</span><button onClick={() => setIsCartOpen(false)} className="text-red-500 font-black text-[9px]">FERMER</button></div>
              <div className="max-h-80 overflow-y-auto p-4 space-y-4">
-              {cart.length === 0 ? <p className="text-[10px] font-bold text-slate-400 uppercase text-center py-4">Votre panier est vide</p> : cart.map((item) => (
+              {cart.length === 0 ? <p className="text-[10px] font-bold text-slate-400 uppercase text-center py-4">Vide</p> : cart.map((item) => (
                 <div key={item.id} className="border-b border-slate-100 pb-3 flex justify-between items-start">
                   <div>
                     <p className="font-black text-[10px] uppercase leading-tight">{item.name}</p>
-                    <p className="text-[8px] font-bold text-slate-500 uppercase mt-1">{item.qty} ex.</p>
+                    <p className="text-[8px] font-bold text-blue-600 uppercase mt-1">{item.qty} ex.</p>
                   </div>
                   <div className="text-right">
                     <p className="font-black text-[10px]">{(item.price * item.qty).toFixed(2)}€</p>
-                    <button onClick={() => removeFromCart(item.id)} className="text-[7px] text-red-500 font-black uppercase hover:underline">Suppr.</button>
+                    <button onClick={() => removeFromCart(item.id)} className="text-[7px] text-red-500 font-black uppercase">Suppr.</button>
                   </div>
                 </div>
               ))}
             </div>
             {cart.length > 0 && (
               <div className="p-5 bg-slate-50 border-t">
-                <div className="flex justify-between items-center mb-4"><span className="font-black text-[10px] uppercase text-slate-400">Total HT</span><span className="font-black text-xl text-blue-600">{cart.reduce((a, b) => a + (b.price * b.qty), 0).toFixed(2)}€</span></div>
-                <Link href="/panier" className="block text-center w-full bg-[#0f092e] text-white py-4 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-blue-600 transition-all">Commander</Link>
+                <Link href="/panier" className="block text-center w-full bg-[#0f092e] text-white py-4 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-blue-600 transition-all">Voir le panier complet</Link>
               </div>
             )}
           </div>
