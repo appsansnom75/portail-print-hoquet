@@ -23,7 +23,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const savedCart = localStorage.getItem('cart');
-    if (savedCart) setCart(JSON.parse(savedCart));
+    if (savedCart) {
+      try {
+        setCart(JSON.parse(savedCart));
+      } catch (e) {
+        console.error("Erreur de lecture du panier", e);
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -35,19 +41,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const existingItemIndex = prevCart.findIndex((item) => item.id === newItem.id);
 
       if (existingItemIndex !== -1) {
-        const updatedCart = [...prevCart];
-        const currentQty = Number(updatedCart[existingItemIndex].qty);
-        const qtyToAdd = Number(newItem.qty);
-
-        // DEBUG: Ouvre ta console (F12) pour voir ce message
-        console.log(`PANIER: Reçu ${qtyToAdd} à ajouter aux ${currentQty} existants`);
-
-        updatedCart[existingItemIndex] = {
-          ...updatedCart[existingItemIndex],
-          qty: currentQty + qtyToAdd
-        };
-        return updatedCart;
+        // LE PRODUIT EXISTE : On crée un nouveau tableau avec la quantité mise à jour
+        return prevCart.map((item, index) => {
+          if (index === existingItemIndex) {
+            return { 
+              ...item, 
+              qty: Number(item.qty) + Number(newItem.qty) 
+            };
+          }
+          return item;
+        });
       }
+
+      // NOUVEAU PRODUIT : On l'ajoute simplement
       return [...prevCart, newItem];
     });
   };
