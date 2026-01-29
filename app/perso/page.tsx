@@ -31,18 +31,13 @@ const PRODUCTS_CONFIG = [
 export default function PersoPage() {
   const { cart, addToCart: addItemToGlobalCart, removeFromCart } = useCart();
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [openConfigId, setOpenConfigId] = useState<string | null>(null); // Pour savoir quelle boîte est ouverte
   
-  // Préchargement pour éviter les lags au swipe
   useEffect(() => {
     PRODUCTS_CONFIG.forEach(p => {
       const imgDefault = new Image();
       imgDefault.src = p.image;
-      if (p.variants) {
-        p.variants.forEach(v => {
-          const img = new Image();
-          img.src = v.image;
-        });
-      }
+      if (p.variants) p.variants.forEach(v => { const img = new Image(); img.src = v.image; });
     });
   }, []);
 
@@ -81,81 +76,108 @@ export default function PersoPage() {
       </header>
 
       <main className="max-w-7xl mx-auto w-full py-20 px-6 pb-40">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-28">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-20">
           {PRODUCTS_CONFIG.map((product) => {
             const sel = selections[product.id];
             const qtyIndex = product.quantities.indexOf(sel.qty);
             const currentTotal = ((product.prices as any)[sel.variant] || (product.prices as any).default)[qtyIndex];
-            const variantImage = product.variants?.find(v => v.id === sel.variant)?.image;
-            const displayImage = variantImage || product.image;
+            const displayImage = product.variants?.find(v => v.id === sel.variant)?.image || product.image;
+            const isOpen = openConfigId === product.id;
 
             return (
-              <div key={product.id} className="flex flex-col group pt-16"> 
+              <div key={product.id} className="flex flex-col pt-16 relative"> 
                 
-                {/* ZONE IMAGE : OMBRE RÉDUITE ET SANS ITALIQUE */}
-                <div className="h-64 w-full flex items-center justify-center relative -mb-12 z-10 pointer-events-none px-4">
+                {/* L'IMAGE QUI VOLAILLE */}
+                <div className="h-64 w-full flex items-center justify-center relative -mb-12 z-20 pointer-events-none px-4">
                   <AnimatePresence mode="wait">
                     <motion.img
                       key={displayImage}
                       src={displayImage}
-                      initial={{ x: 30, opacity: 0 }}
+                      initial={{ x: 20, opacity: 0 }}
                       animate={{ x: 0, opacity: 1 }}
-                      exit={{ x: -30, opacity: 0 }}
-                      transition={{ duration: 0.25, ease: "easeOut" }}
-                      className="max-h-full w-full object-contain drop-shadow-[0_10px_15px_rgba(0,0,0,0.5)] will-change-transform"
+                      exit={{ x: -20, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="max-h-full w-full object-contain drop-shadow-[0_10px_15px_rgba(0,0,0,0.5)]"
                     />
                   </AnimatePresence>
                 </div>
 
-                {/* BOITE DE DESIGN (STYLE BUSINESS BLEU) */}
-                <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 shadow-xl flex flex-col h-full pt-16">
-                  <div className="flex justify-between items-start mb-6">
-                    <h3 className="font-black text-xl uppercase tracking-tighter text-blue-500 leading-tight w-2/3">{product.name}</h3>
-                    <span className="bg-white/10 text-white/60 text-[7px] font-black px-2 py-1 rounded uppercase border border-white/10 tracking-widest">Premium</span>
+                {/* LA BOX */}
+                <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 shadow-xl flex flex-col pt-16 transition-all duration-300 overflow-hidden">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-black text-lg uppercase tracking-tighter text-blue-500 leading-tight">{product.name}</h3>
+                    {!isOpen && (
+                        <button 
+                            onClick={() => setOpenConfigId(product.id)}
+                            className="text-[8px] font-black uppercase bg-blue-500 px-3 py-1.5 rounded-full hover:bg-blue-400 transition-colors shadow-lg shadow-blue-500/20"
+                        >
+                            Configurer
+                        </button>
+                    )}
                   </div>
 
-                  {product.hasVariants && (
-                    <div className="mb-6">
-                      <p className="text-[8px] font-black text-white/40 uppercase mb-2 tracking-widest">Modèle</p>
-                      <div className="grid grid-cols-2 gap-1.5">
-                        {product.variants?.map((v) => (
-                          <button 
-                            key={v.id} 
-                            onClick={() => updateSelection(product.id, 'variant', v.id)} 
-                            className={`p-2.5 rounded border text-[9px] font-black uppercase transition-all ${sel.variant === v.id ? 'border-blue-500 bg-blue-500 text-white' : 'border-white/10 bg-white/5 text-white/40 hover:bg-white/10'}`}
-                          >
-                            {v.name}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  {/* CONTENU CACHÉ (Ouverture avec animation) */}
+                  <AnimatePresence>
+                    {isOpen && (
+                      <motion.div 
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="space-y-6 pt-4 border-t border-white/5 mt-2">
+                          {product.hasVariants && (
+                            <div>
+                              <p className="text-[7px] font-black text-white/30 uppercase mb-2 tracking-widest">Choix du Modèle</p>
+                              <div className="grid grid-cols-2 gap-1.5">
+                                {product.variants?.map((v) => (
+                                  <button 
+                                    key={v.id} 
+                                    onClick={() => updateSelection(product.id, 'variant', v.id)} 
+                                    className={`p-2 rounded border text-[8px] font-black uppercase transition-all ${sel.variant === v.id ? 'border-blue-500 bg-blue-500 text-white' : 'border-white/10 bg-white/5 text-white/40'}`}
+                                  >
+                                    {v.name}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
 
-                  <div className="mb-8">
-                    <p className="text-[8px] font-black text-white/40 uppercase mb-2 tracking-widest">Quantité</p>
-                    <select 
-                      value={sel.qty} 
-                      onChange={(e) => updateSelection(product.id, 'qty', Number(e.target.value))} 
-                      className="w-full bg-[#1a133d] border border-white/10 rounded p-3 text-[10px] font-black uppercase outline-none focus:border-blue-500 text-white appearance-none cursor-pointer"
-                    >
-                      {product.quantities.map((q: number) => (
-                        <option key={q} value={q} className="bg-[#0f092e]">{q} exemplaires</option>
-                      ))}
-                    </select>
-                  </div>
+                          <div>
+                            <p className="text-[7px] font-black text-white/30 uppercase mb-2 tracking-widest">Quantité</p>
+                            <select 
+                              value={sel.qty} 
+                              onChange={(e) => updateSelection(product.id, 'qty', Number(e.target.value))} 
+                              className="w-full bg-[#1a133d] border border-white/10 rounded p-2.5 text-[9px] font-black uppercase text-white appearance-none outline-none focus:border-blue-500"
+                            >
+                              {product.quantities.map((q: number) => <option key={q} value={q}>{q} ex.</option>)}
+                            </select>
+                          </div>
 
-                  <div className="mt-auto pt-6 border-t border-white/5 flex items-center justify-between">
-                    <div className="text-left">
-                        <p className="text-[7px] font-black text-white/20 uppercase tracking-widest mb-1">Total HT</p>
-                        <p className="font-black text-2xl text-white tracking-tighter">{currentTotal.toFixed(2)}€</p>
-                    </div>
-                    <button 
-                      onClick={() => handleAddToCart(product)} 
-                      className="bg-white text-[#0f092e] px-6 py-4 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-600 hover:text-white transition-all active:scale-95"
-                    >
-                      Ajouter
-                    </button>
-                  </div>
+                          <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                            <div className="text-left">
+                                <p className="text-[7px] font-black text-white/20 uppercase mb-1">Total HT</p>
+                                <p className="font-black text-xl text-white">{currentTotal.toFixed(2)}€</p>
+                            </div>
+                            <div className="flex gap-2">
+                                <button 
+                                    onClick={() => setOpenConfigId(null)}
+                                    className="bg-white/5 border border-white/10 text-white/40 px-3 py-3 rounded-xl font-black uppercase text-[8px] hover:text-white transition-all"
+                                >
+                                    Fermer
+                                </button>
+                                <button 
+                                    onClick={() => handleAddToCart(product)} 
+                                    className="bg-white text-[#0f092e] px-5 py-3 rounded-xl font-black uppercase text-[8px] tracking-widest hover:bg-blue-600 hover:text-white transition-all"
+                                >
+                                    Ajouter
+                                </button>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
             );
