@@ -8,7 +8,6 @@ export default function ProfilPage() {
   const [updating, setUpdating] = useState(false);
   const router = useRouter();
 
-  // États pour les champs du formulaire
   const [formData, setFormData] = useState({
     full_name: '',
     email: '',
@@ -19,6 +18,7 @@ export default function ProfilPage() {
 
   useEffect(() => {
     const getProfile = async () => {
+      // 1. Récupérer l'utilisateur authentifié
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -26,9 +26,10 @@ export default function ProfilPage() {
         return;
       }
 
+      // 2. On utilise '*' pour récupérer ABSOLUMENT TOUT ce qui est en base
       const { data, error } = await supabase
         .from('profiles')
-        .select('full_name, phone, siret, role')
+        .select('*') 
         .eq('id', user.id)
         .single();
 
@@ -36,7 +37,7 @@ export default function ProfilPage() {
         setFormData({
           full_name: data.full_name || '',
           email: user.email || '',
-          phone: data.phone || '',
+          phone: data.phone || '', // Ton téléphone est ici
           siret: data.siret || '',
           role: data.role || ''
         });
@@ -53,6 +54,7 @@ export default function ProfilPage() {
 
     const { data: { user } } = await supabase.auth.getUser();
 
+    // On envoie les modifications vers Supabase
     const { error } = await supabase
       .from('profiles')
       .update({
@@ -80,7 +82,7 @@ export default function ProfilPage() {
             <button onClick={() => router.push('/')} className="text-[9px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors">Retour au catalogue</button>
         </div>
 
-        <form onSubmit={handleUpdate} className="space-y-4 bg-white/5 p-8 rounded-[40px] border border-white/10 backdrop-blur-xl">
+        <form onSubmit={handleUpdate} className="space-y-4 bg-white/5 p-8 rounded-[40px] border border-white/10 backdrop-blur-xl shadow-2xl">
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1">
@@ -90,7 +92,6 @@ export default function ProfilPage() {
                     value={formData.full_name} 
                     onChange={(e) => setFormData({...formData, full_name: e.target.value})}
                     className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-medium"
-                    placeholder="Jean Dupont"
                 />
             </div>
 
@@ -113,7 +114,7 @@ export default function ProfilPage() {
                     value={formData.phone} 
                     onChange={(e) => setFormData({...formData, phone: e.target.value})}
                     className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-medium"
-                    placeholder="06 00 00 00 00"
+                    placeholder="06..."
                 />
             </div>
 
@@ -124,7 +125,6 @@ export default function ProfilPage() {
                     value={formData.siret} 
                     onChange={(e) => setFormData({...formData, siret: e.target.value})}
                     className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-medium"
-                    placeholder="123 456 789 00012"
                 />
             </div>
           </div>
@@ -140,7 +140,7 @@ export default function ProfilPage() {
           </div>
 
           <div className="mt-6 text-center text-[7px] font-black uppercase tracking-[0.3em] text-white/20">
-            Compte : {formData.role === 'admin_agence' ? 'Administrateur Agence' : 'Collaborateur Agence'}
+            Type de compte : {formData.role === 'admin_agence' ? 'Administrateur Agence' : 'Collaborateur'}
           </div>
         </form>
       </div>
