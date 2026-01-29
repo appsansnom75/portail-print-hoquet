@@ -20,7 +20,7 @@ const PRODUCTS_CONFIG = [
       { id: 'recrutement', name: 'Recrutement' }, { id: 'climat', name: 'Climat' }, { id: 'noel', name: 'Noël 2026' }
     ],
     quantities: [500, 10000, 15000, 20000, 30000, 40000],
-    prices: { default: [8.45, 169.00, 229.50, 302.00, 444.00, 552.00] } // Prix TOTAL pour la quantité
+    prices: { default: [8.45, 169.00, 229.50, 302.00, 444.00, 552.00] }
   },
   {
     id: 'calendrier',
@@ -47,6 +47,13 @@ const PRODUCTS_CONFIG = [
     image: '/entete-lettre.png',
     quantities: [500, 1000, 5000],
     prices: { default: [12.85, 24.00, 110.00] }
+  },
+  {
+    id: 'memo_climat',
+    name: 'Mémo climat',
+    image: '/memo-climat.png',
+    quantities: [100, 200, 300, 400, 1000],
+    prices: { default: [40.00, 70.00, 90.00, 100.00, 220.00] }
   }
 ];
 
@@ -67,16 +74,19 @@ export default function PersoPage() {
   const handleAddToCart = (product: any) => {
     const sel = selections[product.id];
     const qtyIndex = product.quantities.indexOf(sel.qty);
-    const priceList = product.prices[sel.variant] || product.prices.default;
+    // Correction de l'erreur TypeScript avec "as any"
+    const priceList = (product.prices as any)[sel.variant] || (product.prices as any).default;
     const totalPrice = priceList[qtyIndex];
     
-    const variantLabel = product.hasVariants ? ` (${product.variants?.find((v:any) => v.id === sel.variant)?.name})` : "";
+    const variantLabel = product.hasVariants 
+      ? ` (${product.variants?.find((v:any) => v.id === sel.variant)?.name})` 
+      : "";
 
     addItemToGlobalCart({
-      id: `${product.id}-${sel.variant}-${sel.qty}`, // On inclut la qty dans l'ID pour différencier si besoin
+      id: `${product.id}-${sel.variant}-${sel.qty}`,
       name: `${product.name}${variantLabel}`,
-      price: totalPrice / sel.qty, // Prix à l'unité (ex: 0.02)
-      qty: sel.qty, // Nombre d'exemplaires (ex: 500)
+      price: totalPrice / sel.qty, // Prix unitaire stocké
+      qty: sel.qty, // Quantité réelle envoyée
       category: 'Impression'
     });
     
@@ -96,7 +106,8 @@ export default function PersoPage() {
           {PRODUCTS_CONFIG.map((product) => {
             const sel = selections[product.id];
             const qtyIndex = product.quantities.indexOf(sel.qty);
-            const priceList = product.prices[sel.variant] || product.prices.default;
+            // Correction de l'erreur TypeScript avec "as any"
+            const priceList = (product.prices as any)[sel.variant] || (product.prices as any).default;
             const currentTotal = priceList[qtyIndex];
 
             return (
@@ -134,6 +145,38 @@ export default function PersoPage() {
           })}
         </div>
       </main>
+
+      {/* PANIER FLOTTANT */}
+      <div className="fixed bottom-8 left-8 z-[100]">
+        <button onClick={() => setIsCartOpen(!isCartOpen)} className="bg-white text-[#0f092e] px-8 py-4 rounded-full font-black uppercase text-[10px] tracking-widest shadow-2xl flex items-center gap-4 hover:bg-blue-600 hover:text-white transition-all">
+          Panier {cart.length > 0 && <span className="bg-blue-500 text-white px-2 py-0.5 rounded text-[9px]">{cart.length}</span>}
+        </button>
+        {isCartOpen && (
+          <div className="absolute bottom-16 left-0 w-80 bg-white rounded-2xl shadow-2xl text-[#0f092e] overflow-hidden">
+             <div className="bg-slate-100 p-4 border-b flex justify-between items-center"><span className="font-black text-[9px] uppercase tracking-widest text-slate-500">Récapitulatif</span><button onClick={() => setIsCartOpen(false)} className="text-red-500 font-black text-[9px]">FERMER</button></div>
+             <div className="max-h-80 overflow-y-auto p-4 space-y-4">
+              {cart.length === 0 ? <p className="text-[10px] font-bold text-slate-400 uppercase text-center py-4">Votre panier est vide</p> : cart.map((item) => (
+                <div key={item.id} className="border-b border-slate-100 pb-3 flex justify-between items-start">
+                  <div>
+                    <p className="font-black text-[10px] uppercase leading-tight">{item.name}</p>
+                    <p className="text-[8px] font-bold text-slate-500 uppercase mt-1">{item.qty} ex.</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-black text-[10px]">{(item.price * item.qty).toFixed(2)}€</p>
+                    <button onClick={() => removeFromCart(item.id)} className="text-[7px] text-red-500 font-black uppercase hover:underline">Suppr.</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {cart.length > 0 && (
+              <div className="p-5 bg-slate-50 border-t">
+                <div className="flex justify-between items-center mb-4"><span className="font-black text-[10px] uppercase text-slate-400">Total HT</span><span className="font-black text-xl text-blue-600">{cart.reduce((a, b) => a + (b.price * b.qty), 0).toFixed(2)}€</span></div>
+                <Link href="/panier" className="block text-center w-full bg-[#0f092e] text-white py-4 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-blue-600 transition-all">Commander</Link>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
