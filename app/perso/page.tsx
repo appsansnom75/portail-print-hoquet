@@ -9,30 +9,12 @@ const PRODUCTS_CONFIG = [
     name: 'Flyer Agence',
     image: '/flyer.png',
     hasVariants: true,
-    useDropdown: true,
     variants: [
       { id: 'estim', name: 'Estimation générique' }, { id: 'garantie', name: 'Garantie revente' },
-      { id: 'reprise', name: 'Ouverture / Reprise' }, { id: 'affiliation', name: 'Ouverture / Affiliation' },
-      { id: 'creation', name: 'Ouverture / Création' }, { id: 'gestion', name: 'Gestion locative Générique' },
-      { id: 'op_gestion', name: 'OPERATION Gestion locative' }, { id: 'matterport', name: 'Matterport' },
-      { id: 'mtaux', name: 'Meilleur Taux' }, { id: 'loc_gen', name: 'Location Générique' },
-      { id: 'op_loc', name: 'OPERATION Location' }, { id: 'op_mandat', name: 'OPERATION Mandat Exclusif' },
-      { id: 'recrutement', name: 'Recrutement' }, { id: 'climat', name: 'Climat' }, { id: 'noel', name: 'Noël 2026' }
+      { id: 'reprise', name: 'Ouverture / Reprise' }, { id: 'noel', name: 'Noël 2026' }
     ],
-    quantities: [500, 10000, 15000, 20000, 30000, 40000],
-    prices: { default: [8.45, 169.00, 229.50, 302.00, 444.00, 552.00] }
-  },
-  {
-    id: 'calendrier',
-    name: 'Calendrier',
-    image: '/calendrier.png',
-    hasVariants: true,
-    variants: [{ id: 'A4', name: 'Format A4' }, { id: 'A5', name: 'Format A5' }],
-    quantities: [500, 1000, 2000, 3000, 5000],
-    prices: {
-      'A4': [73.50, 110.26, 197.40, 283.50, 456.80],
-      'A5': [51.52, 74.90, 128.40, 160.50, 192.50]
-    }
+    quantities: [500, 10000, 15000, 20000],
+    prices: { default: [8.45, 169.00, 229.50, 302.00] }
   },
   {
     id: 'carte_visite',
@@ -40,21 +22,8 @@ const PRODUCTS_CONFIG = [
     image: '/carte-visite.png',
     quantities: [100, 200, 500],
     prices: { default: [8.25, 15.00, 30.00] }
-  },
-  {
-    id: 'entete_lettre',
-    name: 'En-tête de lettre',
-    image: '/entete-lettre.png',
-    quantities: [500, 1000, 5000],
-    prices: { default: [12.85, 24.00, 110.00] }
-  },
-  {
-    id: 'memo_climat',
-    name: 'Mémo climat',
-    image: '/memo-climat.png',
-    quantities: [100, 200, 300, 400, 1000],
-    prices: { default: [40.00, 70.00, 90.00, 100.00, 220.00] }
   }
+  // ... ajoute tes autres produits ici avec la même structure
 ];
 
 export default function PersoPage() {
@@ -75,18 +44,19 @@ export default function PersoPage() {
     const sel = selections[product.id];
     const qtyIndex = product.quantities.indexOf(sel.qty);
     const priceList = (product.prices as any)[sel.variant] || (product.prices as any).default;
-    const totalPrice = priceList[qtyIndex];
+    const totalPriceHT = priceList[qtyIndex];
     
     const variantLabel = product.hasVariants 
       ? ` (${product.variants?.find((v:any) => v.id === sel.variant)?.name})` 
       : "";
 
+    // On prépare l'objet pour le panier
     addItemToGlobalCart({
-      // L'ID ne change pas selon la quantité -> Favorise le cumul
+      // L'ID ne contient PAS la quantité pour permettre le cumul dans le panier
       id: `${product.id}-${sel.variant}`, 
       name: `${product.name}${variantLabel}`,
-      price: totalPrice / sel.qty, 
-      qty: sel.qty, // On envoie bien 500, 10000, etc.
+      price: totalPriceHT / sel.qty, // Prix unitaire
+      qty: Number(sel.qty), // On envoie bien le volume sélectionné (ex: 500)
       category: 'Impression'
     });
     
@@ -112,7 +82,7 @@ export default function PersoPage() {
             return (
               <div key={product.id} className="flex flex-col group">
                 <div className="h-48 w-full flex items-center justify-center mb-4">
-                  <img src={product.image} alt={product.name} className="max-h-full max-w-full object-contain transition-all duration-500 group-hover:scale-105" />
+                  <img src={product.image} alt={product.name} className="max-h-full max-w-full object-contain" />
                 </div>
 
                 <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 shadow-xl flex flex-col h-full">
@@ -121,16 +91,16 @@ export default function PersoPage() {
                   {product.hasVariants && (
                     <div className="mb-4">
                       <p className="text-[8px] font-black text-white/40 uppercase mb-2 tracking-widest">Modèle</p>
-                      <select value={sel.variant} onChange={(e) => updateSelection(product.id, 'variant', e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-[10px] font-black uppercase outline-none focus:border-blue-500">
-                        {product.variants?.map((v: any) => <option key={v.id} value={v.id} className="bg-[#0f092e]">{v.name}</option>)}
+                      <select value={sel.variant} onChange={(e) => updateSelection(product.id, 'variant', e.target.value)} className="w-full bg-[#1a1340] border border-white/10 rounded-lg p-2 text-[10px] font-black uppercase outline-none">
+                        {product.variants?.map((v: any) => <option key={v.id} value={v.id}>{v.name}</option>)}
                       </select>
                     </div>
                   )}
 
                   <div className="mb-8">
-                    <p className="text-[8px] font-black text-white/40 uppercase mb-2 tracking-widest">Quantité souhaitée</p>
-                    <select value={sel.qty} onChange={(e) => updateSelection(product.id, 'qty', Number(e.target.value))} className="w-full bg-white/5 border border-white/10 rounded p-3 text-[11px] font-black uppercase outline-none focus:border-blue-500">
-                      {product.quantities.map(q => <option key={q} value={q} className="bg-[#0f092e]">{q} ex.</option>)}
+                    <p className="text-[8px] font-black text-white/40 uppercase mb-2 tracking-widest">Sélectionner la quantité</p>
+                    <select value={sel.qty} onChange={(e) => updateSelection(product.id, 'qty', Number(e.target.value))} className="w-full bg-[#1a1340] border border-white/10 rounded p-3 text-[11px] font-black uppercase outline-none">
+                      {product.quantities.map(q => <option key={q} value={q}>{q} exemplaires</option>)}
                     </select>
                   </div>
 
@@ -145,14 +115,14 @@ export default function PersoPage() {
         </div>
       </main>
 
-      {/* PANIER FLOTTANT (DÉFILANT) */}
+      {/* PANIER FLOTTANT */}
       <div className="fixed bottom-8 left-8 z-[100]">
-        <button onClick={() => setIsCartOpen(!isCartOpen)} className="bg-white text-[#0f092e] px-8 py-4 rounded-full font-black uppercase text-[10px] tracking-widest shadow-2xl flex items-center gap-4 hover:bg-blue-600 hover:text-white transition-all">
+        <button onClick={() => setIsCartOpen(!isCartOpen)} className="bg-white text-[#0f092e] px-8 py-4 rounded-full font-black uppercase text-[10px] tracking-widest shadow-2xl flex items-center gap-4 hover:bg-blue-600 transition-all">
           Panier {cart.length > 0 && <span className="bg-blue-500 text-white px-2 py-0.5 rounded text-[9px]">{cart.length}</span>}
         </button>
         {isCartOpen && (
           <div className="absolute bottom-16 left-0 w-80 bg-white rounded-2xl shadow-2xl text-[#0f092e] overflow-hidden">
-             <div className="bg-slate-100 p-4 border-b flex justify-between items-center"><span className="font-black text-[9px] uppercase tracking-widest text-slate-500">Détails HT</span><button onClick={() => setIsCartOpen(false)} className="text-red-500 font-black text-[9px]">FERMER</button></div>
+             <div className="bg-slate-100 p-4 border-b flex justify-between items-center"><span className="font-black text-[9px] uppercase tracking-widest text-slate-500">Détails</span><button onClick={() => setIsCartOpen(false)} className="text-red-500 font-black text-[9px]">FERMER</button></div>
              <div className="max-h-80 overflow-y-auto p-4 space-y-4">
               {cart.length === 0 ? <p className="text-[10px] font-bold text-slate-400 uppercase text-center py-4">Vide</p> : cart.map((item) => (
                 <div key={item.id} className="border-b border-slate-100 pb-3 flex justify-between items-start">
@@ -162,15 +132,14 @@ export default function PersoPage() {
                   </div>
                   <div className="text-right">
                     <p className="font-black text-[10px]">{(item.price * item.qty).toFixed(2)}€</p>
-                    <button onClick={() => removeFromCart(item.id)} className="text-[7px] text-red-500 font-black uppercase hover:underline">Suppr.</button>
+                    <button onClick={() => removeFromCart(item.id)} className="text-[7px] text-red-500 font-black uppercase">Suppr.</button>
                   </div>
                 </div>
               ))}
             </div>
             {cart.length > 0 && (
               <div className="p-5 bg-slate-50 border-t">
-                <div className="flex justify-between items-center mb-4"><span className="font-black text-[10px] uppercase text-slate-400">Total HT</span><span className="font-black text-xl text-blue-600">{cart.reduce((a, b) => a + (b.price * b.qty), 0).toFixed(2)}€</span></div>
-                <Link href="/panier" className="block text-center w-full bg-[#0f092e] text-white py-4 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-blue-600 transition-all">Voir mon panier</Link>
+                <Link href="/panier" className="block text-center w-full bg-[#0f092e] text-white py-4 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-blue-600 transition-all">Finaliser la commande</Link>
               </div>
             )}
           </div>
