@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 export default function HomePage() {
   const [agencyName, setAgencyName] = useState("");
   const [userName, setUserName] = useState("");
-  const [role, setRole] = useState(""); // Pour stocker le rôle (admin_agence ou collaborateur)
+  const [role, setRole] = useState(""); // admin_agence ou collaborateur
   const [loading, setLoading] = useState(true);
   const { cart } = useCart();
   const router = useRouter();
@@ -17,7 +17,6 @@ export default function HomePage() {
 
   useEffect(() => {
     const fetchUserAndAgency = async () => {
-      // 1. Récupérer l'utilisateur session
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
@@ -25,7 +24,6 @@ export default function HomePage() {
         return;
       }
 
-      // 2. Récupérer le profil et l'agence
       const { data, error } = await supabase
         .from('profiles')
         .select(`
@@ -55,7 +53,6 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-[#0f092e] text-white font-sans flex flex-col">
-      {/* ... (Header et Banner identiques) ... */}
       <header className="py-8 px-4">
         <div className="max-w-4xl mx-auto flex items-center justify-center gap-6 md:gap-12">
           <img src="/logo-imprimeur.png" alt="Mon Imprimerie" className="h-7 md:h-10 object-contain opacity-70" />
@@ -80,7 +77,6 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto px-6 py-6 md:py-3">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 md:gap-4">
             
-            {/* Zone Session */}
             <div className="flex items-center gap-3 justify-center md:justify-start">
               <span className={`h-1.5 w-1.5 rounded-full animate-pulse ${loading ? 'bg-white/20' : 'bg-green-500'}`}></span>
               <div className="flex flex-col md:flex-row md:items-baseline md:gap-2">
@@ -96,16 +92,17 @@ export default function HomePage() {
             </div>
 
             <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
-              {/* AFFICHAGE CONDITIONNEL DES BOUTONS */}
               {!loading && (
                 <>
-                  {role === 'admin_agence' ? (
+                  {/* BOUTON PROFIL : Toujours visible pour modifier ses infos */}
+                  <Link href="/profil" className="text-center bg-white/5 border border-white/10 hover:bg-white/10 text-white/80 text-[9px] font-black uppercase tracking-widest px-6 py-2.5 transition-all">
+                    {role === 'admin_agence' ? "Mon Profil Admin" : "Gérer mes infos"}
+                  </Link>
+
+                  {/* BOUTON EQUIPE : Uniquement si admin_agence */}
+                  {role === 'admin_agence' && (
                     <Link href="/dashboard/equipe" className="text-center bg-blue-600/20 border border-blue-500/30 hover:bg-blue-600/40 text-blue-400 text-[9px] font-black uppercase tracking-widest px-6 py-2.5 transition-all">
                       Gérer l'Équipe
-                    </Link>
-                  ) : (
-                    <Link href="/profil" className="text-center bg-white/5 border border-white/10 hover:bg-white/10 text-white/60 text-[9px] font-black uppercase tracking-widest px-6 py-2.5 transition-all">
-                      Gérer mes infos
                     </Link>
                   )}
                 </>
@@ -129,7 +126,6 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ... (Main et Footer identiques) ... */}
       <main className="flex-grow flex items-center py-12">
         <div className="max-w-6xl mx-auto w-full px-6 grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
           <Link href="/perso" className="group">
