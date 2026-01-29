@@ -1,7 +1,8 @@
 'use client';
+'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-// Import pour créer un client éphémère
+// Import crucial pour ne pas être déconnecté
 import { createClient } from '@supabase/supabase-js';
 
 export default function GestionEquipe() {
@@ -44,58 +45,59 @@ export default function GestionEquipe() {
   }, []);
 
   const creerCompte = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // --- MODIFICATION ICI POUR ÉVITER LA DÉCONNEXION ---
-    // On crée un client Supabase "jetable" sans stockage de session
-    const tempSupabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        auth: {
-          persistSession: false, // Empêche d'écraser TA session
-          autoRefreshToken: false,
-          detectSessionInUrl: false
-        }
-      }
-    );
-
-    // 1. Création dans l'Auth avec le client temporaire
-    const { data: authData, error: authError } = await tempSupabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { first_name: prenom, last_name: nom }
-      }
-    });
-
-    if (authError) return alert(authError.message);
-
-    if (authData.user && monAgencyId) {
-      // 2. Insertion dans 'profiles' (On utilise le client normal ici pour profiter de ta session admin)
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([{ 
-            id: authData.user.id, 
-            first_name: prenom, 
-            last_name: nom,
-            full_name: `${prenom} ${nom}`,
-            email: email, 
-            role: roleChoisi, 
-            agency_id: monAgencyId,
-            phone: '', 
-            siret: ''
-        }]);
-
-      if (!profileError) {
-        alert("Succès ! Vous êtes toujours connecté et le membre a été créé.");
-        setEmail(''); setPassword(''); setPrenom(''); setNom('');
-        chargerEquipe();
-      } else {
-        alert("Erreur profil: " + profileError.message);
+  e.preventDefault();
+  
+  // 1. On crée un client Supabase "jetable" qui ne stocke pas de session
+  // Cela utilise tes variables d'environnement déjà présentes dans ton projet
+  const tempSupabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: {
+        persistSession: false, // C'est CA qui t'empêche d'être déconnecté
+        autoRefreshToken: false,
+        detectSessionInUrl: false
       }
     }
-  };
+  );
+
+  // 2. On utilise ce client temporaire pour créer l'accès (Auth)
+  const { data: authData, error: authError } = await tempSupabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { first_name: prenom, last_name: nom }
+    }
+  });
+
+  if (authError) return alert("Erreur Auth : " + authError.message);
+
+  if (authData.user && monAgencyId) {
+    // 3. On utilise le client 'supabase' NORMAL pour insérer dans ta table profiles
+    // Comme ça, Supabase sait que c'est TOI (l'admin) qui fait l'action
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert([{ 
+          id: authData.user.id, 
+          first_name: prenom, 
+          last_name: nom,
+          full_name: `${prenom} ${nom}`,
+          email: email, 
+          role: roleChoisi, 
+          agency_id: monAgencyId,
+          phone: '', 
+          siret: ''
+      }]);
+
+    if (!profileError) {
+      alert("Membre créé avec succès ! Vous êtes toujours sur votre session.");
+      setEmail(''); setPassword(''); setPrenom(''); setNom('');
+      chargerEquipe(); // Rafraîchit la liste en bas
+    } else {
+      alert("Erreur Profil : " + profileError.message);
+    }
+  }
+};
 
   const supprimerMembre = async (id: string) => {
     if (id === monId) return alert("Opération impossible sur votre compte.");
