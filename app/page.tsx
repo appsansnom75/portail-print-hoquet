@@ -2,21 +2,51 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
+import { supabase } from '@/lib/supabase'; // Import de Supabase
+import { useRouter } from 'next/navigation';
 
 export default function HomePage() {
-  const [agencyName, setAgencyName] = useState("Guy Hoquet PARIS 10 BONNE NOUVELLE");
+  const [agencyName, setAgencyName] = useState("Chargement...");
+  const [userName, setUserName] = useState("");
   const { cart } = useCart();
+  const router = useRouter();
   
-  // On vérifie juste si le panier n'est pas vide
   const hasItems = cart.length > 0;
 
   useEffect(() => {
-    const savedData = localStorage.getItem('agencyData');
-    if (savedData) {
-      const parsed = JSON.parse(savedData);
-      if (parsed.name) setAgencyName(parsed.name);
-    }
-  }, []);
+    const fetchUserAndAgency = async () => {
+      // 1. On récupère l'utilisateur connecté
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (user) {
+        // 2. On récupère son profil et le nom de son agence liée
+        const { data, error } = await supabase
+          .from('profiles')
+          .select(`
+            full_name,
+            agencies ( name )
+          `)
+          .eq('id', user.id)
+          .single();
+
+        if (data) {
+          setUserName(data.full_name);
+          // @ts-ignore
+          setAgencyName(data.agencies?.name || "Agence Inconnue");
+        }
+      } else {
+        // Si pas de session, on peut rediriger vers login
+        router.push('/login');
+      }
+    };
+
+    fetchUserAndAgency();
+  }, [router]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
+  };
 
   return (
     <div className="min-h-screen bg-[#0f092e] text-white font-sans flex flex-col">
@@ -45,18 +75,19 @@ export default function HomePage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 md:gap-4">
             <div className="flex items-center gap-3 justify-center md:justify-start">
               <span className="h-1 w-1 rounded-full bg-green-500 animate-pulse"></span>
-              <div className="flex flex-col md:flex-row md:items-center md:gap-2">
-                <span className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30">Connecté en tant que :</span>
-                <span className="text-[10px] font-black uppercase text-white/90 tracking-tight">{agencyName}</span>
+              <div className="flex flex-col md:flex-row md:items-baseline md:gap-2">
+                <span className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30">Session :</span>
+                <span className="text-[10px] font-black uppercase text-white/90 tracking-tight">
+                    {userName} <span className="text-white/30 mx-1">—</span> {agencyName}
+                </span>
               </div>
             </div>
 
             <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
-              <Link href="/profil" className="text-center bg-white/10 border border-white/10 hover:bg-white/20 text-white text-[9px] font-black uppercase tracking-widest px-6 py-2.5 transition-all">
-                Profil Agence
+              <Link href="/dashboard/equipe" className="text-center bg-blue-600/20 border border-blue-500/30 hover:bg-blue-600/40 text-blue-400 text-[9px] font-black uppercase tracking-widest px-6 py-2.5 transition-all">
+                Gérer l'Équipe
               </Link>
               
-              {/* MODIFICATION : Bouton avec pastille animée sans numéro */}
               <Link href="/panier" className="relative text-center bg-white/10 border border-white/10 hover:bg-white/20 text-white text-[9px] font-black uppercase tracking-widest px-6 py-2.5 transition-all">
                 Mon Panier 
                 {hasItems && (
@@ -67,7 +98,7 @@ export default function HomePage() {
                 )}
               </Link>
 
-              <button onClick={() => alert('Déconnexion...')} className="text-center text-[9px] font-black uppercase tracking-widest text-red-500/60 hover:text-red-400 py-2.5 px-4 transition-all">
+              <button onClick={handleLogout} className="text-center text-[9px] font-black uppercase tracking-widest text-red-500/60 hover:text-red-400 py-2.5 px-4 transition-all">
                 Déconnexion
               </button>
             </div>
