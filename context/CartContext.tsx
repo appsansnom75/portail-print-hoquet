@@ -21,33 +21,35 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
 
-  // Charger le panier au démarrage
   useEffect(() => {
     const savedCart = localStorage.getItem('cart');
     if (savedCart) setCart(JSON.parse(savedCart));
   }, []);
 
-  // Sauvegarder à chaque modif
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(cart));
   }, [cart]);
 
   const addToCart = (newItem: CartItem) => {
     setCart((prevCart) => {
-      // On cherche si le même produit (même ID et même variante) existe déjà
+      // On cherche si le produit existe déjà par son ID
       const existingItemIndex = prevCart.findIndex((item) => item.id === newItem.id);
 
       if (existingItemIndex !== -1) {
-        // LE PRODUIT EXISTE : On additionne les vraies quantités (ex: 500 + 500)
+        // LE PRODUIT EXISTE DÉJÀ
         const updatedCart = [...prevCart];
+        
+        // CORRECTION MAJEURE ICI :
+        // On additionne newItem.qty (ex: 500) et non pas +1
         updatedCart[existingItemIndex] = {
           ...updatedCart[existingItemIndex],
-          qty: updatedCart[existingItemIndex].qty + newItem.qty, // ICI : Addition des exemplaires réels
+          qty: updatedCart[existingItemIndex].qty + newItem.qty
         };
+        
         return updatedCart;
       }
 
-      // LE PRODUIT EST NOUVEAU : On l'ajoute normalement
+      // NOUVEAU PRODUIT
       return [...prevCart, newItem];
     });
   };
