@@ -32,20 +32,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const addToCart = (newItem: CartItem) => {
     setCart((prevCart) => {
-      // On cherche si le produit existe déjà par son ID
       const existingItemIndex = prevCart.findIndex((item) => item.id === newItem.id);
 
       if (existingItemIndex !== -1) {
-        // LE PRODUIT EXISTE DÉJÀ
+        // LE PRODUIT EXISTE DÉJÀ : On additionne le volume envoyé (ex: 500)
         const updatedCart = [...prevCart];
+        const existingItem = updatedCart[existingItemIndex];
         
-        // CORRECTION MAJEURE ICI :
-        // On additionne newItem.qty (ex: 500) et non pas +1
         updatedCart[existingItemIndex] = {
-          ...updatedCart[existingItemIndex],
-          qty: updatedCart[existingItemIndex].qty + newItem.qty
+          ...existingItem,
+          qty: Number(existingItem.qty) + Number(newItem.qty) // Addition forcée des nombres
         };
-        
         return updatedCart;
       }
 

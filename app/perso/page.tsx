@@ -82,12 +82,11 @@ export default function PersoPage() {
       : "";
 
     addItemToGlobalCart({
-      // IMPORTANT : L'ID ne contient QUE le produit et la variante. 
-      // Si l'utilisateur change la quantité, l'ID reste le même, donc le Context additionne.
+      // L'ID ne change pas selon la quantité -> Favorise le cumul
       id: `${product.id}-${sel.variant}`, 
       name: `${product.name}${variantLabel}`,
       price: totalPrice / sel.qty, 
-      qty: sel.qty,
+      qty: sel.qty, // On envoie bien 500, 10000, etc.
       category: 'Impression'
     });
     
@@ -129,7 +128,7 @@ export default function PersoPage() {
                   )}
 
                   <div className="mb-8">
-                    <p className="text-[8px] font-black text-white/40 uppercase mb-2 tracking-widest">Quantité (Exemplaires)</p>
+                    <p className="text-[8px] font-black text-white/40 uppercase mb-2 tracking-widest">Quantité souhaitée</p>
                     <select value={sel.qty} onChange={(e) => updateSelection(product.id, 'qty', Number(e.target.value))} className="w-full bg-white/5 border border-white/10 rounded p-3 text-[11px] font-black uppercase outline-none focus:border-blue-500">
                       {product.quantities.map(q => <option key={q} value={q} className="bg-[#0f092e]">{q} ex.</option>)}
                     </select>
@@ -146,31 +145,32 @@ export default function PersoPage() {
         </div>
       </main>
 
-      {/* PANIER FLOTTANT RÉACTIF */}
+      {/* PANIER FLOTTANT (DÉFILANT) */}
       <div className="fixed bottom-8 left-8 z-[100]">
         <button onClick={() => setIsCartOpen(!isCartOpen)} className="bg-white text-[#0f092e] px-8 py-4 rounded-full font-black uppercase text-[10px] tracking-widest shadow-2xl flex items-center gap-4 hover:bg-blue-600 hover:text-white transition-all">
-          Récapitulatif {cart.length > 0 && <span className="bg-blue-500 text-white px-2 py-0.5 rounded text-[9px]">{cart.length}</span>}
+          Panier {cart.length > 0 && <span className="bg-blue-500 text-white px-2 py-0.5 rounded text-[9px]">{cart.length}</span>}
         </button>
         {isCartOpen && (
           <div className="absolute bottom-16 left-0 w-80 bg-white rounded-2xl shadow-2xl text-[#0f092e] overflow-hidden">
-             <div className="bg-slate-100 p-4 border-b flex justify-between items-center"><span className="font-black text-[9px] uppercase tracking-widest text-slate-500">Détails</span><button onClick={() => setIsCartOpen(false)} className="text-red-500 font-black text-[9px]">FERMER</button></div>
+             <div className="bg-slate-100 p-4 border-b flex justify-between items-center"><span className="font-black text-[9px] uppercase tracking-widest text-slate-500">Détails HT</span><button onClick={() => setIsCartOpen(false)} className="text-red-500 font-black text-[9px]">FERMER</button></div>
              <div className="max-h-80 overflow-y-auto p-4 space-y-4">
               {cart.length === 0 ? <p className="text-[10px] font-bold text-slate-400 uppercase text-center py-4">Vide</p> : cart.map((item) => (
                 <div key={item.id} className="border-b border-slate-100 pb-3 flex justify-between items-start">
                   <div>
                     <p className="font-black text-[10px] uppercase leading-tight">{item.name}</p>
-                    <p className="text-[8px] font-bold text-blue-600 uppercase mt-1">{item.qty} ex.</p>
+                    <p className="text-[9px] font-bold text-blue-600 mt-1">{item.qty} ex.</p>
                   </div>
                   <div className="text-right">
                     <p className="font-black text-[10px]">{(item.price * item.qty).toFixed(2)}€</p>
-                    <button onClick={() => removeFromCart(item.id)} className="text-[7px] text-red-500 font-black uppercase">Suppr.</button>
+                    <button onClick={() => removeFromCart(item.id)} className="text-[7px] text-red-500 font-black uppercase hover:underline">Suppr.</button>
                   </div>
                 </div>
               ))}
             </div>
             {cart.length > 0 && (
               <div className="p-5 bg-slate-50 border-t">
-                <Link href="/panier" className="block text-center w-full bg-[#0f092e] text-white py-4 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-blue-600 transition-all">Voir le panier complet</Link>
+                <div className="flex justify-between items-center mb-4"><span className="font-black text-[10px] uppercase text-slate-400">Total HT</span><span className="font-black text-xl text-blue-600">{cart.reduce((a, b) => a + (b.price * b.qty), 0).toFixed(2)}€</span></div>
+                <Link href="/panier" className="block text-center w-full bg-[#0f092e] text-white py-4 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-blue-600 transition-all">Voir mon panier</Link>
               </div>
             )}
           </div>
