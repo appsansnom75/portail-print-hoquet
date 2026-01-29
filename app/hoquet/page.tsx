@@ -1,8 +1,8 @@
 'use client';
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useCart } from '@/context/CartContext'; // 1. IMPORT DU CONTEXT
 
-// On définit une structure précise pour éviter les erreurs "any"
 interface Product {
   id: string;
   name: string;
@@ -11,13 +11,13 @@ interface Product {
   hasVariants?: boolean;
   variants?: { id: string; name: string }[];
   lots?: number[];
-  lotsByVariant?: { [key: string]: number[] }; // Cette ligne règle ton erreur
+  lotsByVariant?: { [key: string]: number[] };
   prices: { [key: string]: number[] };
 }
 
 const BUSINESS_CONFIG: Product[] = [
   { id: 'pochette', name: 'Pochette à rabat', image: '/pochette.png', baseQty: 100, lots: [1], prices: { default: [25.99] } },
-  { id: 'carte_visite', name: 'Carte de visite', image: '/carte.png', baseQty: 100, lots: [1], prices: { default: [8.25] } },
+  { id: 'carte_visite_gh', name: 'Carte de visite GH', image: '/carte.png', baseQty: 100, lots: [1], prices: { default: [8.25] } },
   { id: 'entete', name: 'En-tête de lettre', image: '/entete.png', baseQty: 500, lots: [1, 20, 30, 40, 60, 80], prices: { default: [12.85] } },
   { id: 'plaquette', name: 'Plaquette servicielle', image: '/plaquette.png', baseQty: 25, lots: [1, 2, 4], prices: { default: [19.45] } },
   { 
@@ -31,8 +31,8 @@ const BUSINESS_CONFIG: Product[] = [
     prices: { '250g': [10.40], '170g': [9.35] } 
   },
   { 
-    id: 'calendrier_2026', 
-    name: 'Calendrier 2026', 
+    id: 'calendrier_2026_biz', 
+    name: 'Calendrier 2026 Business', 
     image: '/calendrier-business.png', 
     baseQty: 500, 
     hasVariants: true,
@@ -44,8 +44,10 @@ const BUSINESS_CONFIG: Product[] = [
 ];
 
 export default function BusinessPage() {
-  const [cart, setCart] = useState<any[]>([]);
+  // 2. UTILISATION DU CONTEXT GLOBAL
+  const { cart, addToCart: addItemToGlobalCart, removeFromCart } = useCart();
   const [isCartOpen, setIsCartOpen] = useState(false);
+
   const [selections, setSelections] = useState<any>(
     BUSINESS_CONFIG.reduce((acc, p) => ({
       ...acc, [p.id]: { 
@@ -59,7 +61,6 @@ export default function BusinessPage() {
     setSelections((prev: any) => {
       const newSel = { ...prev, [id]: { ...prev[id], [field]: val } };
       const product = BUSINESS_CONFIG.find(p => p.id === id);
-      // Correction de l'erreur d'indexation ici
       if (field === 'variant' && product?.lotsByVariant) {
         newSel[id].lot = product.lotsByVariant[val as string][0];
       }
@@ -67,16 +68,26 @@ export default function BusinessPage() {
     });
   };
 
-  const calculatePrice = (product: Product) => {
+  const calculateUnitPrice = (product: Product) => {
     const sel = selections[product.id];
     const priceList = product.prices[sel.variant] || product.prices.default;
-    return priceList[0] * sel.lot;
+    return priceList[0]; // Prix par lot
   };
 
-  const addToCart = (product: Product) => {
-    const price = calculatePrice(product);
+  const handleAddToCart = (product: Product) => {
+    const unitPrice = calculateUnitPrice(product);
     const sel = selections[product.id];
-    setCart([...cart, { id: Date.now(), name: product.name, variant: sel.variant !== 'default' ? sel.variant : '', quantity: sel.lot, totalPrice: price }]);
+    const variantLabel = product.hasVariants ? ` (${product.variants?.find(v => v.id === sel.variant)?.name})` : "";
+
+    // 3. ENVOI AU PANIER GLOBAL
+    addItemToGlobalCart({
+      id: `${product.id}-${sel.variant}`,
+      name: `${product.name}${variantLabel}`,
+      price: unitPrice,
+      qty: sel.lot,
+      category: 'Gamme Business'
+    });
+    
     setIsCartOpen(true);
   };
 
@@ -91,9 +102,8 @@ export default function BusinessPage() {
       <main className="max-w-7xl mx-auto w-full py-12 px-6 pb-40">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
           {BUSINESS_CONFIG.map((product) => {
-            const currentTotal = calculatePrice(product);
+            const unitPrice = calculateUnitPrice(product);
             const sel = selections[product.id];
-            // Sécurisation de l'accès aux lots
             const availableLots = product.lotsByVariant ? product.lotsByVariant[sel.variant as string] : product.lots;
 
             return (
@@ -129,8 +139,8 @@ export default function BusinessPage() {
                   </div>
 
                   <div className="mt-auto pt-4 border-t border-white/5 text-center">
-                    <p className="font-black text-2xl mb-3 text-white">{currentTotal.toFixed(2)}€ <span className="text-[10px] text-white/40">HT</span></p>
-                    <button onClick={() => addToCart(product)} className="w-full bg-white text-[#0f092e] py-3 rounded-lg font-black uppercase text-[10px] tracking-widest hover:bg-orange-500 hover:text-white transition-all shadow-lg active:scale-95">Ajouter au panier</button>
+                    <p className="font-black text-2xl mb-3 text-white">{(unitPrice * sel.lot).toFixed(2)}€ <span className="text-[10px] text-white/40">HT</span></p>
+                    <button onClick={() => handleAddToCart(product)} className="w-full bg-white text-[#0f092e] py-3 rounded-lg font-black uppercase text-[10px] tracking-widest hover:bg-orange-500 hover:text-white transition-all shadow-lg active:scale-95">Ajouter au panier</button>
                   </div>
                 </div>
               </div>
@@ -139,7 +149,7 @@ export default function BusinessPage() {
         </div>
       </main>
 
-      {/* PANIER ORANGE */}
+      {/* PANIER FLOTTANT BRANCHÉ */}
       <div className="fixed bottom-8 left-8 z-[100]">
         <button onClick={() => setIsCartOpen(!isCartOpen)} className="bg-white text-[#0f092e] px-8 py-4 rounded-full font-black uppercase text-[10px] tracking-widest shadow-2xl flex items-center gap-4 hover:bg-orange-500 hover:text-white transition-all">
           Panier Business {cart.length > 0 && <span className="bg-orange-500 text-white px-2 py-0.5 rounded text-[9px]">{cart.length}</span>}
@@ -148,23 +158,23 @@ export default function BusinessPage() {
           <div className="absolute bottom-16 left-0 w-80 bg-white rounded-2xl shadow-2xl text-[#0f092e] overflow-hidden">
              <div className="bg-slate-100 p-4 border-b flex justify-between items-center"><span className="font-black text-[9px] uppercase tracking-widest text-slate-500">Panier</span><button onClick={() => setIsCartOpen(false)} className="text-red-500 font-black text-[9px]">FERMER</button></div>
              <div className="max-h-80 overflow-y-auto p-4 space-y-4">
-              {cart.length === 0 ? <p className="text-[10px] font-bold text-slate-400 uppercase text-center py-4 text-orange-500">Vide</p> : cart.map((item, idx) => (
+              {cart.length === 0 ? <p className="text-[10px] font-bold text-slate-400 uppercase text-center py-4 text-orange-500">Vide</p> : cart.map((item) => (
                 <div key={item.id} className="border-b border-slate-100 pb-3 flex justify-between items-start">
                   <div>
                     <p className="font-black text-[10px] uppercase leading-tight">{item.name}</p>
-                    <p className="text-[8px] font-bold text-slate-500 uppercase mt-1">{item.variant} • {item.quantity} lot(s)</p>
+                    <p className="text-[8px] font-bold text-slate-500 uppercase mt-1">{item.qty} lot(s)</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-black text-[10px]">{item.totalPrice.toFixed(2)}€</p>
-                    <button onClick={() => setCart(cart.filter((_, i) => i !== idx))} className="text-[7px] text-red-500 font-black uppercase hover:underline">Suppr.</button>
+                    <p className="font-black text-[10px]">{(item.price * item.qty).toFixed(2)}€</p>
+                    <button onClick={() => removeFromCart(item.id)} className="text-[7px] text-red-500 font-black uppercase hover:underline">Suppr.</button>
                   </div>
                 </div>
               ))}
             </div>
             {cart.length > 0 && (
               <div className="p-5 bg-slate-50 border-t">
-                <div className="flex justify-between items-center mb-4"><span className="font-black text-[10px] uppercase text-slate-400">Total HT</span><span className="font-black text-xl text-orange-600">{cart.reduce((a, b) => a + b.totalPrice, 0).toFixed(2)}€</span></div>
-                <button className="w-full bg-[#0f092e] text-white py-4 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-orange-500 transition-all">Commander</button>
+                <div className="flex justify-between items-center mb-4"><span className="font-black text-[10px] uppercase text-slate-400">Total HT</span><span className="font-black text-xl text-orange-600">{cart.reduce((a, b) => a + (b.price * b.qty), 0).toFixed(2)}€</span></div>
+                <Link href="/panier" className="block text-center w-full bg-[#0f092e] text-white py-4 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-orange-500 transition-all">Voir mon panier complet</Link>
               </div>
             )}
           </div>
