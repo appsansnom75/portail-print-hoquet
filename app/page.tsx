@@ -1,9 +1,16 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useCart } from '@/context/CartContext'; // On importe le hook du panier
 
 export default function HomePage() {
   const [agencyName, setAgencyName] = useState("Guy Hoquet PARIS 10 BONNE NOUVELLE");
+  
+  // --- NOUVEAU : On récupère les données du panier ---
+  const { cart } = useCart();
+  
+  // On calcule le nombre total d'articles (somme des quantités)
+  const cartCount = cart.reduce((acc, item) => acc + item.qty, 0);
 
   useEffect(() => {
     const savedData = localStorage.getItem('agencyData');
@@ -37,7 +44,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* --- STATUT & NAV (UNE SEULE LIGNE SUR PC) --- */}
+      {/* --- STATUT & NAV --- */}
       <div className="border-b border-white/5 bg-black/20 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-6 py-6 md:py-3">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 md:gap-4">
@@ -54,9 +61,17 @@ export default function HomePage() {
               <Link href="/profil" className="text-center bg-white/10 border border-white/10 hover:bg-white/20 text-white text-[9px] font-black uppercase tracking-widest px-6 py-2.5 transition-all">
                 Profil Agence
               </Link>
-              <Link href="/panier" className="text-center bg-white/10 border border-white/10 hover:bg-white/20 text-white text-[9px] font-black uppercase tracking-widest px-6 py-2.5 transition-all">
-                Mon Panier
+              
+              {/* MODIFICATION ICI : Ajout du compteur dynamique */}
+              <Link href="/panier" className="relative text-center bg-white/10 border border-white/10 hover:bg-white/20 text-white text-[9px] font-black uppercase tracking-widest px-6 py-2.5 transition-all">
+                Mon Panier 
+                {cartCount > 0 && (
+                  <span className="ml-2 bg-white text-[#0f092e] px-1.5 py-0.5 rounded-sm text-[8px]">
+                    {cartCount}
+                  </span>
+                )}
               </Link>
+
               <button onClick={() => alert('Déconnexion...')} className="text-center text-[9px] font-black uppercase tracking-widest text-red-500/60 hover:text-red-400 py-2.5 px-4 transition-all">
                 Déconnexion
               </button>
@@ -65,14 +80,13 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* --- GRILLE DE NAVIGATION (AVEC TRAITS COLORÉS) --- */}
+      {/* --- GRILLE DE NAVIGATION --- */}
       <main className="flex-grow flex items-center py-12">
         <div className="max-w-6xl mx-auto w-full px-6 grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
           
           <Link href="/perso" className="group">
             <div className="h-20 md:h-28 bg-white/5 border border-white/5 rounded-sm flex flex-col items-center justify-center p-4 text-center transition-all duration-300 hover:bg-blue-600/10 hover:border-blue-500/30">
               <span className="font-black text-[11px] md:text-xs uppercase tracking-[0.15em] text-white/80 group-hover:text-blue-400 transition-colors">Produit Sur-Mesure</span>
-              {/* Trait Bleu */}
               <div className="h-[1px] w-6 bg-blue-500/50 my-2 group-hover:w-12 transition-all duration-500"></div>
               <span className="text-[7px] font-bold text-white/20 uppercase tracking-[0.2em] group-hover:text-blue-500/50">Configurateur</span>
             </div>
@@ -81,7 +95,6 @@ export default function HomePage() {
           <Link href="/stock" className="group">
             <div className="h-20 md:h-28 bg-white/5 border border-white/5 rounded-sm flex flex-col items-center justify-center p-4 text-center transition-all duration-300 hover:bg-green-600/10 hover:border-green-500/30">
               <span className="font-black text-[11px] md:text-xs uppercase tracking-[0.15em] text-white/80 group-hover:text-green-400 transition-colors">Produit standard</span>
-              {/* Trait Vert */}
               <div className="h-[1px] w-6 bg-green-500/50 my-2 group-hover:w-12 transition-all duration-500"></div>
               <span className="text-[7px] font-bold text-white/20 uppercase tracking-[0.2em] group-hover:text-green-500/50">catalogue</span>
             </div>
@@ -90,7 +103,6 @@ export default function HomePage() {
           <Link href="/hoquet" className="group">
             <div className="h-20 md:h-28 bg-white/5 border border-white/5 rounded-sm flex flex-col items-center justify-center p-4 text-center transition-all duration-300 hover:bg-orange-600/10 hover:border-orange-500/30">
               <span className="font-black text-[11px] md:text-xs uppercase tracking-[0.15em] text-white/80 group-hover:text-orange-400 transition-colors">produit Business</span>
-              {/* Trait Orange */}
               <div className="h-[1px] w-6 bg-orange-500/50 my-2 group-hover:w-12 transition-all duration-500"></div>
               <span className="text-[7px] font-bold text-white/20 uppercase tracking-[0.2em] group-hover:text-orange-500/50">Gamme guy hoquet</span>
             </div>

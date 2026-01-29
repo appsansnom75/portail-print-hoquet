@@ -1,13 +1,13 @@
 'use client';
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useCart } from '@/context/CartContext'; // 1. IMPORT DU CONTEXT
 
-// --- CONFIGURATION DES PRODUITS EN STOCK ---
 const STOCK_CONFIG = [
   {
     id: 'dossier_acc',
     name: 'Dossier accompagnement',
-    image: '/dossier-accompagnement.png', // Vérifie le nom du fichier
+    image: '/dossier-accompagnement.png',
     baseQty: 25,
     lots: [1, 2, 4],
     prices: { default: [19.45, 19.45, 19.45] }
@@ -25,13 +25,15 @@ const STOCK_CONFIG = [
     name: 'Affiche A3 ou A4',
     image: '/affiche.png',
     baseQty: 1,
-    lots: [1, 5, 10, 20], // J'ai ajouté des lots logiques, mais tu peux laisser [1]
+    lots: [1, 5, 10, 20],
     prices: { default: [1.00, 1.00, 1.00, 1.00] }
   }
 ];
 
 export default function StockPage() {
-  const [cart, setCart] = useState<any[]>([]);
+  // 2. ON UTILISE LE CONTEXT AU LIEU DU STATE LOCAL
+  const { cart, addToCart: addItemToGlobalCart, removeFromCart, updateQty } = useCart();
+  
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [selections, setSelections] = useState<any>(
     STOCK_CONFIG.reduce((acc, p) => ({
@@ -48,19 +50,22 @@ export default function StockPage() {
     const sel = selections[product.id];
     const lotIndex = product.lots.indexOf(sel.lot);
     const priceList = product.prices.default;
-    return (priceList[lotIndex] || priceList[0]) * sel.lot;
+    return (priceList[lotIndex] || priceList[0]); // Prix à l'unité de lot
   };
 
-  const addToCart = (product: any) => {
-    const price = calculatePrice(product);
+  const handleAddToCart = (product: any) => {
+    const unitPrice = calculatePrice(product);
     const sel = selections[product.id];
-    setCart([...cart, {
-      id: Date.now(),
+    
+    // 3. ON ENVOIE AU CONTEXT GLOBAL
+    addItemToGlobalCart({
+      id: product.id,
       name: product.name,
-      quantity: sel.lot,
-      totalPrice: price,
-      isStock: true
-    }]);
+      price: unitPrice,
+      qty: sel.lot, // Nombre de lots choisis
+      category: 'Produit Standard'
+    });
+    
     setIsCartOpen(true);
   };
 
@@ -75,8 +80,9 @@ export default function StockPage() {
       <main className="max-w-7xl mx-auto w-full py-12 px-6 pb-40">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
           {STOCK_CONFIG.map((product) => {
-            const currentTotal = calculatePrice(product);
+            const currentUnitPrice = calculatePrice(product);
             const sel = selections[product.id];
+            const totalPrice = currentUnitPrice * sel.lot;
 
             return (
               <div key={product.id} className="flex flex-col group">
@@ -104,8 +110,8 @@ export default function StockPage() {
                   </div>
 
                   <div className="mt-auto pt-4 border-t border-white/5 text-center">
-                    <p className="font-black text-2xl mb-3 tracking-tighter text-white">{currentTotal.toFixed(2)}€ <span className="text-[10px] text-white/40">HT</span></p>
-                    <button onClick={() => addToCart(product)} className="w-full bg-white text-[#0f092e] py-3 rounded-lg font-black uppercase text-[10px] tracking-widest hover:bg-green-600 hover:text-white transition-all shadow-lg active:scale-95">Ajouter au panier</button>
+                    <p className="font-black text-2xl mb-3 tracking-tighter text-white">{totalPrice.toFixed(2)}€ <span className="text-[10px] text-white/40">HT</span></p>
+                    <button onClick={() => handleAddToCart(product)} className="w-full bg-white text-[#0f092e] py-3 rounded-lg font-black uppercase text-[10px] tracking-widest hover:bg-green-600 hover:text-white transition-all shadow-lg active:scale-95">Ajouter au panier</button>
                   </div>
                 </div>
               </div>
@@ -114,32 +120,50 @@ export default function StockPage() {
         </div>
       </main>
 
-      {/* PANIER FLOTTANT VERT */}
+      {/* PANIER FLOTTANT BRANCHÉ SUR LE CONTEXT */}
       <div className="fixed bottom-8 left-8 z-[100]">
         <button onClick={() => setIsCartOpen(!isCartOpen)} className="bg-white text-[#0f092e] px-8 py-4 rounded-full font-black uppercase text-[10px] tracking-widest shadow-2xl flex items-center gap-4 hover:bg-green-600 hover:text-white transition-all">
           Mon Panier {cart.length > 0 && <span className="bg-green-500 text-white px-2 py-0.5 rounded text-[9px]">{cart.length}</span>}
         </button>
+        
         {isCartOpen && (
           <div className="absolute bottom-16 left-0 w-80 bg-white rounded-2xl shadow-2xl text-[#0f092e] overflow-hidden">
-            <div className="bg-slate-100 p-4 border-b flex justify-between items-center"><span className="font-black text-[9px] uppercase tracking-widest text-slate-500">Récapitulatif HT</span><button onClick={() => setIsCartOpen(false)} className="text-red-500 font-black text-[9px]">FERMER</button></div>
-            <div className="max-h-80 overflow-y-auto p-4 space-y-4">
-              {cart.length === 0 ? <p className="text-[10px] font-bold text-slate-400 uppercase text-center py-4">Vide</p> : cart.map((item, idx) => (
-                <div key={item.id} className="border-b border-slate-100 pb-3 flex justify-between items-start">
-                  <div>
-                    <p className="font-black text-[10px] uppercase leading-tight">{item.name}</p>
-                    <p className="text-[8px] font-bold text-slate-500 uppercase mt-1">{item.quantity} lot(s)</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-black text-[10px]">{item.totalPrice.toFixed(2)}€</p>
-                    <button onClick={() => setCart(cart.filter((_, i) => i !== idx))} className="text-[7px] text-red-500 font-black uppercase hover:underline">Suppr.</button>
-                  </div>
-                </div>
-              ))}
+            <div className="bg-slate-100 p-4 border-b flex justify-between items-center">
+              <span className="font-black text-[9px] uppercase tracking-widest text-slate-500">Récapitulatif HT</span>
+              <button onClick={() => setIsCartOpen(false)} className="text-red-500 font-black text-[9px]">FERMER</button>
             </div>
+            
+            <div className="max-h-80 overflow-y-auto p-4 space-y-4">
+              {cart.length === 0 ? (
+                <p className="text-[10px] font-bold text-slate-400 uppercase text-center py-4">Vide</p>
+              ) : (
+                cart.map((item) => (
+                  <div key={item.id} className="border-b border-slate-100 pb-3 flex justify-between items-start">
+                    <div>
+                      <p className="font-black text-[10px] uppercase leading-tight">{item.name}</p>
+                      <p className="text-[8px] font-bold text-slate-500 uppercase mt-1">{item.qty} lot(s)</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-black text-[10px]">{(item.price * item.qty).toFixed(2)}€</p>
+                      <button onClick={() => removeFromCart(item.id)} className="text-[7px] text-red-500 font-black uppercase hover:underline">Suppr.</button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
             {cart.length > 0 && (
               <div className="p-5 bg-slate-50 border-t">
-                <div className="flex justify-between items-center mb-4"><span className="font-black text-[10px] uppercase text-slate-400">Total HT</span><span className="font-black text-xl text-green-600">{cart.reduce((a, b) => a + b.totalPrice, 0).toFixed(2)}€</span></div>
-                <button className="w-full bg-[#0f092e] text-white py-4 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-green-600 transition-all">Commander</button>
+                <div className="flex justify-between items-center mb-4">
+                  <span className="font-black text-[10px] uppercase text-slate-400">Total HT</span>
+                  <span className="font-black text-xl text-green-600">
+                    {cart.reduce((a, b) => a + (b.price * b.qty), 0).toFixed(2)}€
+                  </span>
+                </div>
+                {/* 4. REDIRECTION VERS LA PAGE PANIER RÉELLE */}
+                <Link href="/panier" className="block text-center w-full bg-[#0f092e] text-white py-4 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-green-600 transition-all">
+                  Voir mon panier complet
+                </Link>
               </div>
             )}
           </div>
