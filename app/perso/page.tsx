@@ -46,7 +46,6 @@ export default function PersoPage() {
     const qtyIndex = product.quantities.indexOf(sel.qty);
     const priceList = (product.prices as any)[sel.variant] || (product.prices as any).default;
     const totalPriceHT = priceList[qtyIndex];
-    
     const quantityToSend = Number(sel.qty);
 
     addItemToGlobalCart({
@@ -62,48 +61,62 @@ export default function PersoPage() {
 
   return (
     <div className="min-h-screen bg-[#0f092e] text-white p-8">
-      <Link href="/" className="text-xs uppercase tracking-widest opacity-50 hover:opacity-100">← Retour</Link>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
+      {/* Header Uniforme */}
+      <header className="max-w-7xl mx-auto mb-16 flex justify-between items-center">
+        <Link href="/" className="text-[10px] font-black uppercase tracking-[0.3em] opacity-50 hover:opacity-100 transition-opacity">
+          ← Retour
+        </Link>
+        <h1 className="text-2xl font-black uppercase tracking-tighter text-blue-500">
+          Personnalisation
+        </h1>
+      </header>
+
+      {/* Grille de Produits */}
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
         {PRODUCTS_CONFIG.map((product) => {
           const sel = selections[product.id];
           const qtyIndex = product.quantities.indexOf(sel.qty);
           const currentTotal = ((product.prices as any)[sel.variant] || (product.prices as any).default)[qtyIndex];
 
           return (
-            <div key={product.id} className="bg-white/5 border border-white/10 p-6 rounded-3xl flex flex-col">
-              <div className="h-40 flex items-center justify-center mb-6">
-                 <img src={product.image} alt={product.name} className="max-h-full object-contain" />
-              </div>
-              
-              <h3 className="text-xl font-black uppercase text-blue-500 mb-4">{product.name}</h3>
-              
-              <div className="space-y-4">
-                {product.hasVariants && (
-                   <select 
-                    value={sel.variant} 
-                    onChange={(e) => updateSelection(product.id, 'variant', e.target.value)}
-                    className="w-full bg-white/10 p-3 rounded-xl outline-none border border-white/5"
-                   >
-                     {product.variants?.map(v => <option key={v.id} value={v.id} className="bg-[#0f092e]">{v.name}</option>)}
-                   </select>
-                )}
+            <div key={product.id} className="group">
+              <div className="bg-white/5 border border-white/10 p-8 rounded-[40px] hover:border-blue-500/50 transition-all duration-500 flex flex-col h-full">
+                <div className="h-48 flex items-center justify-center mb-8 group-hover:scale-105 transition-transform duration-500">
+                   <img src={product.image} alt={product.name} className="max-h-full object-contain" />
+                </div>
+                
+                <h3 className="text-xl font-black uppercase tracking-tighter mb-6">{product.name}</h3>
+                
+                <div className="space-y-3 mb-8">
+                  {product.hasVariants && (
+                     <select 
+                      value={sel.variant} 
+                      onChange={(e) => updateSelection(product.id, 'variant', e.target.value)}
+                      className="w-full bg-white/10 p-4 rounded-2xl text-[11px] font-bold uppercase tracking-widest outline-none border border-transparent focus:border-blue-500/50 transition-all"
+                     >
+                       {product.variants?.map(v => <option key={v.id} value={v.id} className="bg-[#0f092e]">{v.name}</option>)}
+                     </select>
+                  )}
 
-                <select 
-                  value={sel.qty} 
-                  onChange={(e) => updateSelection(product.id, 'qty', Number(e.target.value))}
-                  className="w-full bg-white/10 p-3 rounded-xl outline-none text-blue-400 font-bold border border-white/5"
-                >
-                  {product.quantities.map(q => <option key={q} value={q} className="bg-[#0f092e]">{q} ex.</option>)}
-                </select>
+                  <select 
+                    value={sel.qty} 
+                    onChange={(e) => updateSelection(product.id, 'qty', Number(e.target.value))}
+                    className="w-full bg-white/10 p-4 rounded-2xl text-[11px] font-bold uppercase tracking-widest outline-none border border-blue-500/30 text-blue-400"
+                  >
+                    {product.quantities.map(q => <option key={q} value={q} className="bg-[#0f092e]">{q} exemplaires</option>)}
+                  </select>
+                </div>
 
-                <div className="text-center pt-4 mt-auto">
-                  <p className="text-2xl font-black">{currentTotal.toFixed(2)}€ HT</p>
+                <div className="mt-auto pt-6 border-t border-white/10 flex justify-between items-center">
+                  <div>
+                    <p className="text-[10px] font-black uppercase opacity-40 tracking-widest">Total HT</p>
+                    <p className="text-2xl font-black tracking-tighter">{currentTotal.toFixed(2)}€</p>
+                  </div>
                   <button 
                     onClick={() => handleAddToCart(product)}
-                    className="w-full bg-blue-600 mt-4 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-white hover:text-blue-600 transition-all shadow-lg"
+                    className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-white hover:text-blue-600 transition-all active:scale-95 shadow-lg shadow-blue-500/20"
                   >
-                    Ajouter au panier
+                    Ajouter
                   </button>
                 </div>
               </div>
@@ -112,30 +125,30 @@ export default function PersoPage() {
         })}
       </div>
 
-      {/* PANIER FLOTTANT */}
+      {/* Panier Flottant Style Glassmorphism */}
       {isCartOpen && (
-        <div className="fixed bottom-8 right-8 w-80 bg-white text-black rounded-3xl shadow-2xl overflow-hidden z-50 animate-in slide-in-from-bottom-5">
-          <div className="p-6 bg-slate-100 flex justify-between items-center border-b">
-            <span className="font-black uppercase text-[10px] tracking-tighter">Ton Panier</span>
-            <button onClick={() => setIsCartOpen(false)} className="text-red-500 font-bold hover:scale-110 transition-transform">✕</button>
+        <div className="fixed bottom-8 right-8 w-80 bg-white text-black rounded-[32px] shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="p-6 bg-slate-50 flex justify-between items-center border-b border-slate-100">
+            <span className="font-black uppercase text-[10px] tracking-[0.2em] text-slate-400">Panier</span>
+            <button onClick={() => setIsCartOpen(false)} className="bg-slate-200 hover:bg-red-100 hover:text-red-500 w-8 h-8 rounded-full flex items-center justify-center transition-all">
+              <span className="text-xs font-bold">✕</span>
+            </button>
           </div>
-          <div className="p-6 space-y-4 max-h-96 overflow-y-auto">
-            {cart.length === 0 ? (
-              <p className="text-center text-xs font-bold text-slate-400">Ton panier est vide</p>
-            ) : (
-              cart.map(item => (
-                <div key={item.id} className="flex justify-between border-b border-slate-100 pb-2">
-                  <div className="w-2/3">
-                    <p className="font-bold text-[10px] uppercase leading-tight">{item.name}</p>
-                    <p className="text-blue-600 font-black text-sm">{item.qty} ex.</p>
-                  </div>
-                  <p className="font-black text-xs">{(item.price * item.qty).toFixed(2)}€</p>
+          
+          <div className="p-6 space-y-4 max-h-80 overflow-y-auto">
+            {cart.map(item => (
+              <div key={item.id} className="flex justify-between items-start group">
+                <div className="w-2/3">
+                  <p className="font-black text-[9px] uppercase leading-tight tracking-wide">{item.name}</p>
+                  <p className="text-blue-600 font-black text-xs mt-1">{item.qty} ex.</p>
                 </div>
-              ))
-            )}
+                <p className="font-black text-[10px]">{(item.price * item.qty).toFixed(2)}€</p>
+              </div>
+            ))}
           </div>
-          <div className="p-6 border-t bg-slate-50">
-            <Link href="/panier" className="block w-full bg-black text-white text-center py-4 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-600 transition-colors">
+
+          <div className="p-6 pt-0">
+            <Link href="/panier" className="block w-full bg-blue-600 text-white text-center py-4 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] hover:bg-black transition-all shadow-md">
               Commander
             </Link>
           </div>
