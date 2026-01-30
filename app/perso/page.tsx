@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase';
 import CartDrawer from '@/components/CartDrawer';
 
 const THEME = { 
-  category: 'Perso', 
+  category: 'Perso', // <--- VÉRIFIE QUE C'EST EXACTEMENT CE NOM DANS SUPABASE
   label: 'Portail Impression', 
   color: 'text-blue-500', 
   bg: 'bg-blue-500' 
@@ -22,33 +22,40 @@ export default function PersoPage() {
 
   useEffect(() => {
     const fetchProducts = async () => {
-      const { data } = await supabase
-        .from('products')
-        .select('*')
-        .eq('category', THEME.category) // Filtre strictement sur la catégorie BLEUE
-        .order('created_at', { ascending: true });
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('category', THEME.category)
+          .order('created_at', { ascending: true });
 
-      if (data) {
-        const formatted = data.map(p => ({
-          id: p.id, 
-          name: p.name, 
-          image: p.image_url, 
-          hasVariants: p.has_variants,
-          variants: p.config.variants || [], 
-          quantities: p.config.quantities || [], 
-          prices: p.config.prices || { default: [] }
-        }));
-        setProducts(formatted);
-        
-        // Initialisation des sélections par défaut
-        setSelections(formatted.reduce((acc, p) => ({ 
-          ...acc, [p.id]: { 
-            qty: p.quantities[0], 
-            variant: p.hasVariants ? p.variants[0].id : 'default' 
-          } 
-        }), {}));
+        if (error) throw error;
+
+        if (data) {
+          const formatted = data.map(p => ({
+            id: p.id, 
+            name: p.name, 
+            image: p.image_url, 
+            hasVariants: p.has_variants,
+            // Sécurité : on ajoute des valeurs par défaut si config est vide
+            variants: p.config?.variants || [], 
+            quantities: p.config?.quantities || [], 
+            prices: p.config?.prices || { default: [] }
+          }));
+          setProducts(formatted);
+          
+          setSelections(formatted.reduce((acc, p) => ({ 
+            ...acc, [p.id]: { 
+              qty: p.quantities[0] || 0, 
+              variant: p.hasVariants ? (p.variants[0]?.id || 'default') : 'default' 
+            } 
+          }), {}));
+        }
+      } catch (err) {
+        console.error("Erreur de chargement:", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     fetchProducts();
   }, []);
@@ -56,12 +63,13 @@ export default function PersoPage() {
   const handleAddToCart = (p: any) => {
     const s = selections[p.id];
     const pList = p.prices[s.variant] || p.prices.default || [];
-    const totalHT = pList[p.quantities.indexOf(Number(s.qty))];
+    const priceIndex = p.quantities.indexOf(Number(s.qty));
+    const totalHT = pList[priceIndex] || 0;
     
     addToCart({ 
       id: `${p.id}-${s.variant}`, 
-      name: `${p.name}${p.hasVariants ? ' - ' + p.variants.find((v:any)=>v.id===s.variant).name : ''}`, 
-      price: totalHT / Number(s.qty), 
+      name: `${p.name}${p.hasVariants ? ' - ' + (p.variants.find((v:any)=>v.id===s.variant)?.name || '') : ''}`, 
+      price: totalHT / (Number(s.qty) || 1), 
       qty: Number(s.qty), 
       category: THEME.label 
     });
@@ -78,97 +86,89 @@ export default function PersoPage() {
     <div className="min-h-screen bg-[#0f092e] text-white flex flex-col relative overflow-x-hidden">
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
       
-      {/* HEADER */}
       <header className="py-6 px-6 border-b border-white/10 flex justify-between items-center sticky top-0 bg-[#0f092e]/80 backdrop-blur-md z-50">
         <Link href="/" className="text-[10px] font-black uppercase text-white/40 hover:text-white transition-colors">← Retour</Link>
         <h1 className={`text-[10px] font-black uppercase tracking-[0.3em] ${THEME.color} italic`}>{THEME.label}</h1>
         <div className="w-10"></div>
       </header>
 
-      {/* GRILLE PRODUITS */}
-      <main className="max-w-7xl mx-auto w-full py-16 px-6 pb-40 grid grid-cols-1 md:grid-cols-3 gap-12">
-        {products.map((p) => {
-          const sel = selections[p.id];
-          if (!sel) return null;
+      <main className="max-w-7xl mx-auto w-full py-16 px-6 pb-40">
+        {products.length === 0 ? (
+          <div className="text-center opacity-20 py-20 font-black uppercase tracking-widest text-xs">
+            Aucun produit trouvé dans "{THEME.category}"
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+            {products.map((p) => {
+              const sel = selections[p.id];
+              if (!sel) return null;
 
-          const pList = p.prices[sel.variant] || p.prices.default || [];
-          const currentPrice = pList[p.quantities.indexOf(Number(sel.qty))] || 0;
-          const displayImage = p.variants.find((v:any) => v.id === sel.variant)?.image || p.image;
+              const pList = p.prices[sel.variant] || p.prices.default || [];
+              const currentPrice = pList[p.quantities.indexOf(Number(sel.qty))] || 0;
+              const displayImage = p.variants.find((v:any) => v.id === sel.variant)?.image || p.image;
 
-          return (
-            <div key={p.id} className="pt-10 relative group">
-              {/* IMAGE FLOTTANTE */}
-              <div className="h-48 w-full flex items-center justify-center relative -mb-10 z-20 transition-transform duration-500 group-hover:scale-110">
-                <AnimatePresence mode="wait">
-                  <motion.img 
-                    key={displayImage}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    src={displayImage} 
-                    className="max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]" 
-                    alt={p.name}
-                  />
-                </AnimatePresence>
-              </div>
+              return (
+                <div key={p.id} className="pt-10 relative group">
+                  <div className="h-48 w-full flex items-center justify-center relative -mb-10 z-20 transition-transform duration-500 group-hover:scale-110">
+                    <AnimatePresence mode="wait">
+                      <motion.img 
+                        key={displayImage}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        src={displayImage} 
+                        className="max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]" 
+                        alt={p.name}
+                        onError={(e) => { (e.target as any).src = "https://via.placeholder.com/300?text=Image+Indisponible"; }}
+                      />
+                    </AnimatePresence>
+                  </div>
 
-              {/* CARTE */}
-              <div className="bg-white/[0.03] border border-white/10 rounded-[40px] p-8 pt-16 group-hover:border-blue-500/30 transition-all duration-500">
-                <h3 className={`font-black text-base uppercase mb-6 ${THEME.color} tracking-tight`}>{p.name}</h3>
-                
-                <div className="space-y-4">
-                  {/* VARIANTE */}
-                  {p.hasVariants && (
-                    <div className="space-y-1">
-                      <p className="text-[7px] font-black text-white/20 uppercase tracking-widest ml-1">Modèle</p>
+                  <div className="bg-white/[0.03] border border-white/10 rounded-[40px] p-8 pt-16 group-hover:border-blue-500/30 transition-all duration-500">
+                    <h3 className={`font-black text-base uppercase mb-6 ${THEME.color} tracking-tight`}>{p.name}</h3>
+                    <div className="space-y-4">
+                      {p.hasVariants && (
+                        <select 
+                          value={sel.variant} 
+                          onChange={(e) => setSelections({...selections, [p.id]:{...sel, variant: e.target.value}})} 
+                          className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none focus:border-blue-500 transition-colors"
+                        >
+                          {p.variants.map((v:any)=><option key={v.id} value={v.id}>{v.name}</option>)}
+                        </select>
+                      )}
                       <select 
-                        value={sel.variant} 
-                        onChange={(e) => setSelections({...selections, [p.id]:{...sel, variant: e.target.value}})} 
+                        value={sel.qty} 
+                        onChange={(e) => setSelections({...selections, [p.id]:{...sel, qty: Number(e.target.value)}})} 
                         className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none focus:border-blue-500 transition-colors"
                       >
-                        {p.variants.map((v:any)=><option key={v.id} value={v.id}>{v.name}</option>)}
+                        {p.quantities.map((q:any)=><option key={q} value={q}>{q} exemplaires</option>)}
                       </select>
+                      <div className="flex items-center justify-between pt-6 border-t border-white/5 mt-4">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-black text-white tracking-tighter text-2xl">
+                            {currentPrice.toFixed(2)}€
+                          </span>
+                          <span className="text-[7px] font-bold text-white/30 uppercase tracking-widest italic text-left">Hors Taxes</span>
+                        </div>
+                        <button 
+                          onClick={() => handleAddToCart(p)} 
+                          className="bg-white text-[#0f092e] px-8 py-3.5 rounded-2xl font-black uppercase text-[9px] tracking-widest hover:bg-blue-500 hover:text-white transition-all active:scale-90"
+                        >
+                          Ajouter
+                        </button>
+                      </div>
                     </div>
-                  )}
-
-                  {/* QUANTITÉ */}
-                  <div className="space-y-1">
-                    <p className="text-[7px] font-black text-white/20 uppercase tracking-widest ml-1">Quantité</p>
-                    <select 
-                      value={sel.qty} 
-                      onChange={(e) => setSelections({...selections, [p.id]:{...sel, qty: Number(e.target.value)}})} 
-                      className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none focus:border-blue-500 transition-colors"
-                    >
-                      {p.quantities.map((q:any)=><option key={q} value={q}>{q} exemplaires</option>)}
-                    </select>
-                  </div>
-
-                  {/* PRIX ET ACTION */}
-                  <div className="flex items-center justify-between pt-6 border-t border-white/5 mt-4">
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-black text-white tracking-tighter text-2xl">
-                        {currentPrice.toFixed(2)}€
-                      </span>
-                      <span className="text-[7px] font-bold text-white/30 uppercase tracking-widest italic">Hors Taxes</span>
-                    </div>
-                    <button 
-                      onClick={() => handleAddToCart(p)} 
-                      className="bg-white text-[#0f092e] px-8 py-3.5 rounded-2xl font-black uppercase text-[9px] tracking-widest hover:bg-blue-500 hover:text-white transition-all active:scale-90"
-                    >
-                      Ajouter
-                    </button>
                   </div>
                 </div>
-              </div>
-            </div>
-          );
-        })}
+              );
+            })}
+          </div>
+        )}
       </main>
 
-      {/* BOUTON FLOTTANT PANIER (BLANC) */}
       <button 
         onClick={() => setIsCartOpen(true)} 
-        className="fixed bottom-8 right-8 w-16 h-16 bg-white rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-center z-[100] hover:scale-110 active:scale-95 transition-all group"
+        className="fixed bottom-8 right-8 w-16 h-16 bg-white rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-center z-[100] hover:scale-110 active:scale-95 transition-all"
       >
         <div className="relative">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0f092e" strokeWidth="2.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
@@ -179,11 +179,6 @@ export default function PersoPage() {
           )}
         </div>
       </button>
-
-      {/* FOOTER DISCRET */}
-      <footer className="py-10 border-t border-white/5 text-center">
-        <p className="text-[7px] font-black text-white/10 uppercase tracking-[0.5em]">Guy Hoquet Print Portal — 2026</p>
-      </footer>
     </div>
   );
 }
