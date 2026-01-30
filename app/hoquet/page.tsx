@@ -5,18 +5,19 @@ import { useCart } from '@/context/CartContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 
-// CONFIGURATION DU THÈME DE LA PAGE
+// CONFIGURATION DU THÈME ORANGE
 const THEME = {
-  category: 'Vetements', // Doit correspondre au nom dans l'admin
+  category: 'Vetements', // Assure-toi que c'est "Vetements" dans l'admin pour cette page
   label: 'Gamme Business',
   color: 'text-orange-500',
   bg: 'bg-orange-500',
   border: 'focus:border-orange-500',
-  hover: 'hover:bg-orange-600'
+  hover: 'hover:bg-orange-600',
+  shadow: 'group-hover:border-orange-500/30'
 };
 
 export default function BusinessPage() {
-  const { cart, addToCart: addItemToGlobalCart, removeFromCart } = useCart();
+  const { cart, addToCart: addItemToGlobalCart } = useCart();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -94,21 +95,31 @@ export default function BusinessPage() {
                   </AnimatePresence>
                 </div>
 
-                <div className="bg-white/[0.03] border border-white/10 rounded-3xl p-6 pt-12 shadow-xl flex flex-col transition-all group-hover:border-orange-500/30">
+                <div className={`bg-white/[0.03] border border-white/10 rounded-3xl p-6 pt-12 shadow-xl flex flex-col transition-all ${THEME.shadow}`}>
                   <h3 className={`font-black text-[15px] uppercase tracking-tighter mb-4 ${THEME.color}`}>{product.name}</h3>
                   
                   <div className="space-y-4">
                     {product.hasVariants && (
-                       <select value={sel.variant} onChange={(e) => updateSelection(product.id, 'variant', e.target.value)} className="w-full bg-[#16103a] border border-white/10 rounded-xl p-3 text-[10px] font-black uppercase text-white outline-none">
-                          {product.variants.map((v: any) => <option key={v.id} value={v.id}>{v.name}</option>)}
-                       </select>
+                       <div className="space-y-1">
+                          <p className="text-[8px] font-black text-white/40 uppercase tracking-widest">Variantes</p>
+                          <select value={sel.variant} onChange={(e) => updateSelection(product.id, 'variant', e.target.value)} className="w-full bg-[#16103a] border border-white/10 rounded-xl p-3 text-[10px] font-black uppercase text-white outline-none focus:border-orange-500">
+                             {product.variants.map((v: any) => <option key={v.id} value={v.id}>{v.name}</option>)}
+                          </select>
+                       </div>
                     )}
-                    <select value={sel.qty} onChange={(e) => updateSelection(product.id, 'qty', Number(e.target.value))} className="w-full bg-[#16103a] border border-white/10 rounded-xl p-3 text-[10px] font-black uppercase text-white outline-none">
-                       {product.quantities.map((q: number) => <option key={q} value={q}>{q} exemplaires</option>)}
-                    </select>
+
+                    <div className="space-y-1">
+                      <p className="text-[8px] font-black text-white/40 uppercase tracking-widest">Quantité</p>
+                      <select value={sel.qty} onChange={(e) => updateSelection(product.id, 'qty', Number(e.target.value))} className="w-full bg-[#16103a] border border-white/10 rounded-xl p-3 text-[10px] font-black uppercase text-white outline-none focus:border-orange-500">
+                         {product.quantities.map((q: number) => <option key={q} value={q}>{q} exemplaires</option>)}
+                      </select>
+                    </div>
                     
                     <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                      <span className="font-black text-2xl text-white tracking-tighter">{currentTotal.toFixed(2)}€</span>
+                      <div>
+                        <span className="font-black text-2xl text-white tracking-tighter">{currentTotal.toFixed(2)}€</span>
+                        <span className="text-[10px] text-white/30 ml-1 font-bold italic">HT</span>
+                      </div>
                       <button onClick={() => handleAddToCart(product)} className={`bg-white text-[#0f092e] px-6 py-3 rounded-2xl font-black uppercase text-[9px] tracking-widest ${THEME.hover} hover:text-white transition-all active:scale-95 shadow-xl`}>
                         Ajouter
                       </button>
@@ -120,13 +131,6 @@ export default function BusinessPage() {
           })}
         </div>
       </main>
-
-      {/* PANIER FLOTTANT (Raccourci pour gain de place) */}
-      <div className="fixed bottom-8 left-8 z-[100]">
-        <button onClick={() => setIsCartOpen(!isCartOpen)} className={`bg-white text-[#0f092e] px-8 py-4 rounded-full font-black uppercase text-[10px] tracking-widest shadow-2xl flex items-center gap-4 ${THEME.hover} hover:text-white transition-all border-4 border-[#0f092e]`}>
-          Panier {cart.length > 0 && <span className={`${THEME.bg} text-white px-2 py-0.5 rounded-full text-[9px]`}>{cart.length}</span>}
-        </button>
-      </div>
     </div>
   );
 }

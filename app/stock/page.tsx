@@ -5,17 +5,19 @@ import { useCart } from '@/context/CartContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 
+// CONFIGURATION DU THÈME VERT
 const THEME = {
-  category: 'produit non personnalisable', // Nom exact dans ton admin pour les produits standard
-  label: 'Produits Standard',
+  category: 'Signaletique', // Doit correspondre au nom dans l'admin
+  label: 'Produits sans personnalisation',
   color: 'text-green-500',
   bg: 'bg-green-500',
   border: 'focus:border-green-500',
-  hover: 'hover:bg-green-600'
+  hover: 'hover:bg-green-600',
+  shadow: 'group-hover:border-green-500/30'
 };
 
-export default function BusinessPage() {
-  const { cart, addToCart: addItemToGlobalCart, removeFromCart } = useCart();
+export default function SignaletiquePage() {
+  const { cart, addToCart: addItemToGlobalCart } = useCart();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,6 +25,7 @@ export default function BusinessPage() {
 
   useEffect(() => {
     const fetchProducts = async () => {
+      // On récupère uniquement les produits de la catégorie "Signaletique"
       const { data } = await supabase.from('products').select('*').eq('category', THEME.category).order('created_at', { ascending: true });
       if (data) {
         const formatted = data.map(p => ({
@@ -35,6 +38,8 @@ export default function BusinessPage() {
           prices: p.config.prices || { default: [] }
         }));
         setProducts(formatted);
+        
+        // Initialisation des sélections par défaut
         const initialSels = formatted.reduce((acc, p) => ({
           ...acc, [p.id]: { qty: p.quantities[0], variant: p.hasVariants ? p.variants[0].id : 'default' }
         }), {});
@@ -66,7 +71,7 @@ export default function BusinessPage() {
     setIsCartOpen(true);
   };
 
-  if (loading) return <div className="min-h-screen bg-[#0f092e] flex items-center justify-center font-black text-orange-500 tracking-widest uppercase animate-pulse">Chargement Business...</div>;
+  if (loading) return <div className="min-h-screen bg-[#0f092e] flex items-center justify-center font-black text-green-500 tracking-widest uppercase animate-pulse">Chargement Signalétique...</div>;
 
   return (
     <div className="min-h-screen bg-[#0f092e] text-white font-sans flex flex-col relative overflow-x-hidden">
@@ -87,28 +92,52 @@ export default function BusinessPage() {
 
             return (
               <div key={product.id} className="flex flex-col pt-10 relative group">
+                {/* Image flottante avec ombre portée */}
                 <div className="h-48 w-full flex items-center justify-center relative -mb-8 z-20 pointer-events-none px-6 transition-transform duration-500 group-hover:scale-105">
                   <AnimatePresence mode="wait">
-                    <motion.img key={displayImage} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} src={displayImage} className="max-h-full w-full object-contain drop-shadow-[0_15px_30px_rgba(0,0,0,0.7)]" />
+                    <motion.img 
+                      key={displayImage} 
+                      initial={{ opacity: 0, y: 10 }} 
+                      animate={{ opacity: 1, y: 0 }} 
+                      src={displayImage} 
+                      className="max-h-full w-full object-contain drop-shadow-[0_15px_30px_rgba(0,0,0,0.7)]" 
+                    />
                   </AnimatePresence>
                 </div>
 
-                <div className="bg-white/[0.03] border border-white/10 rounded-3xl p-6 pt-12 shadow-xl flex flex-col transition-all group-hover:border-orange-500/30">
+                {/* Carte Produit */}
+                <div className={`bg-white/[0.03] border border-white/10 rounded-3xl p-6 pt-12 shadow-xl flex flex-col transition-all ${THEME.shadow}`}>
                   <h3 className={`font-black text-[15px] uppercase tracking-tighter mb-4 ${THEME.color}`}>{product.name}</h3>
                   
                   <div className="space-y-4">
+                    {/* Sélecteur de Variantes */}
                     {product.hasVariants && (
-                       <select value={sel.variant} onChange={(e) => updateSelection(product.id, 'variant', e.target.value)} className="w-full bg-[#16103a] border border-white/10 rounded-xl p-3 text-[10px] font-black uppercase text-white outline-none">
-                          {product.variants.map((v: any) => <option key={v.id} value={v.id}>{v.name}</option>)}
-                       </select>
+                       <div className="space-y-1">
+                          <p className="text-[8px] font-black text-white/40 uppercase tracking-widest">Modèles disponibles</p>
+                          <select value={sel.variant} onChange={(e) => updateSelection(product.id, 'variant', e.target.value)} className="w-full bg-[#16103a] border border-white/10 rounded-xl p-3 text-[10px] font-black uppercase text-white outline-none focus:border-green-500">
+                             {product.variants.map((v: any) => <option key={v.id} value={v.id}>{v.name}</option>)}
+                          </select>
+                       </div>
                     )}
-                    <select value={sel.qty} onChange={(e) => updateSelection(product.id, 'qty', Number(e.target.value))} className="w-full bg-[#16103a] border border-white/10 rounded-xl p-3 text-[10px] font-black uppercase text-white outline-none">
-                       {product.quantities.map((q: number) => <option key={q} value={q}>{q} exemplaires</option>)}
-                    </select>
+
+                    {/* Sélecteur de Quantité */}
+                    <div className="space-y-1">
+                      <p className="text-[8px] font-black text-white/40 uppercase tracking-widest">Quantité souhaitée</p>
+                      <select value={sel.qty} onChange={(e) => updateSelection(product.id, 'qty', Number(e.target.value))} className="w-full bg-[#16103a] border border-white/10 rounded-xl p-3 text-[10px] font-black uppercase text-white outline-none focus:border-green-500">
+                         {product.quantities.map((q: number) => <option key={q} value={q}>{q} exemplaires</option>)}
+                      </select>
+                    </div>
                     
+                    {/* Prix et Bouton */}
                     <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                      <span className="font-black text-2xl text-white tracking-tighter">{currentTotal.toFixed(2)}€</span>
-                      <button onClick={() => handleAddToCart(product)} className={`bg-white text-[#0f092e] px-6 py-3 rounded-2xl font-black uppercase text-[9px] tracking-widest ${THEME.hover} hover:text-white transition-all active:scale-95 shadow-xl`}>
+                      <div>
+                        <span className="font-black text-2xl text-white tracking-tighter">{currentTotal.toFixed(2)}€</span>
+                        <span className="text-[10px] text-white/30 ml-1 font-bold italic">HT</span>
+                      </div>
+                      <button 
+                        onClick={() => handleAddToCart(product)} 
+                        className={`bg-white text-[#0f092e] px-6 py-3 rounded-2xl font-black uppercase text-[9px] tracking-widest ${THEME.hover} hover:text-white transition-all active:scale-95 shadow-xl`}
+                      >
                         Ajouter
                       </button>
                     </div>
@@ -119,13 +148,6 @@ export default function BusinessPage() {
           })}
         </div>
       </main>
-
-      {/* PANIER FLOTTANT (Raccourci pour gain de place) */}
-      <div className="fixed bottom-8 left-8 z-[100]">
-        <button onClick={() => setIsCartOpen(!isCartOpen)} className={`bg-white text-[#0f092e] px-8 py-4 rounded-full font-black uppercase text-[10px] tracking-widest shadow-2xl flex items-center gap-4 ${THEME.hover} hover:text-white transition-all border-4 border-[#0f092e]`}>
-          Panier {cart.length > 0 && <span className={`${THEME.bg} text-white px-2 py-0.5 rounded-full text-[9px]`}>{cart.length}</span>}
-        </button>
-      </div>
     </div>
   );
 }
