@@ -19,7 +19,6 @@ export default function CartPage() {
   const totalHT = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
 
   const handleFinalSubmit = async () => {
-    // On vérifie juste que les infos de contact sont là
     if (!email || !address || !phone) {
       alert("⚠️ Merci de remplir Email, Téléphone et Adresse.");
       return;
@@ -28,7 +27,6 @@ export default function CartPage() {
     setIsSubmitting(true);
 
     try {
-      // Préparation des listes pour le Excel
       const listeProduits = cart.map(item => item.name).join(', ');
       const listeQuantites = cart.map(item => item.qty).join(', ');
 
@@ -72,8 +70,37 @@ export default function CartPage() {
   return (
     <div className="min-h-screen bg-[#0f092e] text-white font-sans pb-20">
       <main className="max-w-6xl mx-auto px-6 py-12 grid grid-cols-1 lg:grid-cols-3 gap-12">
-        <div className="lg:col-span-2 space-y-10">
+        <div className="lg:col-span-2 space-y-8">
           
+          {/* --- NOUVEAU : RÉCAPITULATIF DES PRODUITS --- */}
+          <section className="bg-white/5 border border-white/10 rounded-[40px] p-8">
+             <h2 className="text-[10px] font-black uppercase text-blue-400 italic mb-6">00. Votre Sélection</h2>
+             <div className="space-y-4">
+                {cart.length === 0 ? (
+                  <p className="text-[10px] opacity-40 uppercase">Votre panier est vide.</p>
+                ) : (
+                  cart.map((item) => (
+                    <div key={item.id} className="flex justify-between items-center border-b border-white/5 pb-4 last:border-0 last:pb-0">
+                      <div className="flex flex-col">
+                        <span className="text-[12px] font-black uppercase">{item.name}</span>
+                        <span className="text-[10px] text-white/50 uppercase font-bold">Quantité: {item.qty}</span>
+                      </div>
+                      <div className="flex items-center gap-6">
+                        <span className="text-[12px] font-bold">{(item.price * item.qty).toFixed(2)}€</span>
+                        {/* Petit bouton pour supprimer si besoin */}
+                        <button 
+                          onClick={() => removeFromCart(item.id)}
+                          className="text-[10px] text-red-500 hover:text-red-400 uppercase font-bold"
+                        >
+                          (Suppr)
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+             </div>
+          </section>
+
           {/* CONTACT */}
           <section className="bg-white/5 border border-white/10 rounded-[40px] p-8 space-y-4">
             <h2 className="text-[10px] font-black uppercase text-blue-400 italic mb-4">01. Infos Livraison</h2>
@@ -91,12 +118,14 @@ export default function CartPage() {
           </section>
         </div>
 
-        {/* RÉSUMÉ */}
+        {/* RÉSUMÉ DROITE */}
         <div className="lg:col-span-1">
-          <div className="bg-white p-10 rounded-[40px] text-[#0f092e]">
+          <div className="bg-white p-10 rounded-[40px] text-[#0f092e] sticky top-10">
             <h2 className="text-[10px] font-black uppercase mb-4">Total HT</h2>
             <span className="text-4xl font-black italic">{totalHT.toFixed(2)}€</span>
-            <button onClick={() => setShowConfirm(true)} className="w-full mt-10 py-6 bg-[#0f092e] text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-600">
+            <div className="text-[10px] mt-2 opacity-60 uppercase font-bold">{cart.length} Articles</div>
+            
+            <button onClick={() => setShowConfirm(true)} disabled={cart.length === 0} className="w-full mt-10 py-6 bg-[#0f092e] text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed">
               Vérifier
             </button>
           </div>
@@ -106,13 +135,30 @@ export default function CartPage() {
       <AnimatePresence>
         {showConfirm && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#0f092e]/95 backdrop-blur-xl">
-            <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-white text-[#0f092e] w-full max-w-lg rounded-[40px] p-10 space-y-6">
-              <h3 className="text-2xl font-black uppercase italic text-center">Tout est bon ?</h3>
-              <div className="text-[10px] font-bold uppercase space-y-2 opacity-60">
+            <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-white text-[#0f092e] w-full max-w-lg rounded-[40px] p-10 space-y-6 max-h-[90vh] overflow-y-auto">
+              <h3 className="text-2xl font-black uppercase italic text-center">Récapitulatif</h3>
+              
+              {/* --- NOUVEAU : LISTE DANS LA MODAL --- */}
+              <div className="bg-gray-100 rounded-2xl p-6 space-y-2">
+                 <p className="text-[9px] font-black uppercase opacity-40 mb-2">Vos articles</p>
+                 {cart.map((item, idx) => (
+                    <div key={idx} className="flex justify-between text-[10px] font-bold uppercase border-b border-gray-300/20 last:border-0 pb-1 last:pb-0">
+                       <span>{item.name} <span className="opacity-50">x{item.qty}</span></span>
+                       <span>{(item.price * item.qty).toFixed(2)}€</span>
+                    </div>
+                 ))}
+                 <div className="pt-2 mt-2 border-t border-gray-300 flex justify-between font-black text-[12px]">
+                    <span>TOTAL</span>
+                    <span>{totalHT.toFixed(2)}€</span>
+                 </div>
+              </div>
+
+              <div className="text-[10px] font-bold uppercase space-y-2 opacity-60 text-center">
                 <p>📍 {address}</p>
                 <p>📞 {phone}</p>
                 <p>✉️ {email}</p>
               </div>
+
               <button onClick={handleFinalSubmit} disabled={isSubmitting} className="w-full py-6 bg-blue-600 text-white rounded-2xl font-black uppercase text-[10px]">
                 {isSubmitting ? "Envoi..." : "Confirmer et Envoyer"}
               </button>
