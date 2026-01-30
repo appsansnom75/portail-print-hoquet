@@ -63,7 +63,7 @@ export default function HomePage() {
             <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter text-white">
               Catalogue <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-400">Print</span>
             </h2>
-            <p className="text-[10px] md:text-xs font-black uppercase tracking-[0.5em] text-white/20 mt-2">Édition Spéciale 2026</p>
+            <p className="text-[10px] md:text-xs font-black uppercase tracking-[0.5em] text-white/20 mt-2">Édition 2026</p>
           </div>
         </div>
       </section>
@@ -143,7 +143,7 @@ export default function HomePage() {
 
           <Link href="/stock" className="group relative">
             <div className="h-40 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-green-600/10 group-hover:border-green-500/40 group-hover:-translate-y-1 shadow-2xl">
-              <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-green-400 transition-colors">Signalétique Stock</span>
+              <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-green-400 transition-colors">Produit sans personnalisation</span>
               <div className="h-[2px] w-6 bg-green-500 my-4 group-hover:w-20 transition-all duration-700"></div>
               <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.3em] group-hover:text-green-500/50">Catalogue Direct</span>
             </div>
