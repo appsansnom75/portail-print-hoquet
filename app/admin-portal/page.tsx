@@ -30,7 +30,7 @@ export default function AdminPortal() {
   // FONCTION : Vérifier l'accès
   const checkAuth = () => {
     // REMPLACE "ton_mot_de_passe" par ton vrai mot de passe
-    if (password === "ton_mot_de_passe") { 
+    if (password === "admin") { 
       setIsAuthenticated(true);
       fetchProducts();
     } else {
