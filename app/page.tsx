@@ -68,7 +68,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* BARRE DE NAVIGATION & STATUT */}
+      {/* BARRE DE NAVIGATION & STATUT (STICKY) */}
       <div className="sticky top-0 z-50 border-y border-white/5 bg-[#0f092e]/80 backdrop-blur-xl">
         <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
@@ -92,11 +92,16 @@ export default function HomePage() {
             <div className="flex flex-wrap justify-center items-center gap-3">
               {!loading && (
                 <>
-                  {/* DASHBOARD PRODUITS (NOUVEAU) */}
+                  {/* LIEN DASHBOARD ADMIN EXTERNE */}
                   {role === 'admin_agence' && (
-                    <Link href="/admin/products" className="bg-white text-[#0f092e] hover:bg-blue-500 hover:text-white text-[9px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all shadow-xl active:scale-95">
-                      📦 Dashboard Produits
-                    </Link>
+                    <a 
+                      href="https://portail-print-hoquet.vercel.app/admin-portal" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="bg-white text-[#0f092e] hover:bg-blue-500 hover:text-white text-[9px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all shadow-xl active:scale-95 border border-white"
+                    >
+                      Dashboard Produits
+                    </a>
                   )}
 
                   <Link href="/profil" className="bg-white/5 border border-white/10 hover:border-blue-500/50 text-white/70 hover:text-white text-[9px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all active:scale-95">
@@ -159,7 +164,7 @@ export default function HomePage() {
       <footer className="py-12 border-t border-white/5 bg-black/20 mt-auto">
         <div className="flex flex-col items-center gap-4">
           <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/10">
-            © 2026 Imprimerie Connivence — Partenaire Officiel Guy Hoquet
+            © 2026 Imprimerie Connivence pour Guy Hoquet
           </p>
         </div>
       </footer>
