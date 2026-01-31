@@ -2,11 +2,11 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { createClient } from '@supabase/supabase-js';
-// Ajout du router pour la navigation
 import { useRouter } from 'next/navigation';
+import Link from 'next/link'; // Import pour le lien
 
 export default function GestionEquipe() {
-  const router = useRouter(); // Initialisation du router
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [prenom, setPrenom] = useState('');
@@ -51,20 +51,14 @@ export default function GestionEquipe() {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
-        auth: {
-          persistSession: false,
-          autoRefreshToken: false,
-          detectSessionInUrl: false
-        }
+        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
       }
     );
 
     const { data: authData, error: authError } = await tempSupabase.auth.signUp({
       email,
       password,
-      options: {
-        data: { first_name: prenom, last_name: nom }
-      }
+      options: { data: { first_name: prenom, last_name: nom } }
     });
 
     if (authError) return alert("Erreur Auth : " + authError.message);
@@ -112,22 +106,35 @@ export default function GestionEquipe() {
     <div className="min-h-screen bg-[#0f092e] text-white p-6 md:p-12">
       <div className="max-w-5xl mx-auto space-y-8">
         
-        {/* EN-TÊTE AVEC BOUTON RETOUR */}
-        <div className="flex items-center justify-between">
+        {/* EN-TÊTE AVEC BOUTON RETOUR ET ACCÈS HISTORIQUE */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <button 
             onClick={() => router.back()} 
-            className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-blue-400 transition-all group"
+            className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-blue-400 transition-all group w-fit"
           >
             <span className="text-lg group-hover:-translate-x-1 transition-transform">←</span> Retour
           </button>
           
+          {/* PETIT MENU DE NAVIGATION */}
+          <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10">
+            <button className="bg-blue-600 px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-tighter shadow-lg shadow-blue-900/40">
+              Équipe
+            </button>
+            <Link 
+              href="/dashboard/commandes" 
+              className="px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-tighter text-white/40 hover:text-white transition-colors"
+            >
+              Historique Achats
+            </Link>
+          </div>
+
           <div className="text-right">
-            <h1 className="text-2xl font-black uppercase italic tracking-tighter text-white">Gestion Equipe</h1>
+            <h1 className="text-2xl font-black uppercase italic tracking-tighter text-white">Espace Agence</h1>
             <p className="text-[9px] font-bold text-blue-500 uppercase tracking-[0.3em]">Tableau de bord Admin</p>
           </div>
         </div>
 
-        {/* FORMULAIRE D'AJOUT */}
+        {/* RESTE DE TON CODE (FORMULAIRE ET LISTE) */}
         <div className="bg-white/5 p-8 rounded-[40px] border border-white/10 backdrop-blur-xl shadow-2xl">
           <h2 className="text-xl font-black uppercase mb-6 text-blue-500 tracking-tighter italic">Nouveau Collaborateur</h2>
           <form onSubmit={creerCompte} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
