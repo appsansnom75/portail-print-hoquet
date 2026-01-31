@@ -62,6 +62,10 @@ export default function CartPage() {
     
     setIsSubmitting(true);
     try {
+      // SÉPARATION DES PRODUITS ET DES QUANTITÉS POUR LE SHEETS
+      const nomsProduits = cart.map(item => item.name).join(', ');
+      const quantitésProduits = cart.map(item => item.qty).join(', ');
+
       const { error } = await supabase.from('orders').insert([{
         agency_name: agencyData.name,
         client_email: email,
@@ -70,7 +74,8 @@ export default function CartPage() {
         zip_code: zipCode,
         city: city,
         siret: siret,
-        produits_liste: cart.map(item => `${item.name} (x${item.qty})`).join(', '),
+        produits_liste: nomsProduits,     // Ira dans la colonne B via Make
+        quantite_liste: quantitésProduits, // Ira dans la colonne C via Make
         total_ht: totalHT,
         instructions: `Commandé par : ${selectedUser} -- ${instructions}`,
         status: 'En attente'
