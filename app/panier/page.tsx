@@ -55,8 +55,7 @@ export default function CartPage() {
         client_email: email,
         client_phone: phone,
         delivery_address: address,
-        produits_liste: cart.map(item => item.name).join(', '),
-        quantite_liste: cart.map(item => item.qty).join(', '),
+        produits_liste: cart.map(item => `${item.name} (x${item.qty})`).join(', '),
         total_ht: totalHT,
         instructions: `Commandé par : ${selectedUser} -- ${instructions}`,
         status: 'En attente'
@@ -99,6 +98,7 @@ export default function CartPage() {
 
       <main className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-3 gap-16">
         <div className="lg:col-span-2 space-y-12">
+          {/* SECTION 01 : IDENTIFICATION */}
           <section className="bg-blue-600/5 border border-blue-500/20 rounded-[45px] p-10 space-y-8">
              <h2 className="text-[11px] font-black uppercase text-blue-400 italic tracking-widest">01. Identification</h2>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -108,17 +108,18 @@ export default function CartPage() {
                 </div>
                 <div className="space-y-3">
                     <label className="text-[9px] font-black uppercase opacity-30 ml-2 italic">Collaborateur</label>
-                    <select value={selectedUser} onChange={(e) => setSelectedUser(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none focus:border-blue-500/50 uppercase text-white appearance-none">
+                    <select value={selectedUser} onChange={(e) => setSelectedUser(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none focus:border-blue-500/50 uppercase text-white appearance-none cursor-pointer">
                         {membres.map((m, idx) => <option key={idx} value={m.full_name || `${m.first_name} ${m.last_name}`}>{m.full_name || `${m.first_name} ${m.last_name}`}</option>)}
                     </select>
                 </div>
              </div>
           </section>
 
+          {/* SECTION 02 : VOTRE PANIER */}
           <section className="bg-white/[0.02] border border-white/10 rounded-[45px] p-10">
              <h2 className="text-[11px] font-black uppercase text-white/60 italic tracking-widest mb-10">02. Votre Panier</h2>
              <div className="space-y-6">
-                {cart.map((item: any) => (
+                {cart.length === 0 ? <p className="text-[10px] opacity-20 uppercase font-black italic">Le panier est vide.</p> : cart.map((item: any) => (
                     <div key={item.id} className="flex justify-between items-center border-b border-white/5 pb-6 last:border-0 last:pb-0">
                       <div className="flex flex-col">
                         <span className={`text-[13px] font-black uppercase tracking-tight ${item.color || 'text-white'}`}>{item.name}</span>
@@ -133,6 +134,7 @@ export default function CartPage() {
              </div>
           </section>
 
+          {/* SECTION 03 : LIVRAISON */}
           <section className="bg-white/[0.02] border border-white/10 rounded-[45px] p-10 space-y-8">
             <h2 className="text-[11px] font-black uppercase text-white/60 italic tracking-widest">03. Livraison</h2>
             <div className="space-y-6">
@@ -144,36 +146,91 @@ export default function CartPage() {
             </div>
           </section>
 
+          {/* SECTION 04 : NOTES */}
           <section className="bg-blue-600/5 border border-blue-500/10 rounded-[45px] p-10">
             <h2 className="text-[10px] font-black uppercase text-blue-400/50 italic mb-6">04. Notes</h2>
-            <textarea value={instructions} onChange={(e) => setInstructions(e.target.value)} placeholder="Note..." className="w-full h-24 bg-black/40 border border-white/5 rounded-3xl p-6 text-[11px] text-white/80 outline-none focus:border-blue-500/40 resize-none uppercase italic" />
+            <textarea value={instructions} onChange={(e) => setInstructions(e.target.value)} placeholder="Note pour l'imprimeur..." className="w-full h-24 bg-black/40 border border-white/5 rounded-3xl p-6 text-[11px] text-white/80 outline-none focus:border-blue-500/40 resize-none uppercase italic" />
           </section>
         </div>
 
+        {/* SIDEBAR TOTAL */}
         <div className="lg:col-span-1">
           <div className="bg-white p-12 rounded-[50px] text-[#0f092e] sticky top-12 shadow-2xl text-center">
             <h2 className="text-[10px] font-black uppercase mb-4 opacity-30 italic tracking-[0.2em]">Total HT</h2>
             <span className="text-6xl font-black italic tracking-tighter leading-none">{totalHT.toFixed(2)}€</span>
-            <button onClick={() => setShowConfirm(true)} disabled={cart.length === 0} className="w-full mt-12 py-7 bg-[#0f092e] text-white rounded-3xl font-black uppercase text-[10px] tracking-[0.2em] hover:bg-blue-600 transition-all shadow-2xl">
-              Vérifier
+            <button 
+              onClick={() => setShowConfirm(true)} 
+              disabled={cart.length === 0} 
+              className="w-full mt-12 py-7 bg-[#0f092e] text-white rounded-3xl font-black uppercase text-[10px] tracking-[0.2em] hover:bg-blue-600 transition-all shadow-2xl active:scale-95 disabled:opacity-20"
+            >
+              Vérifier la commande
             </button>
           </div>
         </div>
       </main>
 
+      {/* POPUP DE RECAPITULATIF COMPLET */}
       <AnimatePresence>
         {showConfirm && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-[#0f092e]/98 backdrop-blur-xl" onClick={() => setShowConfirm(false)} />
-            <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="relative bg-white text-[#0f092e] w-full max-w-xl rounded-[60px] p-12 shadow-2xl text-center space-y-6">
-                <h3 className="text-3xl font-black uppercase italic text-blue-600">Confirmer ?</h3>
-                <div className="bg-blue-50 rounded-3xl p-8">
-                  <span className="text-5xl font-black italic tracking-tighter">{totalHT.toFixed(2)}€ HT</span>
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-6">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-[#0f092e]/95 backdrop-blur-xl" onClick={() => setShowConfirm(false)} />
+            
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }} 
+              animate={{ scale: 1, opacity: 1, y: 0 }} 
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative bg-white text-[#0f092e] w-full max-w-2xl rounded-[60px] overflow-hidden shadow-2xl"
+            >
+              <div className="p-10 md:p-14 space-y-8">
+                <div className="text-center">
+                  <h3 className="text-3xl font-black uppercase italic text-blue-600 leading-none">Récapitulatif</h3>
+                  <p className="text-[9px] font-black uppercase opacity-30 mt-2 tracking-widest">Dernière vérification avant envoi</p>
                 </div>
-                <button onClick={handleFinalSubmit} disabled={isSubmitting} className="w-full py-7 bg-blue-600 text-white rounded-[25px] font-black uppercase text-[11px] shadow-xl hover:bg-blue-700 transition-all">
-                  {isSubmitting ? "Envoi..." : "Confirmer"}
-                </button>
-                <button onClick={() => setShowConfirm(false)} className="py-4 text-[9px] font-black uppercase opacity-30 hover:opacity-100 tracking-widest">Retour</button>
+
+                <div className="grid grid-cols-2 gap-8 py-8 border-y border-gray-100">
+                  <div className="space-y-1">
+                    <p className="text-[8px] font-black opacity-30 uppercase">Agence</p>
+                    <p className="text-[11px] font-black uppercase">{agencyData?.name}</p>
+                  </div>
+                  <div className="space-y-1 text-right">
+                    <p className="text-[8px] font-black opacity-30 uppercase">Collaborateur</p>
+                    <p className="text-[11px] font-black uppercase">{selectedUser}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[8px] font-black opacity-30 uppercase">Livraison</p>
+                    <p className="text-[10px] font-bold uppercase leading-tight line-clamp-2">{address}</p>
+                  </div>
+                  <div className="space-y-1 text-right">
+                    <p className="text-[8px] font-black opacity-30 uppercase">Contact</p>
+                    <p className="text-[10px] font-bold uppercase">{email}</p>
+                  </div>
+                </div>
+
+                <div className="max-h-48 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+                  {cart.map((item) => (
+                    <div key={item.id} className="flex justify-between items-center text-[10px] font-black uppercase">
+                      <span className="opacity-60">{item.name} <span className="text-blue-500 ml-1">x{item.qty}</span></span>
+                      <span>{(item.price * item.qty).toFixed(2)}€</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="bg-gray-50 rounded-[30px] p-8 flex justify-between items-center">
+                  <span className="text-[10px] font-black uppercase opacity-40 italic">Total HT à régler</span>
+                  <span className="text-4xl font-black italic tracking-tighter text-[#0f092e]">{totalHT.toFixed(2)}€</span>
+                </div>
+
+                <div className="flex flex-col gap-4">
+                  <button 
+                    onClick={handleFinalSubmit} 
+                    disabled={isSubmitting} 
+                    className="w-full py-7 bg-blue-600 text-white rounded-[25px] font-black uppercase text-[11px] tracking-[0.2em] shadow-xl hover:bg-blue-700 transition-all active:scale-[0.98] disabled:opacity-50"
+                  >
+                    {isSubmitting ? "Transmission en cours..." : "Confirmer la commande"}
+                  </button>
+                  <button onClick={() => setShowConfirm(false)} className="py-2 text-[9px] font-black uppercase opacity-30 hover:opacity-100 transition-opacity tracking-widest italic">Modifier les informations</button>
+                </div>
+              </div>
             </motion.div>
           </div>
         )}
