@@ -45,10 +45,10 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-[#0f092e] text-white font-sans flex flex-col selection:bg-blue-500/30">
       
-      {/* HEADER LOGOS */}
+      {/* HEADER LOGOS (MODIFIÉ : PLUS DE SURBRILLANCE) */}
       <header className="py-10 px-4">
         <div className="max-w-6xl mx-auto flex items-center justify-center gap-8 md:gap-16">
-          <img src="/logo-imprimeur.png" alt="Mon Imprimerie" className="h-6 md:h-8 object-contain opacity-40 hover:opacity-100 transition-opacity" />
+          <img src="/logo-imprimeur.png" alt="Mon Imprimerie" className="h-6 md:h-8 object-contain" />
           <div className="w-px h-6 bg-white/10 rotate-[20deg]"></div>
           <img src="/logo-hoquet.png" alt="Guy Hoquet" className="h-8 md:h-10 object-contain" />
         </div>
@@ -92,7 +92,6 @@ export default function HomePage() {
             <div className="flex flex-wrap justify-center items-center gap-3">
               {!loading && (
                 <>
-                  {/* LIEN DASHBOARD ADMIN EXTERNE */}
                   {role === 'admin_agence' && (
                     <a 
                       href="https://portail-print-hoquet.vercel.app/admin-portal" 
