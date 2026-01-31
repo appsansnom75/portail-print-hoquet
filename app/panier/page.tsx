@@ -73,118 +73,107 @@ export default function CartPage() {
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-[#0f092e] flex items-center justify-center text-white font-black uppercase text-[10px] animate-pulse">Chargement profil...</div>;
+  if (loading) return <div className="min-h-screen bg-[#0f092e] flex items-center justify-center text-white font-black uppercase text-[10px] tracking-[0.2em] animate-pulse">Chargement profil agence...</div>;
 
   if (orderSent) return (
     <div className="min-h-screen bg-[#0f092e] flex flex-col items-center justify-center text-center p-6 italic font-black uppercase text-white">
-      <h2 className="text-4xl mb-4 text-blue-500 text-center">Commande Reçue !</h2>
-      <p className="text-white/40 text-[10px] tracking-[0.3em] mb-12 text-center uppercase">L'équipe production a été notifiée.</p>
-      <Link href="/" className="bg-white text-[#0f092e] px-10 py-5 rounded-full text-[10px] hover:bg-blue-500 hover:text-white transition-all">Retour Boutique</Link>
+      <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
+        <h2 className="text-5xl mb-4 text-blue-500">Commande Reçue !</h2>
+        <p className="text-white/40 text-[10px] tracking-[0.3em] mb-12 uppercase">L'équipe de production a été notifiée.</p>
+        <Link href="/" className="bg-white text-[#0f092e] px-12 py-6 rounded-full text-[10px] hover:bg-blue-500 hover:text-white transition-all">Retour Boutique</Link>
+      </motion.div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#0f092e] text-white font-sans pb-20">
-      <header className="py-8 px-6 max-w-6xl mx-auto flex justify-between items-center border-b border-white/10 mb-10">
-          <Link href="/" className="text-[10px] font-black uppercase opacity-40 hover:opacity-100 transition-all flex items-center gap-2">
-            ← Retour Boutique
+    <div className="min-h-screen bg-[#0f092e] text-white font-sans pb-20 overflow-x-hidden">
+      <header className="py-10 px-6 max-w-6xl mx-auto flex justify-between items-center border-b border-white/10 mb-12">
+          <Link href="/" className="group text-[10px] font-black uppercase opacity-40 hover:opacity-100 transition-all flex items-center gap-3">
+            <span className="group-hover:-translate-x-1 transition-transform">←</span> Retour Boutique
           </Link>
-          <h1 className="text-[10px] font-black uppercase tracking-widest italic text-blue-500">Validation Panier</h1>
-          <div className="w-10"></div>
+          <div className="flex flex-col items-center">
+            <h1 className="text-[11px] font-black uppercase tracking-[0.4em] italic text-blue-500">Validation Panier</h1>
+          </div>
+          <div className="w-24"></div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-3 gap-12">
-        <div className="lg:col-span-2 space-y-8">
-          
-          {/* SECTION 01 : IDENTIFICATION */}
-          <section className="bg-blue-600/10 border border-blue-500/20 rounded-[40px] p-8 space-y-4">
-             <h2 className="text-[10px] font-black uppercase text-blue-400 italic mb-2">01. Identification</h2>
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <label className="text-[9px] font-bold uppercase opacity-50 ml-2">Votre Agence</label>
-                    <div className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[11px] font-black text-blue-400 uppercase tracking-tight">{agencyData?.name}</div>
+      <main className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-3 gap-16">
+        <div className="lg:col-span-2 space-y-12">
+          <section className="bg-blue-600/5 border border-blue-500/20 rounded-[45px] p-10 space-y-8">
+             <h2 className="text-[11px] font-black uppercase text-blue-400 italic tracking-widest">01. Identification</h2>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                    <label className="text-[9px] font-black uppercase opacity-30 ml-2 italic">Agence</label>
+                    <div className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-[11px] font-black text-blue-400 uppercase">{agencyData?.name}</div>
                 </div>
-                <div className="space-y-2">
-                    <label className="text-[9px] font-bold uppercase opacity-50 ml-2">Qui commande ?</label>
-                    <select value={selectedUser} onChange={(e) => setSelectedUser(e.target.value)} className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-[10px] font-black outline-none focus:border-blue-500/50 uppercase appearance-none text-white cursor-pointer">
+                <div className="space-y-3">
+                    <label className="text-[9px] font-black uppercase opacity-30 ml-2 italic">Collaborateur</label>
+                    <select value={selectedUser} onChange={(e) => setSelectedUser(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none focus:border-blue-500/50 uppercase text-white appearance-none">
                         {membres.map((m, idx) => <option key={idx} value={m.full_name || `${m.first_name} ${m.last_name}`}>{m.full_name || `${m.first_name} ${m.last_name}`}</option>)}
                     </select>
                 </div>
              </div>
           </section>
 
-          {/* SECTION 02 : PANIER */}
-          <section className="bg-white/5 border border-white/10 rounded-[40px] p-8">
-             <h2 className="text-[10px] font-black uppercase text-blue-400 italic mb-6">02. Votre Panier</h2>
-             <div className="space-y-4">
-                {cart.length === 0 ? <p className="text-[10px] opacity-40 uppercase">Votre panier est vide.</p> : cart.map((item: any) => (
-                    <div key={item.id} className="flex justify-between items-center border-b border-white/5 pb-4 last:border-0 last:pb-0">
+          <section className="bg-white/[0.02] border border-white/10 rounded-[45px] p-10">
+             <h2 className="text-[11px] font-black uppercase text-white/60 italic tracking-widest mb-10">02. Votre Panier</h2>
+             <div className="space-y-6">
+                {cart.map((item: any) => (
+                    <div key={item.id} className="flex justify-between items-center border-b border-white/5 pb-6 last:border-0 last:pb-0">
                       <div className="flex flex-col">
-                        <span className={`text-[12px] font-black uppercase tracking-tight ${item.color || 'text-white'}`}>{item.name}</span>
-                        <span className="text-[10px] text-white/50 uppercase font-bold">x{item.qty} exemplaires</span>
+                        <span className={`text-[13px] font-black uppercase tracking-tight ${item.color || 'text-white'}`}>{item.name}</span>
+                        <span className="text-[9px] text-white/30 uppercase font-black mt-1 italic">x{item.qty} exemplaires</span>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <span className="text-[12px] font-bold">{(item.price * item.qty).toFixed(2)}€</span>
-                        <button onClick={() => removeFromCart(item.id)} className="text-[10px] text-red-500 font-bold hover:scale-110 transition-transform">(X)</button>
+                      <div className="flex items-center gap-8">
+                        <span className="text-[14px] font-black italic">{(item.price * item.qty).toFixed(2)}€</span>
+                        <button onClick={() => removeFromCart(item.id)} className="text-[9px] text-red-500/50 hover:text-red-500 font-black transition-colors uppercase">Supprimer</button>
                       </div>
                     </div>
                 ))}
              </div>
           </section>
 
-          {/* SECTION 03 : LIVRAISON */}
-          <section className="bg-white/5 border border-white/10 rounded-[40px] p-8 space-y-4">
-            <h2 className="text-[10px] font-black uppercase text-blue-400 italic mb-4">03. Livraison & Contact</h2>
-            <textarea placeholder="ADRESSE DE LIVRAISON" value={address} onChange={(e) => setAddress(e.target.value)} className="w-full h-24 bg-black/40 border border-white/5 rounded-2xl p-4 text-[10px] font-black outline-none focus:border-blue-500/50 resize-none uppercase text-white tracking-widest" />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input type="email" placeholder="EMAIL DE SUIVI" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-[10px] font-black outline-none focus:border-blue-500/50 uppercase text-white" />
-              <input type="tel" placeholder="TÉLÉPHONE" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-[10px] font-black outline-none focus:border-blue-500/50 uppercase text-white" />
+          <section className="bg-white/[0.02] border border-white/10 rounded-[45px] p-10 space-y-8">
+            <h2 className="text-[11px] font-black uppercase text-white/60 italic tracking-widest">03. Livraison</h2>
+            <div className="space-y-6">
+                <textarea placeholder="ADRESSE DE LIVRAISON" value={address} onChange={(e) => setAddress(e.target.value)} className="w-full h-28 bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none focus:border-blue-500/50 resize-none uppercase text-white" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <input type="email" placeholder="EMAIL" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none focus:border-blue-500/50 uppercase text-white" />
+                  <input type="tel" placeholder="TÉLÉPHONE" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none focus:border-blue-500/50 uppercase text-white" />
+                </div>
             </div>
           </section>
 
-          {/* SECTION 04 : NOTES */}
-          <section className="bg-blue-600/5 border border-blue-500/10 rounded-[40px] p-8">
-            <h2 className="text-[10px] font-black uppercase text-blue-400 italic mb-4">04. Notes pour l'imprimeur</h2>
-            <textarea value={instructions} onChange={(e) => setInstructions(e.target.value)} placeholder="Précisez ici toute information utile (finition, urgence, etc.)" className="w-full h-20 bg-black/40 border border-white/5 rounded-3xl p-6 text-[11px] text-white/80 outline-none focus:border-blue-500/40 resize-none uppercase italic" />
+          <section className="bg-blue-600/5 border border-blue-500/10 rounded-[45px] p-10">
+            <h2 className="text-[10px] font-black uppercase text-blue-400/50 italic mb-6">04. Notes</h2>
+            <textarea value={instructions} onChange={(e) => setInstructions(e.target.value)} placeholder="Note..." className="w-full h-24 bg-black/40 border border-white/5 rounded-3xl p-6 text-[11px] text-white/80 outline-none focus:border-blue-500/40 resize-none uppercase italic" />
           </section>
         </div>
 
         <div className="lg:col-span-1">
-          <div className="bg-white p-10 rounded-[40px] text-[#0f092e] sticky top-10 shadow-2xl text-center">
-            <h2 className="text-[10px] font-black uppercase mb-4 opacity-40 italic tracking-widest">Total à régler HT</h2>
-            <span className="text-5xl font-black italic tracking-tighter leading-none">{totalHT.toFixed(2)}€</span>
-            <button 
-              onClick={() => setShowConfirm(true)} 
-              disabled={cart.length === 0} 
-              className="w-full mt-10 py-6 bg-[#0f092e] text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-600 transition-all active:scale-95 disabled:opacity-20 shadow-xl"
-            >
-              Vérifier la commande
+          <div className="bg-white p-12 rounded-[50px] text-[#0f092e] sticky top-12 shadow-2xl text-center">
+            <h2 className="text-[10px] font-black uppercase mb-4 opacity-30 italic tracking-[0.2em]">Total HT</h2>
+            <span className="text-6xl font-black italic tracking-tighter leading-none">{totalHT.toFixed(2)}€</span>
+            <button onClick={() => setShowConfirm(true)} disabled={cart.length === 0} className="w-full mt-12 py-7 bg-[#0f092e] text-white rounded-3xl font-black uppercase text-[10px] tracking-[0.2em] hover:bg-blue-600 transition-all shadow-2xl">
+              Vérifier
             </button>
           </div>
         </div>
       </main>
 
-      {/* MODAL DE CONFIRMATION */}
       <AnimatePresence>
         {showConfirm && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#0f092e]/95 backdrop-blur-xl">
-            <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-white text-[#0f092e] w-full max-w-lg rounded-[40px] p-10 space-y-6 shadow-2xl">
-              <h3 className="text-2xl font-black uppercase italic text-center text-blue-600">Confirmer ?</h3>
-              <div className="bg-gray-100 rounded-3xl p-6 text-center space-y-2">
-                 <p className="text-[11px] font-black uppercase">{agencyData?.name}</p>
-                 <p className="text-[10px] uppercase opacity-50 font-bold italic">Par : {selectedUser}</p>
-              </div>
-              <div className="text-center py-4 border-y border-gray-100">
-                <span className="text-4xl font-black italic">{totalHT.toFixed(2)}€ HT</span>
-              </div>
-              <button 
-                onClick={handleFinalSubmit} 
-                disabled={isSubmitting} 
-                className="w-full py-6 bg-blue-600 text-white rounded-2xl font-black uppercase text-[10px] shadow-xl hover:bg-blue-700 transition-all"
-              >
-                {isSubmitting ? "Envoi en cours..." : "Confirmer et Envoyer"}
-              </button>
-              <button onClick={() => setShowConfirm(false)} className="w-full text-[9px] font-black uppercase opacity-20 text-center tracking-widest hover:opacity-100 transition-opacity">Retour au panier</button>
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-[#0f092e]/98 backdrop-blur-xl" onClick={() => setShowConfirm(false)} />
+            <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="relative bg-white text-[#0f092e] w-full max-w-xl rounded-[60px] p-12 shadow-2xl text-center space-y-6">
+                <h3 className="text-3xl font-black uppercase italic text-blue-600">Confirmer ?</h3>
+                <div className="bg-blue-50 rounded-3xl p-8">
+                  <span className="text-5xl font-black italic tracking-tighter">{totalHT.toFixed(2)}€ HT</span>
+                </div>
+                <button onClick={handleFinalSubmit} disabled={isSubmitting} className="w-full py-7 bg-blue-600 text-white rounded-[25px] font-black uppercase text-[11px] shadow-xl hover:bg-blue-700 transition-all">
+                  {isSubmitting ? "Envoi..." : "Confirmer"}
+                </button>
+                <button onClick={() => setShowConfirm(false)} className="py-4 text-[9px] font-black uppercase opacity-30 hover:opacity-100 tracking-widest">Retour</button>
             </motion.div>
           </div>
         )}

@@ -1,79 +1,81 @@
 'use client';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-type CartItem = {
+export interface CartItem {
   id: string;
   name: string;
   price: number;
   qty: number;
   category: string;
-};
+  color?: string;
+}
 
-type CartContextType = {
+interface CartContextType {
   cart: CartItem[];
   addToCart: (item: CartItem) => void;
   removeFromCart: (id: string) => void;
-  updateQty: (id: string, newQty: number) => void; // Ajouté pour corriger l'erreur de build
+  updateQty: (id: string, newQty: number) => void;
   clearCart: () => void;
-};
+}
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Charger le panier au démarrage
   useEffect(() => {
-    const savedCart = localStorage.getItem('cart');
+    const savedCart = localStorage.getItem('cart_storage');
     if (savedCart) {
       try {
         setCart(JSON.parse(savedCart));
       } catch (e) {
-        console.error("Erreur de chargement du panier", e);
+        console.error("Erreur lors du chargement du panier", e);
       }
     }
+    setIsInitialized(true);
   }, []);
 
-  // Sauvegarder à chaque modification
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cart));
-  }, [cart]);
+    if (isInitialized) {
+      localStorage.setItem('cart_storage', JSON.stringify(cart));
+    }
+  }, [cart, isInitialized]);
 
-  const addToCart = (newItem: CartItem) => {
+  const addToCart = (item: CartItem) => {
     setCart((prevCart) => {
-      const existingItemIndex = prevCart.findIndex((item) => item.id === newItem.id);
-
-      if (existingItemIndex !== -1) {
-        return prevCart.map((item, index) => {
-          if (index === existingItemIndex) {
-            return { 
-              ...item, 
-              qty: Number(item.qty) + Number(newItem.qty)
-            };
-          }
-          return item;
-        });
+      const existingItemIndex = prevCart.findIndex((i) => i.id === item.id);
+      if (existingItemIndex > -1) {
+        const newCart = [...prevCart];
+        newCart[existingItemIndex] = {
+          ...newCart[existingItemIndex],
+          qty: newCart[existingItemIndex].qty + item.qty,
+        };
+        return newCart;
       }
-      return [...prevCart, newItem];
+      return [...prevCart, item];
     });
   };
 
-  // Ajout de la fonction updateQty demandée par la page /stock
-  const updateQty = (id: string, newQty: number) => {
-    setCart((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, qty: Math.max(1, newQty) } : item
-      )
-    );
+  const removeFromCart = (id: string) => {
+    setCart((prevCart) => prevCart.filter((item) => item.id !== id));
   };
 
-  const removeFromCart = (id: string) => {
-    setCart((prev) => prev.filter((item) => item.id !== id));
+  const updateQty = (id: string, newQty: number) => {
+    if (newQty <= 0) {
+      removeFromCart(id);
+      return;
+    }
+    setCart((prevCart) =>
+      prevCart.map((item) => (item.id === id ? { ...item, qty: newQty } : item))
+    );
   };
 
   const clearCart = () => {
     setCart([]);
-    localStorage.removeItem('cart');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('cart_storage');
+    }
   };
 
   return (
@@ -85,6 +87,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
 export function useCart() {
   const context = useContext(CartContext);
-  if (!context) throw new Error('useCart must be used within a CartProvider');
+  if (!context) {
+    throw new Error('useCart must be used within a CartProvider');
+  }
   return context;
 }

@@ -50,7 +50,7 @@ export default function PersoPage() {
       price: totalHT / (Number(s.qty) || 1), 
       qty: Number(s.qty), 
       category: THEME.label,
-      color: THEME.color // Ajout de la couleur ici
+      color: THEME.color 
     });
     setIsCartOpen(true);
   };
