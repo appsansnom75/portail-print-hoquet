@@ -1,11 +1,9 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
-// On importe la liste des agences
-import { AGENCIES } from '@/lib/agencies'; 
 
 export default function CartPage() {
   const { cart, removeFromCart, clearCart } = useCart();
@@ -13,11 +11,12 @@ export default function CartPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [orderSent, setOrderSent] = useState(false);
   
-  // Nouveaux états pour Agence et Utilisateur
-  const [selectedAgency, setSelectedAgency] = useState("");
+  // ÉTATS DYNAMIQUES (Base de données)
+  const [agencyData, setAgencyData] = useState<{name: string, address: string} | null>(null);
+  const [membres, setMembres] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const [selectedUser, setSelectedUser] = useState("");
-  
-  // On garde les anciens (address sera rempli auto)
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -25,22 +24,57 @@ export default function CartPage() {
 
   const totalHT = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
 
-  // Fonction magique : Quand on change d'agence
-  const handleAgencyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const agencyName = e.target.value;
-    setSelectedAgency(agencyName);
-    
-    // On trouve l'adresse correspondante et on l'injecte
-    const agencyData = AGENCIES.find(a => a.name === agencyName);
-    if (agencyData) {
-      setAddress(agencyData.address);
-      setSelectedUser(""); // On reset l'utilisateur si on change d'agence
-    }
-  };
+  // CHARGEMENT DES INFOS DEPUIS SUPABASE
+  useEffect(() => {
+    const loadData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      // 1. Trouver l'agence de l'utilisateur via son profil
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('agency_id, first_name, last_name, email')
+        .eq('id', user.id)
+        .single();
+
+      if (profile?.agency_id) {
+        // 2. Récupérer les infos de l'agence
+        const { data: agency } = await supabase
+          .from('agencies')
+          .select('name, address')
+          .eq('id', profile.agency_id)
+          .single();
+
+        if (agency) {
+          setAgencyData(agency);
+          setAddress(agency.address); // Adresse pré-remplie
+        }
+
+        // 3. Récupérer tous les membres de cette agence (ton répertoire)
+        const { data: team } = await supabase
+          .from('profiles')
+          .select('full_name, first_name, last_name, email, phone')
+          .eq('agency_id', profile.agency_id)
+          .order('first_name', { ascending: true });
+
+        setMembres(team || []);
+        
+        // Par défaut, on sélectionne l'utilisateur connecté
+        setSelectedUser(`${profile.first_name} ${profile.last_name}`);
+        setEmail(profile.email || "");
+      }
+      setLoading(false);
+    };
+
+    loadData();
+  }, []);
 
   const handleFinalSubmit = async () => {
-    if (!selectedAgency || !selectedUser || !email || !address || !phone) {
-      alert("⚠️ Merci de sélectionner une Agence, un Utilisateur et remplir les contacts.");
+    if (!agencyData || !selectedUser || !email || !address || !phone) {
+      alert("⚠️ Merci de remplir tous les champs de contact.");
       return;
     }
 
@@ -53,14 +87,14 @@ export default function CartPage() {
       const { error: orderError } = await supabase
         .from('orders')
         .insert([{
-          agency_name: selectedAgency, // Nouvelle colonne
-          client_email: email, // On utilisera ça comme identifiant utilisateur aussi si besoin
+          agency_name: agencyData.name, 
+          client_email: email, 
           client_phone: phone,
           delivery_address: address,
           produits_liste: listeProduits,
           quantite_liste: listeQuantites,
           total_ht: totalHT,
-          instructions: `Commandé par : ${selectedUser} - ${instructions}`, // On ajoute le user dans les notes
+          instructions: `Commandé par : ${selectedUser} -- ${instructions}`,
           status: 'En attente'
         }]);
 
@@ -72,69 +106,72 @@ export default function CartPage() {
 
     } catch (error) {
       console.error(error);
-      alert("Erreur technique. Vérifiez Supabase.");
+      alert("Erreur lors de l'envoi.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (orderSent) {
+  if (loading) return <div className="min-h-screen bg-[#0f092e] flex items-center justify-center text-white font-black uppercase text-[10px]">Chargement du profil...</div>;
+
+  if (!agencyData && !loading) {
     return (
-      <div className="min-h-screen bg-[#0f092e] flex flex-col items-center justify-center text-center p-6 italic font-black uppercase text-white">
-        <h2 className="text-4xl mb-4">Commande Reçue !</h2>
-        <p className="text-blue-500 text-xs tracking-widest mb-12 text-center">Merci à l'équipe {selectedAgency}</p>
-        <Link href="/" className="bg-white text-[#0f092e] px-10 py-5 rounded-full text-[10px]">Retour à l'accueil</Link>
+      <div className="min-h-screen bg-[#0f092e] flex flex-col items-center justify-center text-center p-6 text-white uppercase font-black">
+        <h2 className="text-xl mb-4 text-red-500">Accès Refusé</h2>
+        <p className="text-[10px] opacity-50 mb-8">Vous devez être connecté à un compte agence pour commander.</p>
+        <Link href="/login" className="bg-white text-black px-8 py-4 rounded-full text-[10px]">Se connecter</Link>
       </div>
     );
   }
 
-  // Helper pour trouver les utilisateurs de l'agence sélectionnée
-  const currentAgencyUsers = AGENCIES.find(a => a.name === selectedAgency)?.users || [];
+  if (orderSent) {
+    return (
+      <div className="min-h-screen bg-[#0f092e] flex flex-col items-center justify-center text-center p-6 italic font-black uppercase text-white">
+        <h2 className="text-4xl mb-4">Commande Reçue !</h2>
+        <p className="text-blue-500 text-xs tracking-widest mb-12 text-center">Merci à l'équipe {agencyData?.name}</p>
+        <Link href="/" className="bg-white text-[#0f092e] px-10 py-5 rounded-full text-[10px]">Retour</Link>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0f092e] text-white font-sans pb-20">
       <main className="max-w-6xl mx-auto px-6 py-12 grid grid-cols-1 lg:grid-cols-3 gap-12">
         <div className="lg:col-span-2 space-y-8">
           
-          {/* SÉLECTION AGENCE (NOUVEAU) */}
+          {/* SECTION 01 : IDENTIFICATION DYNAMIQUE */}
           <section className="bg-blue-600/10 border border-blue-500/20 rounded-[40px] p-8 space-y-4">
              <h2 className="text-[10px] font-black uppercase text-blue-400 italic mb-2">01. Identification</h2>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 
-                {/* Selecteur d'Agence */}
+                {/* Agence (Auto) */}
                 <div className="space-y-2">
-                    <label className="text-[9px] font-bold uppercase opacity-50 ml-2">Agence</label>
-                    <select 
-                        value={selectedAgency} 
-                        onChange={handleAgencyChange}
-                        className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-[10px] font-black outline-none focus:border-blue-500/50 uppercase appearance-none text-white"
-                    >
-                        <option value="">-- Choisir l'agence --</option>
-                        {AGENCIES.map((agency) => (
-                            <option key={agency.name} value={agency.name}>{agency.name}</option>
-                        ))}
-                    </select>
+                    <label className="text-[9px] font-bold uppercase opacity-50 ml-2">Votre Agence</label>
+                    <div className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[11px] font-black text-blue-400 uppercase">
+                        {agencyData?.name}
+                    </div>
                 </div>
 
-                {/* Selecteur d'Utilisateur (Apparaît seulement si agence choisie) */}
+                {/* Membre de l'équipe (Répertoire) */}
                 <div className="space-y-2">
-                    <label className="text-[9px] font-bold uppercase opacity-50 ml-2">Utilisateur</label>
+                    <label className="text-[9px] font-bold uppercase opacity-50 ml-2">Qui commande ?</label>
                     <select 
                         value={selectedUser} 
                         onChange={(e) => setSelectedUser(e.target.value)}
-                        disabled={!selectedAgency}
-                        className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-[10px] font-black outline-none focus:border-blue-500/50 uppercase appearance-none text-white disabled:opacity-30"
+                        className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-[10px] font-black outline-none focus:border-blue-500/50 uppercase appearance-none text-white cursor-pointer"
                     >
-                        <option value="">-- Qui commande ? --</option>
-                        {currentAgencyUsers.map((user) => (
-                            <option key={user} value={user}>{user}</option>
+                        <option value="">-- Sélectionner un membre --</option>
+                        {membres.map((m, idx) => (
+                            <option key={idx} value={m.full_name || `${m.first_name} ${m.last_name}`}>
+                                {m.full_name || `${m.first_name} ${m.last_name}`}
+                            </option>
                         ))}
                     </select>
                 </div>
              </div>
           </section>
 
-          {/* LISTE PRODUITS */}
+          {/* SECTION 02 : PANIER */}
           <section className="bg-white/5 border border-white/10 rounded-[40px] p-8">
              <h2 className="text-[10px] font-black uppercase text-blue-400 italic mb-6">02. Votre Panier</h2>
              <div className="space-y-4">
@@ -146,14 +183,14 @@ export default function CartPage() {
                       </div>
                       <div className="flex items-center gap-4">
                         <span className="text-[12px] font-bold">{(item.price * item.qty).toFixed(2)}€</span>
-                        <button onClick={() => removeFromCart(item.id)} className="text-[10px] text-red-500 hover:text-red-400 font-bold">(X)</button>
+                        <button onClick={() => removeFromCart(item.id)} className="text-[10px] text-red-500 font-bold hover:scale-110 transition-transform">(X)</button>
                       </div>
                     </div>
                 ))}
              </div>
           </section>
 
-          {/* INFOS LIVRAISON (Pré-remplies mais modifiables) */}
+          {/* SECTION 03 : LIVRAISON */}
           <section className="bg-white/5 border border-white/10 rounded-[40px] p-8 space-y-4">
             <h2 className="text-[10px] font-black uppercase text-blue-400 italic mb-4">03. Livraison & Contact</h2>
             <textarea 
@@ -163,25 +200,29 @@ export default function CartPage() {
                 className="w-full h-24 bg-black/40 border border-white/5 rounded-2xl p-4 text-[10px] font-black outline-none focus:border-blue-500/50 resize-none uppercase text-white" 
             />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input type="email" placeholder="EMAIL DE SUIVI" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-[10px] font-black outline-none focus:border-blue-500/50 uppercase" />
-              <input type="tel" placeholder="TÉLÉPHONE" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-[10px] font-black outline-none focus:border-blue-500/50 uppercase" />
+              <input type="email" placeholder="EMAIL DE SUIVI" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-[10px] font-black outline-none focus:border-blue-500/50 uppercase text-white" />
+              <input type="tel" placeholder="TÉLÉPHONE" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-[10px] font-black outline-none focus:border-blue-500/50 uppercase text-white" />
             </div>
           </section>
 
-          {/* INSTRUCTIONS */}
+          {/* SECTION 04 : NOTES */}
           <section className="bg-blue-600/5 border border-blue-500/10 rounded-[40px] p-8">
             <h2 className="text-[10px] font-black uppercase text-blue-400 italic mb-4">04. Notes</h2>
-            <textarea value={instructions} onChange={(e) => setInstructions(e.target.value)} placeholder="Infos supplémentaires..." className="w-full h-20 bg-black/40 border border-white/5 rounded-3xl p-6 text-[11px] text-white/80 outline-none focus:border-blue-500/40 resize-none uppercase" />
+            <textarea value={instructions} onChange={(e) => setInstructions(e.target.value)} placeholder="Précisions pour l'imprimeur..." className="w-full h-20 bg-black/40 border border-white/5 rounded-3xl p-6 text-[11px] text-white/80 outline-none focus:border-blue-500/40 resize-none uppercase" />
           </section>
         </div>
 
-        {/* TOTAL GAUCHE */}
+        {/* RÉSUMÉ À DROITE */}
         <div className="lg:col-span-1">
-          <div className="bg-white p-10 rounded-[40px] text-[#0f092e] sticky top-10">
+          <div className="bg-white p-10 rounded-[40px] text-[#0f092e] sticky top-10 shadow-2xl">
             <h2 className="text-[10px] font-black uppercase mb-4">Total HT</h2>
-            <span className="text-4xl font-black italic">{totalHT.toFixed(2)}€</span>
-            <button onClick={() => setShowConfirm(true)} disabled={cart.length === 0 || !selectedAgency} className="w-full mt-10 py-6 bg-[#0f092e] text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed">
-              {!selectedAgency ? "Choisir Agence" : "Vérifier"}
+            <span className="text-5xl font-black italic tracking-tighter">{totalHT.toFixed(2)}€</span>
+            <button 
+              onClick={() => setShowConfirm(true)} 
+              disabled={cart.length === 0} 
+              className="w-full mt-10 py-6 bg-[#0f092e] text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-600 transition-all active:scale-95 disabled:opacity-20"
+            >
+              Vérifier la commande
             </button>
           </div>
         </div>
@@ -194,27 +235,28 @@ export default function CartPage() {
             <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-white text-[#0f092e] w-full max-w-lg rounded-[40px] p-10 space-y-6 max-h-[90vh] overflow-y-auto">
               <h3 className="text-2xl font-black uppercase italic text-center">Récapitulatif</h3>
               
-              <div className="bg-gray-100 rounded-2xl p-6 text-center">
-                 <p className="text-[10px] font-black uppercase mb-2">Agence : {selectedAgency}</p>
-                 <p className="text-[10px] uppercase opacity-60">Utilisateur : {selectedUser}</p>
+              <div className="bg-gray-100 rounded-3xl p-6 text-center">
+                 <p className="text-[11px] font-black uppercase mb-1">{agencyData?.name}</p>
+                 <p className="text-[10px] uppercase opacity-50 font-bold">Par : {selectedUser}</p>
               </div>
 
-              <div className="text-[10px] font-bold uppercase space-y-2 opacity-60 text-center border-t border-b border-gray-200 py-4">
+              <div className="text-[10px] font-bold uppercase space-y-2 opacity-60 text-center border-y border-gray-200 py-6">
                 <p>📍 {address}</p>
-                <div className="flex justify-center gap-4">
-                    <p>📞 {phone}</p>
-                    <p>✉️ {email}</p>
-                </div>
+                <p>✉️ {email} | 📞 {phone}</p>
               </div>
 
-               <div className="text-center">
-                    <span className="text-4xl font-black italic">{totalHT.toFixed(2)}€</span>
+               <div className="text-center py-2">
+                    <span className="text-4xl font-black italic">{totalHT.toFixed(2)}€ HT</span>
                </div>
 
-              <button onClick={handleFinalSubmit} disabled={isSubmitting} className="w-full py-6 bg-blue-600 text-white rounded-2xl font-black uppercase text-[10px]">
-                {isSubmitting ? "Envoi..." : "Confirmer et Envoyer"}
+              <button 
+                onClick={handleFinalSubmit} 
+                disabled={isSubmitting} 
+                className="w-full py-6 bg-blue-600 text-white rounded-2xl font-black uppercase text-[10px] shadow-xl shadow-blue-500/20"
+              >
+                {isSubmitting ? "Envoi en cours..." : "Confirmer et Envoyer"}
               </button>
-              <button onClick={() => setShowConfirm(false)} className="w-full text-[9px] font-black uppercase opacity-20 text-center">Modifier</button>
+              <button onClick={() => setShowConfirm(false)} className="w-full text-[9px] font-black uppercase opacity-20 text-center tracking-widest">Retour au panier</button>
             </motion.div>
           </div>
         )}
