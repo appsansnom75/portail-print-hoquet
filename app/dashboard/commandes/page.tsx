@@ -29,12 +29,7 @@ export default function HistoriqueCommandes() {
 
         const { data: history, error } = await supabase
           .from('orders')
-          .select(`
-            *,
-            profiles!user_id (
-              full_name
-            )
-          `)
+          .select(`*, profiles!user_id (full_name)`)
           .eq('agency_name', name)
           .order('created_at', { ascending: false });
 
@@ -77,63 +72,64 @@ export default function HistoriqueCommandes() {
     }
   };
 
-  if (loading) return <div className="p-20 text-white font-black uppercase text-center animate-pulse">Chargement...</div>;
+  if (loading) return <div className="p-20 text-white font-black uppercase text-center animate-pulse tracking-[0.3em]">Chargement...</div>;
 
   return (
     <div className="min-h-screen bg-[#0f092e] text-white p-6 md:p-12">
       <div className="max-w-6xl mx-auto space-y-10">
         
         {/* HEADER */}
-        <div className="flex justify-between items-center border-b border-white/10 pb-8">
+        <div className="flex justify-between items-end border-b border-white/10 pb-8">
             <div>
-              <h1 className="text-4xl font-black uppercase italic italic tracking-tighter text-blue-500">Historique</h1>
-              <p className="text-[10px] font-bold opacity-30 uppercase tracking-[0.3em]">Agence : {agencyName}</p>
+              <h1 className="text-5xl font-black uppercase italic tracking-tighter text-blue-500">Historique</h1>
+              <p className="text-[10px] font-bold opacity-30 uppercase tracking-[0.3em] mt-2">Agence : {agencyName}</p>
             </div>
-            <Link href="/" className="text-[10px] font-black uppercase bg-white/10 px-6 py-3 rounded-xl hover:bg-white/20 transition-all">Retour Boutique</Link>
+            <Link href="/" className="text-[10px] font-black uppercase bg-white/5 border border-white/10 px-6 py-4 rounded-2xl hover:bg-white/10 transition-all">Boutique</Link>
         </div>
 
         {/* LISTE DES COMMANDES */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           {orders.map((order) => (
-            <div key={order.id} className="bg-white/5 border-2 border-white/10 rounded-[30px] p-8 hover:border-blue-500/50 transition-all relative overflow-hidden group">
+            <div key={order.id} className="bg-white/[0.03] border border-white/10 rounded-[35px] p-7 hover:bg-white/[0.06] transition-all group">
               
               <div className="flex flex-col lg:flex-row gap-8 items-center">
                 
-                {/* 1. LA PERSONNE (XXL) */}
-                <div className="flex-1 border-r border-white/10 pr-4 w-full lg:w-auto text-center lg:text-left">
-                  <span className="text-[9px] font-black uppercase text-blue-500 tracking-widest mb-1 block">Commandé par :</span>
-                  <h2 className="text-3xl font-black uppercase tracking-tighter leading-none">
-                    {order.profiles?.full_name || 'Commande Système'}
+                {/* 1. LE CLIENT */}
+                <div className="w-full lg:w-1/4 border-r border-white/5">
+                  <span className="text-[8px] font-black uppercase text-blue-500/60 tracking-[0.2em] block mb-1">Passée par</span>
+                  <h2 className="text-2xl font-black uppercase tracking-tight truncate leading-none">
+                    {order.profiles?.full_name || 'Système'}
                   </h2>
-                  <div className="mt-3 flex gap-2 items-center justify-center lg:justify-start">
-                    <span className="text-[10px] font-bold opacity-40">{new Date(order.created_at).toLocaleDateString('fr-FR')}</span>
-                    <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded ${order.status === 'En attente' ? 'bg-orange-500 text-white' : 'bg-green-500 text-white'}`}>
+                  <div className="mt-3 flex items-center gap-3">
+                    <span className="text-[10px] font-bold opacity-30">{new Date(order.created_at).toLocaleDateString('fr-FR')}</span>
+                    <span className={`text-[7px] font-black uppercase px-2 py-1 rounded-md ${order.status === 'En attente' ? 'bg-orange-500/20 text-orange-500' : 'bg-green-500/20 text-green-500'}`}>
                         {order.status}
                     </span>
                   </div>
                 </div>
 
-                {/* 2. L'ADRESSE (TRES VISIBLE) */}
-                <div className="flex-[1.5] w-full lg:w-auto">
-                    <span className="text-[9px] font-black uppercase text-blue-500 tracking-widest mb-2 block text-center lg:text-left">Adresse de livraison :</span>
-                    <div className="bg-white text-[#0f092e] p-4 rounded-2xl font-black text-lg uppercase leading-tight transform -rotate-1 group-hover:rotate-0 transition-transform">
-                        📍 {order.delivery_address}
-                    </div>
-                    <p className="text-[11px] font-bold mt-2 text-white/60 text-center lg:text-left">
-                        📦 {order.produits_liste}
+                {/* 2. RÉCAP ARTICLES (CENTRE) */}
+                <div className="flex-1 w-full bg-white/5 rounded-2xl p-5 border border-white/5">
+                    <span className="text-[8px] font-black uppercase text-white/20 tracking-widest mb-2 block">Détails articles</span>
+                    <p className="text-sm font-bold text-white leading-relaxed">
+                        {order.produits_liste}
                     </p>
+                    <div className="mt-3 flex items-center gap-2 text-[10px] text-white/40">
+                        <span className="opacity-100">📍</span> 
+                        <span className="truncate">{order.delivery_address}</span>
+                    </div>
                 </div>
 
                 {/* 3. PRIX & ACTION */}
-                <div className="flex items-center gap-6 w-full lg:w-auto justify-center">
-                  <div className="text-right mr-4">
-                    <span className="block text-[8px] font-black opacity-30 uppercase">Total HT</span>
-                    <span className="text-3xl font-black italic">{order.total_ht?.toFixed(2)}€</span>
+                <div className="flex items-center gap-8 w-full lg:w-auto justify-between lg:justify-end">
+                  <div className="text-right">
+                    <span className="block text-[8px] font-black opacity-30 uppercase tracking-tighter">Montant Total</span>
+                    <span className="text-3xl font-black italic tabular-nums">{order.total_ht?.toFixed(2)}€</span>
                   </div>
                   
                   <button 
                     onClick={() => setOrderToReorder(order)}
-                    className="bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black uppercase px-10 py-5 rounded-2xl shadow-xl shadow-blue-900/40 transition-all active:scale-95"
+                    className="bg-white text-[#0f092e] hover:bg-blue-600 hover:text-white text-[9px] font-black uppercase px-8 py-5 rounded-2xl transition-all active:scale-95 shadow-xl"
                   >
                     Recommander
                   </button>
@@ -145,21 +141,22 @@ export default function HistoriqueCommandes() {
         </div>
       </div>
 
-      {/* MODAL RECOMMANDATION RESTE IDENTIQUE MAIS ÉPURÉ */}
+      {/* MODAL RECOMMANDATION */}
       <AnimatePresence>
         {orderToReorder && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#0f092e]/95 backdrop-blur-xl">
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-white text-[#0f092e] w-full max-w-md rounded-[40px] p-10 space-y-6">
-              <h3 className="text-2xl font-black uppercase italic text-center">Refaire cette commande ?</h3>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#0f092e]/90 backdrop-blur-md">
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white text-[#0f092e] w-full max-w-md rounded-[40px] p-10 space-y-6">
+              <h3 className="text-2xl font-black uppercase italic text-center">Refaire la commande ?</h3>
               <div className="bg-gray-100 rounded-3xl p-6">
-                 <p className="text-sm font-black uppercase border-b border-gray-200 pb-3 mb-3">{orderToReorder.produits_liste}</p>
-                 <p className="text-[10px] font-bold uppercase opacity-60">Livré à :</p>
-                 <p className="text-sm font-black uppercase">{orderToReorder.delivery_address}</p>
+                 <p className="text-sm font-black uppercase leading-tight mb-4">{orderToReorder.produits_liste}</p>
+                 <div className="text-[10px] font-bold uppercase opacity-40 border-t border-gray-200 pt-4">
+                    Destinataire : {orderToReorder.delivery_address}
+                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4 pt-4">
-                <button onClick={() => setOrderToReorder(null)} className="py-4 text-[10px] font-black uppercase opacity-40 hover:opacity-100 transition-opacity">Fermer</button>
-                <button onClick={confirmReorder} disabled={isReordering} className="py-4 bg-blue-600 text-white rounded-2xl font-black uppercase text-[10px] hover:bg-blue-700 transition-colors">
-                  {isReordering ? "Patientez..." : "Confirmer"}
+              <div className="grid grid-cols-2 gap-4">
+                <button onClick={() => setOrderToReorder(null)} className="py-4 text-[10px] font-black uppercase opacity-40">Annuler</button>
+                <button onClick={confirmReorder} disabled={isReordering} className="py-4 bg-blue-600 text-white rounded-2xl font-black uppercase text-[10px] shadow-lg shadow-blue-200">
+                  {isReordering ? "..." : "Confirmer"}
                 </button>
               </div>
             </motion.div>
