@@ -62,7 +62,8 @@ export default function SignaletiquePage() {
       name: `${p.name}${p.hasVariants ? ' - ' + p.variants.find((v:any)=>v.id===s.variant).name : ''}`, 
       price: totalHT / Number(s.qty), 
       qty: Number(s.qty), 
-      category: THEME.label 
+      category: THEME.label,
+      color: THEME.color // AJOUT DE LA COULEUR VERTE ICI
     });
     setIsCartOpen(true);
   };
@@ -158,7 +159,7 @@ export default function SignaletiquePage() {
         })}
       </main>
 
-      {/* BOUTON FLOTTANT PANIER (BLANC) - C'est celui-ci qui manquait ! */}
+      {/* BOUTON FLOTTANT PANIER (BLANC) */}
       <button 
         onClick={() => setIsCartOpen(true)} 
         className="fixed bottom-8 right-8 w-16 h-16 bg-white rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-center z-[100] hover:scale-110 active:scale-95 transition-all group"
