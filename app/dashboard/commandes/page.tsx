@@ -14,34 +14,42 @@ export default function HistoriqueCommandes() {
   const [orderToReorder, setOrderToReorder] = useState<any | null>(null);
 
   const fetchOrders = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-    // 1. Récupérer l'agence de l'utilisateur connecté
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('agency_id, agencies(name)')
-      .eq('id', user.id)
-      .single();
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('agency_id, agencies(name)')
+        .eq('id', user.id)
+        .single();
 
-    if (profile?.agencies) {
-      const name = (profile.agencies as any).name;
-      setAgencyName(name);
+      if (profile?.agencies) {
+        const name = (profile.agencies as any).name;
+        setAgencyName(name);
 
-      // 2. Récupérer les commandes + Infos du profil qui a commandé (auteur)
-      // Note: Assure-toi que ta table 'orders' a une colonne 'user_id'
-      const { data: history, error } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          profiles:user_id (full_name, avatar_url)
-        `)
-        .eq('agency_name', name)
-        .order('created_at', { ascending: false });
+        // LE FIX EST ICI : on ajoute '!' pour forcer un LEFT JOIN 
+        // Cela affiche la commande même si user_id est vide ou invalide
+        const { data: history, error } = await supabase
+          .from('orders')
+          .select(`
+            *,
+            profiles!user_id (
+              full_name,
+              avatar_url
+            )
+          `)
+          .eq('agency_name', name)
+          .order('created_at', { ascending: false });
 
-      if (!error && history) setOrders(history);
+        if (error) throw error;
+        setOrders(history || []);
+      }
+    } catch (err) {
+      console.error("Erreur chargement commandes:", err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -65,14 +73,14 @@ export default function HistoriqueCommandes() {
           produits_liste: orderToReorder.produits_liste,
           quantite_liste: orderToReorder.quantite_liste,
           total_ht: orderToReorder.total_ht,
-          instructions: `(RECOMMANDE) - ${orderToReorder.instructions || ''}`,
+          instructions: `(RECO) - ${orderToReorder.instructions || ''}`,
           status: 'En attente',
-          user_id: user?.id // On lie la nouvelle commande à celui qui clique sur recommander
+          user_id: user?.id 
         }]);
 
       if (error) throw error;
 
-      alert("Commande passée avec succès !");
+      alert("Commande passée !");
       setOrderToReorder(null);
       fetchOrders();
     } catch (err) {
@@ -82,7 +90,7 @@ export default function HistoriqueCommandes() {
     }
   };
 
-  if (loading) return <div className="p-20 text-white font-black uppercase text-[10px] tracking-widest animate-pulse">Chargement de l'historique...</div>;
+  if (loading) return <div className="p-20 text-white font-black uppercase text-[10px] tracking-[0.3em] animate-pulse text-center">Chargement de l'historique...</div>;
 
   return (
     <div className="min-h-screen bg-[#0f092e] text-white p-6 md:p-12 relative selection:bg-blue-500/30">
@@ -92,69 +100,61 @@ export default function HistoriqueCommandes() {
         <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div>
               <h1 className="text-4xl font-black uppercase italic tracking-tighter">Historique <span className="text-blue-500">Achats</span></h1>
-              <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.3em] mt-2">Agence : {agencyName}</p>
+              <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.3em] mt-2 italic">Agence : {agencyName}</p>
             </div>
             <div className="flex gap-3">
               <Link href="/" className="text-[9px] font-black uppercase bg-white/5 px-6 py-3 rounded-xl border border-white/10 hover:bg-white/10 transition-all">Boutique</Link>
-              <Link href="/dashboard/equipe" className="text-[9px] font-black uppercase bg-blue-600 px-6 py-3 rounded-xl shadow-lg shadow-blue-900/40">Équipe</Link>
+              <Link href="/dashboard/equipe" className="text-[9px] font-black uppercase bg-blue-600 px-6 py-3 rounded-xl shadow-lg shadow-blue-900/40 hover:bg-blue-500 transition-all">Équipe</Link>
             </div>
         </div>
 
-        {/* LISTE DES COMMANDES DÉTAILLÉE */}
-        <div className="space-y-6">
+        {/* LISTE DES COMMANDES */}
+        <div className="space-y-4">
           {orders.map((order) => (
             <div key={order.id} className="bg-white/5 border border-white/5 rounded-[40px] p-8 hover:bg-white/[0.07] transition-all group relative overflow-hidden">
               
-              {/* INDICATEUR DE STATUT */}
-              <div className={`absolute top-0 left-0 w-2 h-full ${order.status === 'En attente' ? 'bg-orange-500' : 'bg-green-500'}`}></div>
+              <div className={`absolute top-0 left-0 w-1.5 h-full ${order.status === 'En attente' ? 'bg-orange-500' : 'bg-green-500'}`}></div>
 
               <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
                 
-                {/* COLONNE 1 : INFOS DE BASE & AUTEUR */}
+                {/* AUTEUR & PRODUITS */}
                 <div className="flex items-center gap-6">
-                  {/* Photo de celui qui a commandé */}
-                  <div className="h-14 w-14 rounded-2xl overflow-hidden bg-white/5 border border-white/10 shrink-0">
+                  <div className="h-14 w-14 rounded-2xl overflow-hidden bg-white/5 border border-white/10 shrink-0 flex items-center justify-center">
                     {order.profiles?.avatar_url ? (
-                      <img src={order.profiles.avatar_url} className="h-full w-full object-cover" alt="Auteur" />
+                      <img src={order.profiles.avatar_url} className="h-full w-full object-cover" alt="Avatar" />
                     ) : (
-                      <div className="h-full w-full flex items-center justify-center text-[10px] font-bold opacity-20">??</div>
+                      <span className="text-[10px] font-black opacity-20 uppercase">GH</span>
                     )}
                   </div>
                   
                   <div>
                     <div className="flex items-center gap-3">
                       <span className="text-[10px] font-bold opacity-30">{new Date(order.created_at).toLocaleDateString('fr-FR')}</span>
-                      <span className={`text-[8px] font-black uppercase px-2 py-1 rounded-md ${order.status === 'En attente' ? 'bg-orange-500/10 text-orange-500' : 'bg-green-500/10 text-green-500'}`}>
+                      <span className={`text-[7px] font-black uppercase px-2 py-0.5 rounded-md ${order.status === 'En attente' ? 'bg-orange-500/20 text-orange-500' : 'bg-green-500/20 text-green-500'}`}>
                         {order.status}
                       </span>
                     </div>
                     <h2 className="text-sm font-black uppercase mt-1 tracking-tight">{order.produits_liste}</h2>
-                    <p className="text-[9px] font-bold text-blue-400 uppercase mt-1">
-                      Par : {order.profiles?.full_name || 'Utilisateur inconnu'}
+                    <p className="text-[9px] font-bold text-blue-500 uppercase mt-0.5">
+                      {order.profiles?.full_name || 'Commande Système'}
                     </p>
                   </div>
                 </div>
 
-                {/* COLONNE 2 : ADRESSE & NOTES */}
-                <div className="flex-grow max-w-md">
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-start gap-2">
-                      <span className="text-[9px] opacity-20 mt-0.5">📍</span>
-                      <p className="text-[9px] opacity-50 uppercase leading-relaxed">{order.delivery_address}</p>
-                    </div>
-                    {order.instructions && (
-                      <div className="flex items-start gap-2">
-                        <span className="text-[9px] opacity-20 mt-0.5">💬</span>
-                        <p className="text-[9px] italic text-white/40 line-clamp-1">{order.instructions}</p>
-                      </div>
-                    )}
-                  </div>
+                {/* ADRESSE & NOTES */}
+                <div className="flex-grow max-w-sm">
+                   <div className="space-y-1.5">
+                      <p className="text-[9px] opacity-40 uppercase leading-tight font-medium">📍 {order.delivery_address}</p>
+                      {order.instructions && (
+                        <p className="text-[9px] italic text-white/30 truncate">💬 {order.instructions}</p>
+                      )}
+                   </div>
                 </div>
 
-                {/* COLONNE 3 : PRIX & ACTION */}
+                {/* PRIX & ACTION */}
                 <div className="flex items-center gap-8 w-full lg:w-auto justify-between lg:justify-end border-t lg:border-none border-white/5 pt-6 lg:pt-0">
                   <div className="text-right">
-                    <span className="block text-[8px] font-black opacity-20 uppercase tracking-widest text-blue-500">Montant HT</span>
+                    <span className="block text-[8px] font-black opacity-20 uppercase tracking-widest text-blue-500">Total HT</span>
                     <span className="text-2xl font-black italic">{order.total_ht?.toFixed(2)}€</span>
                   </div>
                   
@@ -170,34 +170,34 @@ export default function HistoriqueCommandes() {
           ))}
 
           {orders.length === 0 && (
-            <div className="text-center py-20 bg-white/5 rounded-[40px] border border-dashed border-white/10">
-              <p className="text-[10px] font-black uppercase opacity-20 tracking-[0.5em]">Aucune commande trouvée</p>
+            <div className="text-center py-24 bg-white/5 rounded-[40px] border border-dashed border-white/10">
+              <p className="text-[10px] font-black uppercase opacity-20 tracking-[0.5em]">Aucun historique</p>
             </div>
           )}
         </div>
       </div>
 
-      {/* MODAL RECOMMANDATION (Inchangée mais profite des nouvelles infos) */}
+      {/* MODAL RECOMMANDATION */}
       <AnimatePresence>
         {orderToReorder && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#0f092e]/95 backdrop-blur-xl">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white text-[#0f092e] w-full max-w-md rounded-[40px] p-10 space-y-6 shadow-2xl">
-              <h3 className="text-2xl font-black uppercase italic text-center">Recommander ?</h3>
-              <div className="bg-gray-100 rounded-3xl p-6 space-y-4">
-                 <p className="text-[11px] font-black uppercase text-center border-b border-gray-200 pb-4">{orderToReorder.produits_liste}</p>
-                 <div className="flex justify-between text-[9px] font-bold uppercase opacity-60">
-                    <span>Livraison à</span>
-                    <span className="text-right max-w-[150px]">{orderToReorder.delivery_address}</span>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#0f092e]/90 backdrop-blur-md">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white text-[#0f092e] w-full max-w-sm rounded-[40px] p-10 space-y-6 shadow-2xl">
+              <h3 className="text-xl font-black uppercase italic text-center">Refaire la commande ?</h3>
+              <div className="bg-gray-100 rounded-3xl p-6 space-y-3">
+                 <p className="text-[10px] font-black uppercase text-center border-b border-gray-200 pb-3">{orderToReorder.produits_liste}</p>
+                 <div className="flex justify-between text-[8px] font-bold uppercase opacity-50">
+                    <span>Vers</span>
+                    <span className="text-right truncate ml-4">{orderToReorder.delivery_address}</span>
                  </div>
-                 <div className="pt-4 flex justify-between items-center border-t border-gray-200">
-                    <span className="text-[10px] font-black uppercase">Total HT</span>
-                    <span className="text-2xl font-black italic">{orderToReorder.total_ht?.toFixed(2)}€</span>
+                 <div className="pt-3 flex justify-between items-center border-t border-gray-200">
+                    <span className="text-[10px] font-black uppercase">Total</span>
+                    <span className="text-xl font-black italic">{orderToReorder.total_ht?.toFixed(2)}€</span>
                  </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => setOrderToReorder(null)} className="py-5 text-[9px] font-black uppercase opacity-40 hover:opacity-100 transition-opacity">Annuler</button>
-                <button onClick={confirmReorder} disabled={isReordering} className="py-5 bg-blue-600 text-white rounded-2xl font-black uppercase text-[10px] active:scale-95 disabled:opacity-50">
-                  {isReordering ? "Envoi..." : "Confirmer"}
+                <button onClick={() => setOrderToReorder(null)} className="py-4 text-[9px] font-black uppercase opacity-40">Annuler</button>
+                <button onClick={confirmReorder} disabled={isReordering} className="py-4 bg-blue-600 text-white rounded-2xl font-black uppercase text-[10px] shadow-lg shadow-blue-200">
+                  {isReordering ? "..." : "Confirmer"}
                 </button>
               </div>
             </motion.div>
