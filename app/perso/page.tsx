@@ -72,6 +72,7 @@ export default function PersoPage() {
       qty: Number(s.qty), 
       category: THEME.label 
     });
+    // Ouvre le tiroir latéral
     setIsCartOpen(true);
   };
 
@@ -83,9 +84,13 @@ export default function PersoPage() {
 
   return (
     <div className="min-h-screen bg-[#0f092e] text-white flex flex-col relative overflow-x-hidden">
+      
+      {/* IMPORTANT : Assure-toi que dans ton fichier CartDrawer.tsx, 
+          le bouton de validation pointe vers "/panier" avec le texte "Aller au panier"
+      */}
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
       
-      {/* HEADER AVEC RETOUR HOME */}
+      {/* HEADER : Bouton retour vers la Home */}
       <header className="py-6 px-6 border-b border-white/10 flex justify-between items-center sticky top-0 bg-[#0f092e]/80 backdrop-blur-md z-50">
         <Link 
             href="/" 
@@ -95,20 +100,19 @@ export default function PersoPage() {
           Retour Accueil
         </Link>
         <h1 className={`text-[10px] font-black uppercase tracking-[0.3em] ${THEME.color} italic`}>{THEME.label}</h1>
-        <div className="w-20"></div> {/* Équilibre visuel */}
+        <div className="w-10"></div>
       </header>
 
       <main className="max-w-7xl mx-auto w-full py-16 px-6 pb-40">
         {products.length === 0 ? (
           <div className="text-center opacity-20 py-20 font-black uppercase tracking-widest text-xs">
-            Aucun produit trouvé dans "{THEME.category}"
+            Aucun produit trouvé
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             {products.map((p) => {
               const sel = selections[p.id];
               if (!sel) return null;
-
               const pList = p.prices[sel.variant] || p.prices.default || [];
               const currentPrice = pList[p.quantities.indexOf(Number(sel.qty))] || 0;
               const displayImage = p.variants.find((v:any) => v.id === sel.variant)?.image || p.image;
@@ -119,13 +123,8 @@ export default function PersoPage() {
                     <AnimatePresence mode="wait">
                       <motion.img 
                         key={displayImage}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        src={displayImage} 
-                        className="max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]" 
-                        alt={p.name}
-                        onError={(e) => { (e.target as any).src = "https://via.placeholder.com/300?text=Image+Indisponible"; }}
+                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                        src={displayImage} className="max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]" alt={p.name}
                       />
                     </AnimatePresence>
                   </div>
@@ -137,7 +136,7 @@ export default function PersoPage() {
                         <select 
                           value={sel.variant} 
                           onChange={(e) => setSelections({...selections, [p.id]:{...sel, variant: e.target.value}})} 
-                          className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none focus:border-blue-500 transition-colors cursor-pointer"
+                          className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase outline-none focus:border-blue-500 cursor-pointer text-white"
                         >
                           {p.variants.map((v:any)=><option key={v.id} value={v.id}>{v.name}</option>)}
                         </select>
@@ -145,20 +144,18 @@ export default function PersoPage() {
                       <select 
                         value={sel.qty} 
                         onChange={(e) => setSelections({...selections, [p.id]:{...sel, qty: Number(e.target.value)}})} 
-                        className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none focus:border-blue-500 transition-colors cursor-pointer"
+                        className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase outline-none focus:border-blue-500 cursor-pointer text-white"
                       >
                         {p.quantities.map((q:any)=><option key={q} value={q}>{q} exemplaires</option>)}
                       </select>
                       <div className="flex items-center justify-between pt-6 border-t border-white/5 mt-4">
                         <div className="flex flex-col">
-                          <span className="text-[10px] font-black text-white tracking-tighter text-2xl">
-                            {currentPrice.toFixed(2)}€
-                          </span>
-                          <span className="text-[7px] font-bold text-white/30 uppercase tracking-widest italic text-left">Hors Taxes</span>
+                          <span className="text-2xl font-black">{currentPrice.toFixed(2)}€</span>
+                          <span className="text-[7px] font-bold opacity-30 uppercase">Hors Taxes</span>
                         </div>
                         <button 
                           onClick={() => handleAddToCart(p)} 
-                          className="bg-white text-[#0f092e] px-8 py-3.5 rounded-2xl font-black uppercase text-[9px] tracking-widest hover:bg-blue-500 hover:text-white transition-all active:scale-90 shadow-xl"
+                          className="bg-white text-[#0f092e] px-8 py-3.5 rounded-2xl font-black uppercase text-[9px] hover:bg-blue-500 hover:text-white transition-all shadow-xl active:scale-95"
                         >
                           Ajouter
                         </button>
@@ -172,27 +169,20 @@ export default function PersoPage() {
         )}
       </main>
 
-      {/* PANIER FLOTTANT - ALLER AU PANIER */}
+      {/* BOUTON FLOTTANT : OUVRE LE DRAWER QUI CONTIENT LE BOUTON "ALLER AU PANIER" */}
       <button 
         onClick={() => setIsCartOpen(true)} 
-        className="fixed bottom-8 right-8 group flex items-center gap-4 z-[100]"
+        className="fixed bottom-8 right-8 w-16 h-16 bg-white rounded-full shadow-2xl flex items-center justify-center z-[100] hover:scale-110 active:scale-95 transition-all group"
       >
-        <span className="bg-white text-[#0f092e] text-[9px] font-black uppercase px-6 py-3 rounded-xl opacity-0 group-hover:opacity-100 transition-all shadow-xl translate-x-2 group-hover:translate-x-0">
-          Aller au panier
-        </span>
-        <div className="w-16 h-16 bg-white rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-center hover:scale-110 active:scale-95 transition-all">
-          <div className="relative">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0f092e" strokeWidth="2.5">
-                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
-                <path d="M3 6h18"/>
-                <path d="M16 10a4 4 0 0 1-8 0"/>
-            </svg>
-            {cart.length > 0 && (
-              <span className={`absolute -top-3 -right-3 ${THEME.bg} text-white text-[9px] font-black w-6 h-6 rounded-full flex items-center justify-center border-4 border-[#0f092e]`}>
-                {cart.length}
-              </span>
-            )}
-          </div>
+        <div className="relative">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0f092e" strokeWidth="2.5">
+            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>
+          </svg>
+          {cart.length > 0 && (
+            <span className={`absolute -top-3 -right-3 ${THEME.bg} text-white text-[9px] font-black w-6 h-6 rounded-full flex items-center justify-center border-4 border-[#0f092e]`}>
+              {cart.length}
+            </span>
+          )}
         </div>
       </button>
     </div>
