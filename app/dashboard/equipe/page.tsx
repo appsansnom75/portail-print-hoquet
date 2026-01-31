@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { createClient } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link'; // Import pour le lien
+import Link from 'next/link';
 
 export default function GestionEquipe() {
   const router = useRouter();
@@ -75,7 +75,8 @@ export default function GestionEquipe() {
             role: roleChoisi, 
             agency_id: monAgencyId,
             phone: '', 
-            siret: ''
+            siret: '',
+            avatar_url: '' // Initialisé à vide
         }]);
 
       if (!profileError) {
@@ -100,13 +101,13 @@ export default function GestionEquipe() {
     }
   };
 
-  if (loading) return <div className="p-20 text-white font-black uppercase text-[10px]">Chargement...</div>;
+  if (loading) return <div className="p-20 text-white font-black uppercase text-[10px] tracking-widest animate-pulse">Chargement de l'agence...</div>;
 
   return (
-    <div className="min-h-screen bg-[#0f092e] text-white p-6 md:p-12">
+    <div className="min-h-screen bg-[#0f092e] text-white p-6 md:p-12 selection:bg-blue-500/30">
       <div className="max-w-5xl mx-auto space-y-8">
         
-        {/* EN-TÊTE AVEC BOUTON RETOUR ET ACCÈS HISTORIQUE */}
+        {/* EN-TÊTE NAVIGATION */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <button 
             onClick={() => router.back()} 
@@ -115,7 +116,6 @@ export default function GestionEquipe() {
             <span className="text-lg group-hover:-translate-x-1 transition-transform">←</span> Retour
           </button>
           
-          {/* PETIT MENU DE NAVIGATION */}
           <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10">
             <button className="bg-blue-600 px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-tighter shadow-lg shadow-blue-900/40">
               Équipe
@@ -130,11 +130,11 @@ export default function GestionEquipe() {
 
           <div className="text-right">
             <h1 className="text-2xl font-black uppercase italic tracking-tighter text-white">Espace Agence</h1>
-            <p className="text-[9px] font-bold text-blue-500 uppercase tracking-[0.3em]">Tableau de bord Admin</p>
+            <p className="text-[9px] font-bold text-blue-500 uppercase tracking-[0.3em]">Équipe & Collaborateurs</p>
           </div>
         </div>
 
-        {/* RESTE DE TON CODE (FORMULAIRE ET LISTE) */}
+        {/* FORMULAIRE DE CRÉATION */}
         <div className="bg-white/5 p-8 rounded-[40px] border border-white/10 backdrop-blur-xl shadow-2xl">
           <h2 className="text-xl font-black uppercase mb-6 text-blue-500 tracking-tighter italic">Nouveau Collaborateur</h2>
           <form onSubmit={creerCompte} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -150,7 +150,7 @@ export default function GestionEquipe() {
           </form>
         </div>
 
-        {/* LISTE DÉTAILLÉE */}
+        {/* LISTE DES MEMBRES AVEC PHOTOS */}
         <div className="space-y-6">
           <div className="flex items-center justify-between px-4">
             <h2 className="text-sm font-black uppercase tracking-[0.2em] text-white/30 italic">Répertoire de l'agence</h2>
@@ -159,20 +159,37 @@ export default function GestionEquipe() {
 
           <div className="grid grid-cols-1 gap-4">
             {membres.map((m) => (
-              <div key={m.id} className="relative group overflow-hidden bg-white/5 border border-white/5 p-6 rounded-[35px] hover:bg-white/[0.08] hover:border-white/20 transition-all duration-300">
+              <div key={m.id} className="relative group overflow-hidden bg-white/5 border border-white/5 p-6 rounded-[35px] hover:bg-white/[0.08] hover:border-white/20 transition-all duration-300 shadow-xl">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                  <div className="flex items-start gap-5">
-                    <div className={`mt-1 h-3 w-3 rounded-full shrink-0 ${m.role === 'admin_agence' ? 'bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.6)]' : 'bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.4)]'}`}></div>
+                  
+                  {/* AVATAR ET NOM */}
+                  <div className="flex items-center gap-5">
+                    <div className="relative">
+                      <div className="h-14 w-14 rounded-full overflow-hidden border-2 border-white/10 bg-white/5 flex items-center justify-center shadow-2xl">
+                        {m.avatar_url ? (
+                          <img src={m.avatar_url} alt={m.first_name} className="h-full w-full object-cover" />
+                        ) : (
+                          <span className="text-xs font-black text-white/20 uppercase tracking-tighter">
+                            {m.first_name?.[0]}{m.last_name?.[0]}
+                          </span>
+                        )}
+                      </div>
+                      <div className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#0f092e] ${m.role === 'admin_agence' ? 'bg-blue-500' : 'bg-green-500'}`}></div>
+                    </div>
+
                     <div className="space-y-1">
                       <div className="text-sm font-black uppercase tracking-tight flex items-center gap-2">
                         {m.first_name} {m.last_name}
                         {m.id === monId && <span className="text-[7px] bg-blue-600 text-white px-2 py-0.5 rounded-md font-black tracking-widest">VOUS</span>}
                       </div>
-                      <div className="text-[9px] font-bold text-white/40 uppercase tracking-widest">
+                      <div className="text-[9px] font-bold text-white/40 uppercase tracking-widest flex items-center gap-2">
                         {m.role === 'admin_agence' ? 'Administrateur' : 'Collaborateur'}
+                        {m.avatar_url && <span className="text-blue-500 text-[10px]">✓ Photo OK</span>}
                       </div>
                     </div>
                   </div>
+
+                  {/* INFOS CONTACT */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 flex-grow px-0 md:px-10">
                     <div className="flex flex-col gap-1">
                       <span className="text-[7px] font-black text-white/20 uppercase tracking-widest">Email</span>
@@ -187,9 +204,19 @@ export default function GestionEquipe() {
                       <span className="text-[10px] font-medium text-white/70 tracking-tighter">{m.siret || '—'}</span>
                     </div>
                   </div>
-                  {m.id !== monId && (
-                    <button onClick={() => supprimerMembre(m.id)} className="shrink-0 bg-red-500/10 hover:bg-red-600 text-red-500 hover:text-white text-[8px] font-black uppercase px-5 py-2.5 rounded-xl transition-all border border-red-500/20">Supprimer</button>
-                  )}
+
+                  {/* ACTIONS */}
+                  <div className="flex items-center gap-3 shrink-0">
+                    {m.avatar_url && (
+                        <a href={m.avatar_url} target="_blank" rel="noreferrer" className="bg-white/5 hover:bg-white/10 p-3 rounded-xl transition-all border border-white/5 group-hover:border-blue-500/30">
+                            <span className="text-[10px]">🖼️</span>
+                        </a>
+                    )}
+                    {m.id !== monId && (
+                        <button onClick={() => supprimerMembre(m.id)} className="bg-red-500/10 hover:bg-red-600 text-red-500 hover:text-white text-[8px] font-black uppercase px-5 py-3 rounded-xl transition-all border border-red-500/20">Supprimer</button>
+                    )}
+                  </div>
+
                 </div>
               </div>
             ))}
