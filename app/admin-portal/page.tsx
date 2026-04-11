@@ -1,6 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+// 1. IMPORT DE LA LIB DE COMPRESSION
+import imageCompression from 'browser-image-compression';
 
 interface VariantItem {
   id: string;
@@ -13,19 +15,47 @@ interface VariantItem {
 export default function AdminPortal() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
+  const [isUploading, setIsUploading] = useState(false); // État pour le chargement
   
-  // États du formulaire
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [category, setCategory] = useState('Perso');
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imageFileVerso, setImageFileVerso] = useState<File | null>(null); // NOUVEAU
+  const [imageFileVerso, setImageFileVerso] = useState<File | null>(null);
   const [quantities, setQuantities] = useState('500, 1000, 5000');
   const [basePrices, setBasePrices] = useState('100, 180, 500');
   const [hasVariants, setHasVariants] = useState(false);
   const [variantsList, setVariantsList] = useState<VariantItem[]>([]);
-  
   const [existingProducts, setExistingProducts] = useState<any[]>([]);
+
+  // 2. FONCTION DE COMPRESSION RÉUTILISABLE
+  const compressAndUpload = async (file: File, suffix: string) => {
+    const options = {
+      maxSizeMB: 0.8,         // Cible ~800Ko max
+      maxWidthOrHeight: 1200, // Redimensionne si l'image est immense
+      useWebWorker: true,
+    };
+
+    try {
+      const compressedFile = await imageCompression(file, options);
+      const fileName = `${Date.now()}-${suffix}-${file.name.replace(/\s/g, '_')}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(fileName, compressedFile);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(fileName);
+
+      return data.publicUrl;
+    } catch (error) {
+      console.error("Erreur compression/upload:", error);
+      throw error;
+    }
+  };
 
   const fetchProducts = async () => {
     const { data } = await supabase.from('products').select('*').order('created_at', { ascending: false });
@@ -42,11 +72,12 @@ export default function AdminPortal() {
     setName('');
     setCategory('Perso');
     setImageFile(null);
-    setImageFileVerso(null); // RESET
+    setImageFileVerso(null);
     setQuantities('500, 1000, 5000');
     setBasePrices('100, 180, 500');
     setHasVariants(false);
     setVariantsList([]);
+    setIsUploading(false);
   };
 
   const startEdit = (p: any) => {
@@ -72,27 +103,26 @@ export default function AdminPortal() {
 
   const handleSaveProduct = async () => {
     if (!name) return alert("Nom requis");
+    setIsUploading(true);
+
     try {
       let mainUrl = existingProducts.find(p => p.id === editingId)?.image_recto;
       let versoUrl = existingProducts.find(p => p.id === editingId)?.image_verso;
 
-      // Upload RECTO
+      // Upload RECTO COMPRESSÉ
       if (imageFile) {
-        const fileName = `${Date.now()}-recto-${imageFile.name}`;
-        const { error: uploadError } = await supabase.storage.from('product-images').upload(fileName, imageFile);
-        if (uploadError) throw uploadError;
-        mainUrl = supabase.storage.from('product-images').getPublicUrl(fileName).data.publicUrl;
+        mainUrl = await compressAndUpload(imageFile, 'recto');
       }
 
-      // Upload VERSO
+      // Upload VERSO COMPRESSÉ
       if (imageFileVerso) {
-        const fileNameV = `${Date.now()}-verso-${imageFileVerso.name}`;
-        const { error: uploadErrorV } = await supabase.storage.from('product-images').upload(fileNameV, imageFileVerso);
-        if (uploadErrorV) throw uploadErrorV;
-        versoUrl = supabase.storage.from('product-images').getPublicUrl(fileNameV).data.publicUrl;
+        versoUrl = await compressAndUpload(imageFileVerso, 'verso');
       }
 
-      if (!mainUrl && !imageFile) return alert("Image Recto requise");
+      if (!mainUrl && !imageFile) {
+        setIsUploading(false);
+        return alert("Image Recto requise");
+      }
 
       const qtyArray = quantities.split(',').map(n => Number(n.trim()));
       const finalPrices: any = {};
@@ -102,9 +132,8 @@ export default function AdminPortal() {
         for (const v of variantsList) {
           let vImg = v.image || mainUrl;
           if (v.file) {
-            const vFileName = `${Date.now()}-v-${v.file.name}`;
-            await supabase.storage.from('product-images').upload(vFileName, v.file);
-            vImg = supabase.storage.from('product-images').getPublicUrl(vFileName).data.publicUrl;
+            // Compression pour chaque variante
+            vImg = await compressAndUpload(v.file, 'variant');
           }
           finalPrices[v.id] = v.prices.split(',').map(n => Number(n.trim()));
           finalVariants.push({ id: v.id, name: v.name, image: vImg });
@@ -116,8 +145,8 @@ export default function AdminPortal() {
       const payload = {
         name,
         category,
-        image_recto: mainUrl, // MODIFIÉ
-        image_verso: versoUrl || null, // NOUVEAU
+        image_recto: mainUrl,
+        image_verso: versoUrl || null,
         has_variants: hasVariants,
         config: { quantities: qtyArray, prices: finalPrices, variants: finalVariants }
       };
@@ -128,12 +157,14 @@ export default function AdminPortal() {
 
       if (dbError) throw dbError;
 
-      alert(editingId ? "Modification enregistrée !" : "Produit ajouté !");
+      alert(editingId ? "Modification enregistrée (et compressée) !" : "Produit ajouté (et compressé) !");
       resetForm();
       fetchProducts();
     } catch (err: any) { 
       console.error(err);
       alert("Erreur de sauvegarde : " + err.message); 
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -163,8 +194,15 @@ export default function AdminPortal() {
             )}
           </div>
           
-          <div className="bg-white/5 p-8 rounded-3xl border border-white/10 space-y-6 shadow-2xl">
-            {/* ... Catégorie ... */}
+          <div className="bg-white/5 p-8 rounded-3xl border border-white/10 space-y-6 shadow-2xl relative">
+            {/* Overlay de chargement pendant la compression/upload */}
+            {isUploading && (
+              <div className="absolute inset-0 bg-[#0f092e]/80 backdrop-blur-sm z-[100] rounded-3xl flex flex-col items-center justify-center space-y-4">
+                <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                <p className="font-black uppercase text-[10px] tracking-widest text-blue-400">Compression & Envoi en cours...</p>
+              </div>
+            )}
+
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase text-white/40 block tracking-widest">Page de destination</label>
               <select value={category} onChange={e => setCategory(e.target.value)} className="w-full bg-[#16103a] border border-white/10 p-4 rounded-xl outline-none text-white font-bold uppercase text-[11px]">
@@ -180,20 +218,18 @@ export default function AdminPortal() {
                 <input value={name} onChange={e => setName(e.target.value)} className="w-full bg-[#16103a] border border-white/10 p-4 rounded-xl outline-none text-sm" placeholder="Nom..." />
               </div>
 
-              {/* GRILLE IMAGES RECTO / VERSO */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-white/40 uppercase">Image Recto</label>
-                  <input type="file" onChange={e => setImageFile(e.target.files?.[0] || null)} className="text-[9px] block w-full file:bg-blue-500 file:border-0 file:text-white file:px-3 file:py-1 file:rounded file:font-black file:uppercase" />
+                  <input type="file" accept="image/*" onChange={e => setImageFile(e.target.files?.[0] || null)} className="text-[9px] block w-full file:bg-blue-500 file:border-0 file:text-white file:px-3 file:py-1 file:rounded file:font-black file:uppercase" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-white/40 uppercase">Image Verso (Optionnel)</label>
-                  <input type="file" onChange={e => setImageFileVerso(e.target.files?.[0] || null)} className="text-[9px] block w-full file:bg-gray-500 file:border-0 file:text-white file:px-3 file:py-1 file:rounded file:font-black file:uppercase" />
+                  <input type="file" accept="image/*" onChange={e => setImageFileVerso(e.target.files?.[0] || null)} className="text-[9px] block w-full file:bg-gray-500 file:border-0 file:text-white file:px-3 file:py-1 file:rounded file:font-black file:uppercase" />
                 </div>
               </div>
             </div>
 
-            {/* ... Quantités ... */}
             <div className="space-y-2">
               <label className="text-[10px] font-black text-white/40 uppercase">Quantités proposées</label>
               <input value={quantities} onChange={e => setQuantities(e.target.value)} className="w-full bg-[#16103a] border border-white/10 p-4 rounded-xl outline-none text-sm" placeholder="ex: 1, 5, 10" />
@@ -217,20 +253,23 @@ export default function AdminPortal() {
                     <button onClick={() => setVariantsList(variantsList.filter((_, i) => i !== idx))} className="absolute top-4 right-4 text-red-500 text-[9px] font-black px-2 py-1">SUPPRIMER</button>
                     <p className="font-black text-[12px] uppercase text-blue-500">{v.name}</p>
                     <input value={v.prices} onChange={(e) => { const c = [...variantsList]; c[idx].prices = e.target.value; setVariantsList(c); }} className="w-full bg-black/30 border border-white/5 p-3 rounded-lg text-xs outline-none" placeholder="Prix..." />
-                    <input type="file" onChange={(e) => { const c = [...variantsList]; c[idx].file = e.target.files?.[0] || null; setVariantsList(c); }} className="text-[8px] opacity-60" />
+                    <input type="file" accept="image/*" onChange={(e) => { const c = [...variantsList]; c[idx].file = e.target.files?.[0] || null; setVariantsList(c); }} className="text-[8px] opacity-60" />
                   </div>
                 ))}
                 <button onClick={() => { const n = prompt("Nom de l'option :"); if(n) setVariantsList([...variantsList, { id: n.toLowerCase().replace(/\s/g, ''), name: n, prices: basePrices }]); }} className="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black text-blue-400 uppercase">+ Ajouter un modèle</button>
               </div>
             )}
 
-            <button onClick={handleSaveProduct} className={`w-full py-5 rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl transition-all active:scale-95 ${editingId ? 'bg-orange-600 hover:bg-orange-500' : 'bg-blue-600 hover:bg-blue-500'}`}>
+            <button 
+              disabled={isUploading}
+              onClick={handleSaveProduct} 
+              className={`w-full py-5 rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl transition-all active:scale-95 ${isUploading ? 'bg-gray-700 cursor-not-allowed' : (editingId ? 'bg-orange-600 hover:bg-orange-500' : 'bg-blue-600 hover:bg-blue-500')}`}
+            >
               {editingId ? 'Enregistrer les modifications' : 'Publier sur le site'}
             </button>
           </div>
         </div>
 
-        {/* LISTE DES PRODUITS */}
         <div className="lg:col-span-7 space-y-12">
           {[
             { id: 'Perso', name: 'Produits personnalisés', color: 'text-blue-500', bg: 'bg-blue-500' },
@@ -266,7 +305,6 @@ export default function AdminPortal() {
             </div>
           ))}
         </div>
-
       </div>
     </div>
   );
