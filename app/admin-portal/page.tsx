@@ -19,6 +19,7 @@ export default function AdminPortal() {
   const [name, setName] = useState('');
   const [category, setCategory] = useState('Perso');
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageFileVerso, setImageFileVerso] = useState<File | null>(null); // NOUVEAU
   const [quantities, setQuantities] = useState('500, 1000, 5000');
   const [basePrices, setBasePrices] = useState('100, 180, 500');
   const [hasVariants, setHasVariants] = useState(false);
@@ -36,12 +37,12 @@ export default function AdminPortal() {
     else { alert("Accès refusé"); }
   };
 
-  // RÉINITIALISER LE FORMULAIRE
   const resetForm = () => {
     setEditingId(null);
     setName('');
     setCategory('Perso');
     setImageFile(null);
+    setImageFileVerso(null); // RESET
     setQuantities('500, 1000, 5000');
     setBasePrices('100, 180, 500');
     setHasVariants(false);
@@ -72,13 +73,26 @@ export default function AdminPortal() {
   const handleSaveProduct = async () => {
     if (!name) return alert("Nom requis");
     try {
-      let mainUrl = existingProducts.find(p => p.id === editingId)?.image_url;
+      let mainUrl = existingProducts.find(p => p.id === editingId)?.image_recto;
+      let versoUrl = existingProducts.find(p => p.id === editingId)?.image_verso;
+
+      // Upload RECTO
       if (imageFile) {
-        const fileName = `${Date.now()}-main-${imageFile.name}`;
-        await supabase.storage.from('product-images').upload(fileName, imageFile);
+        const fileName = `${Date.now()}-recto-${imageFile.name}`;
+        const { error: uploadError } = await supabase.storage.from('product-images').upload(fileName, imageFile);
+        if (uploadError) throw uploadError;
         mainUrl = supabase.storage.from('product-images').getPublicUrl(fileName).data.publicUrl;
       }
-      if (!mainUrl && !imageFile) return alert("Image requise");
+
+      // Upload VERSO
+      if (imageFileVerso) {
+        const fileNameV = `${Date.now()}-verso-${imageFileVerso.name}`;
+        const { error: uploadErrorV } = await supabase.storage.from('product-images').upload(fileNameV, imageFileVerso);
+        if (uploadErrorV) throw uploadErrorV;
+        versoUrl = supabase.storage.from('product-images').getPublicUrl(fileNameV).data.publicUrl;
+      }
+
+      if (!mainUrl && !imageFile) return alert("Image Recto requise");
 
       const qtyArray = quantities.split(',').map(n => Number(n.trim()));
       const finalPrices: any = {};
@@ -102,18 +116,25 @@ export default function AdminPortal() {
       const payload = {
         name,
         category,
-        image_url: mainUrl,
+        image_recto: mainUrl, // MODIFIÉ
+        image_verso: versoUrl || null, // NOUVEAU
         has_variants: hasVariants,
         config: { quantities: qtyArray, prices: finalPrices, variants: finalVariants }
       };
 
-      if (editingId) { await supabase.from('products').update(payload).eq('id', editingId); } 
-      else { await supabase.from('products').insert([payload]); }
+      const { error: dbError } = editingId 
+        ? await supabase.from('products').update(payload).eq('id', editingId)
+        : await supabase.from('products').insert([payload]);
+
+      if (dbError) throw dbError;
 
       alert(editingId ? "Modification enregistrée !" : "Produit ajouté !");
       resetForm();
       fetchProducts();
-    } catch (err) { alert("Erreur de sauvegarde"); }
+    } catch (err: any) { 
+      console.error(err);
+      alert("Erreur de sauvegarde : " + err.message); 
+    }
   };
 
   if (!isAuthenticated) return (
@@ -130,7 +151,6 @@ export default function AdminPortal() {
     <div className="min-h-screen bg-[#0f092e] text-white p-10 font-sans">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-16">
         
-        {/* FORMULAIRE D'AJOUT / MODIFICATION */}
         <div className="lg:col-span-5 space-y-8">
           <div className="flex justify-between items-center">
             <h1 className="text-3xl font-black uppercase text-blue-500 italic">
@@ -138,12 +158,13 @@ export default function AdminPortal() {
             </h1>
             {editingId && (
               <button onClick={resetForm} className="bg-red-500/20 text-red-500 px-4 py-2 rounded-full text-[9px] font-black uppercase border border-red-500/30 hover:bg-red-500 hover:text-white transition-all">
-                Annuler la modification
+                Annuler
               </button>
             )}
           </div>
           
           <div className="bg-white/5 p-8 rounded-3xl border border-white/10 space-y-6 shadow-2xl">
+            {/* ... Catégorie ... */}
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase text-white/40 block tracking-widest">Page de destination</label>
               <select value={category} onChange={e => setCategory(e.target.value)} className="w-full bg-[#16103a] border border-white/10 p-4 rounded-xl outline-none text-white font-bold uppercase text-[11px]">
@@ -153,27 +174,35 @@ export default function AdminPortal() {
               </select>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-white/40 uppercase">Titre</label>
+                <label className="text-[10px] font-black text-white/40 uppercase">Titre du produit</label>
                 <input value={name} onChange={e => setName(e.target.value)} className="w-full bg-[#16103a] border border-white/10 p-4 rounded-xl outline-none text-sm" placeholder="Nom..." />
               </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-white/40 uppercase tracking-tighter">Image {editingId && '(Optionnel)'}</label>
-                <input type="file" onChange={e => setImageFile(e.target.files?.[0] || null)} className="text-[9px] mt-2 block w-full file:bg-blue-500 file:border-0 file:text-white file:px-3 file:py-1 file:rounded file:font-black file:uppercase" />
+
+              {/* GRILLE IMAGES RECTO / VERSO */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-white/40 uppercase">Image Recto</label>
+                  <input type="file" onChange={e => setImageFile(e.target.files?.[0] || null)} className="text-[9px] block w-full file:bg-blue-500 file:border-0 file:text-white file:px-3 file:py-1 file:rounded file:font-black file:uppercase" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-white/40 uppercase">Image Verso (Optionnel)</label>
+                  <input type="file" onChange={e => setImageFileVerso(e.target.files?.[0] || null)} className="text-[9px] block w-full file:bg-gray-500 file:border-0 file:text-white file:px-3 file:py-1 file:rounded file:font-black file:uppercase" />
+                </div>
               </div>
             </div>
 
+            {/* ... Quantités ... */}
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-white/40 uppercase">Quantités proposées (Séparez par une virgule)</label>
-              <input value={quantities} onChange={e => setQuantities(e.target.value)} className="w-full bg-[#16103a] border border-white/10 p-4 rounded-xl outline-none text-sm" placeholder="ex: 1, 5, 10, 50" />
+              <label className="text-[10px] font-black text-white/40 uppercase">Quantités proposées</label>
+              <input value={quantities} onChange={e => setQuantities(e.target.value)} className="w-full bg-[#16103a] border border-white/10 p-4 rounded-xl outline-none text-sm" placeholder="ex: 1, 5, 10" />
             </div>
 
             {!hasVariants && (
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-white/40 uppercase">Prix HT correspondants (Séparez par une virgule)</label>
-                <input value={basePrices} onChange={e => setBasePrices(e.target.value)} className="w-full bg-[#16103a] border border-white/10 p-4 rounded-xl outline-none text-sm border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.1)]" placeholder="ex: 10, 45, 80, 350" />
-                <p className="text-[8px] text-white/30 italic">L'ordre doit être identique aux quantités ci-dessus.</p>
+                <label className="text-[10px] font-black text-white/40 uppercase">Prix HT correspondants</label>
+                <input value={basePrices} onChange={e => setBasePrices(e.target.value)} className="w-full bg-[#16103a] border border-white/10 p-4 rounded-xl outline-none text-sm" />
               </div>
             )}
 
@@ -183,24 +212,15 @@ export default function AdminPortal() {
 
             {hasVariants && (
               <div className="space-y-6 border-l-2 border-blue-500 pl-6 py-2">
-                <p className="text-[9px] font-black text-blue-400/60 uppercase tracking-widest mb-2">Détails des variantes :</p>
                 {variantsList.map((v, idx) => (
-                  <div key={idx} className="bg-white/5 p-5 rounded-2xl space-y-4 relative border border-white/5 shadow-inner">
-                    <button onClick={() => setVariantsList(variantsList.filter((_, i) => i !== idx))} className="absolute top-4 right-4 text-red-500 text-[9px] font-black hover:scale-110 transition-transform px-2 py-1">SUPPRIMER</button>
-                    <p className="font-black text-[12px] uppercase text-blue-500 tracking-tighter">{v.name}</p>
-                    
-                    <div className="space-y-2">
-                      <label className="text-[8px] font-black text-white/40 uppercase">Prix spécifiques pour {v.name}</label>
-                      <input value={v.prices} onChange={(e) => { const c = [...variantsList]; c[idx].prices = e.target.value; setVariantsList(c); }} className="w-full bg-black/30 border border-white/5 p-3 rounded-lg text-xs outline-none focus:border-blue-500" placeholder="Prix (ex: 12, 50, 95...)" />
-                    </div>
-                    
-                    <div className="space-y-1">
-                      <label className="text-[8px] font-black text-white/40 uppercase">Image spécifique (Laisser vide pour garder l'image principale)</label>
-                      <input type="file" onChange={(e) => { const c = [...variantsList]; c[idx].file = e.target.files?.[0] || null; setVariantsList(c); }} className="text-[8px] opacity-60" />
-                    </div>
+                  <div key={idx} className="bg-white/5 p-5 rounded-2xl space-y-4 relative border border-white/5">
+                    <button onClick={() => setVariantsList(variantsList.filter((_, i) => i !== idx))} className="absolute top-4 right-4 text-red-500 text-[9px] font-black px-2 py-1">SUPPRIMER</button>
+                    <p className="font-black text-[12px] uppercase text-blue-500">{v.name}</p>
+                    <input value={v.prices} onChange={(e) => { const c = [...variantsList]; c[idx].prices = e.target.value; setVariantsList(c); }} className="w-full bg-black/30 border border-white/5 p-3 rounded-lg text-xs outline-none" placeholder="Prix..." />
+                    <input type="file" onChange={(e) => { const c = [...variantsList]; c[idx].file = e.target.files?.[0] || null; setVariantsList(c); }} className="text-[8px] opacity-60" />
                   </div>
                 ))}
-                <button onClick={() => { const n = prompt("Nom de l'option (ex: Papier Mat, Format A3...) :"); if(n) setVariantsList([...variantsList, { id: n.toLowerCase().replace(/\s/g, ''), name: n, prices: basePrices }]); }} className="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black text-blue-400 uppercase hover:bg-white/10">+ Ajouter un modèle</button>
+                <button onClick={() => { const n = prompt("Nom de l'option :"); if(n) setVariantsList([...variantsList, { id: n.toLowerCase().replace(/\s/g, ''), name: n, prices: basePrices }]); }} className="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black text-blue-400 uppercase">+ Ajouter un modèle</button>
               </div>
             )}
 
@@ -224,26 +244,24 @@ export default function AdminPortal() {
               </div>
               
               <div className="grid grid-cols-1 gap-3">
-                {existingProducts.filter(p => p.category === section.id).length === 0 ? (
-                  <p className="text-[9px] font-black uppercase text-white/10 pl-5 italic tracking-widest">Aucun produit dans cette section</p>
-                ) : (
-                  existingProducts.filter(p => p.category === section.id).map(p => (
-                    <div key={p.id} className="flex items-center gap-5 bg-white/[0.03] p-5 rounded-3xl border border-white/5 hover:bg-white/[0.06] transition-all group">
-                      <img src={p.image_url} className="w-14 h-14 object-contain bg-black/40 rounded-xl p-1" alt="" />
-                      <div className="flex-1">
-                        <p className="font-black uppercase text-[11px] tracking-widest text-white/90">{p.name}</p>
-                        <div className="flex gap-3 mt-1">
-                          <span className="text-[7px] text-white/30 font-black uppercase">{p.config.quantities.length} Tarifs</span>
-                          {p.has_variants && <span className="text-[7px] text-blue-500 font-black uppercase border border-blue-500/30 px-1 rounded">Modèles inclus</span>}
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <button onClick={() => startEdit(p)} className="bg-white text-[#0f092e] px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-blue-500 hover:text-white transition-all shadow-lg active:scale-95">Modifier</button>
-                        <button onClick={() => { if(confirm('Supprimer définitivement ?')) { supabase.from('products').delete().eq('id', p.id).then(() => fetchProducts()); } }} className="bg-red-500/10 text-red-500 border border-red-500/20 px-3 py-2.5 rounded-xl text-[9px] font-black uppercase hover:bg-red-500 hover:text-white transition-all">Suppr.</button>
+                {existingProducts.filter(p => p.category === section.id).map(p => (
+                  <div key={p.id} className="flex items-center gap-5 bg-white/[0.03] p-5 rounded-3xl border border-white/5 hover:bg-white/[0.06] transition-all group">
+                    <div className="flex gap-1">
+                        <img src={p.image_recto} className="w-10 h-10 object-contain bg-black/40 rounded-lg p-1" alt="" />
+                        {p.image_verso && <img src={p.image_verso} className="w-10 h-10 object-contain bg-black/40 rounded-lg p-1 border border-white/10" alt="" />}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-black uppercase text-[11px] tracking-widest text-white/90">{p.name}</p>
+                      <div className="flex gap-3 mt-1">
+                        <span className="text-[7px] text-white/30 font-black uppercase">{p.config.quantities.length} Tarifs</span>
                       </div>
                     </div>
-                  ))
-                )}
+                    <div className="flex gap-2">
+                      <button onClick={() => startEdit(p)} className="bg-white text-[#0f092e] px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-blue-500 hover:text-white transition-all">Modifier</button>
+                      <button onClick={() => { if(confirm('Supprimer ?')) { supabase.from('products').delete().eq('id', p.id).then(() => fetchProducts()); } }} className="bg-red-500/10 text-red-500 border border-red-500/20 px-3 py-2.5 rounded-xl text-[9px] font-black uppercase">Suppr.</button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           ))}
