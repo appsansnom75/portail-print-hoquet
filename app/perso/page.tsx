@@ -19,6 +19,8 @@ export default function PersoPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selections, setSelections] = useState<any>({});
+  // État pour gérer quelle face est affichée par produit
+  const [flippedProducts, setFlippedProducts] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -59,6 +61,10 @@ export default function PersoPage() {
     fetchProducts();
   }, []);
 
+  const toggleFlip = (id: string) => {
+    setFlippedProducts(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
   const handleAddToCart = (p: any) => {
     const s = selections[p.id];
     const pList = p.prices[s.variant] || p.prices.default || [];
@@ -76,16 +82,14 @@ export default function PersoPage() {
     setIsCartOpen(true);
   };
 
-  if (loading) return <div className="min-h-screen bg-[#0f092e] flex items-center justify-center font-black text-blue-500 uppercase animate-pulse">Chargement Impression...</div>;
+  if (loading) return <div className="min-h-screen bg-[#0f092e] flex items-center justify-center font-black text-blue-500 uppercase animate-pulse">Chargement...</div>;
 
   return (
     <div className="min-h-screen bg-[#0f092e] text-white flex flex-col relative overflow-x-hidden">
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
       
       <header className="py-6 px-6 border-b border-white/10 flex justify-between items-center sticky top-0 bg-[#0f092e]/80 backdrop-blur-md z-50">
-        <Link href="/" className="group flex items-center gap-2 text-[10px] font-black uppercase text-white/40 hover:text-white transition-all">
-          <span className="group-hover:-translate-x-1 transition-transform">←</span> Retour Accueil
-        </Link>
+        <Link href="/" className="text-[10px] font-black uppercase text-white/40 hover:text-white transition-all">← Retour</Link>
         <h1 className={`text-[10px] font-black uppercase tracking-[0.3em] ${THEME.color} italic`}>{THEME.label}</h1>
         <div className="w-10"></div>
       </header>
@@ -98,59 +102,47 @@ export default function PersoPage() {
             const pList = p.prices[sel.variant] || p.prices.default || [];
             const currentPrice = pList[p.quantities.indexOf(Number(sel.qty))] || 0;
             
-            const displayImageRecto = p.variants.find((v:any) => v.id === sel.variant)?.image || p.image_recto;
-            const displayImageVerso = p.image_verso;
+            const isFlipped = flippedProducts[p.id] || false;
+            const currentImg = (isFlipped && p.image_verso) ? p.image_verso : (p.variants.find((v:any) => v.id === sel.variant)?.image || p.image_recto);
 
             return (
-              <div key={p.id} className="pt-10 relative group">
+              <div key={p.id} className="pt-10 relative">
                 {/* ZONE IMAGE */}
-                <div className="h-48 w-full flex items-center justify-center relative -mb-10 z-20 group-hover:scale-110 transition-transform duration-500">
+                <div className="h-48 w-full flex items-center justify-center relative -mb-10 z-20">
                   
-                  {/* INDICATEUR FLÈCHE VERSO (Mobile & Desktop) */}
-                  {displayImageVerso && (
-                    <div className="absolute -right-2 bottom-4 z-30 flex flex-col items-center gap-1 animate-bounce">
-                      <span className="text-[7px] font-black uppercase text-blue-500 bg-white/10 backdrop-blur-md px-2 py-1 rounded-full border border-blue-500/20">Verso</span>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-                    </div>
+                  {/* BOUTON FLÈCHE POUR TOURNER (Uniquement si verso existe) */}
+                  {p.image_verso && (
+                    <button 
+                      onClick={() => toggleFlip(p.id)}
+                      className="absolute right-0 bottom-4 z-30 bg-white text-black p-2 rounded-full shadow-xl hover:bg-blue-500 hover:text-white transition-all active:scale-90"
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="m15 18 6-6-6-6"/><path d="M3 12h18"/>
+                      </svg>
+                    </button>
                   )}
 
-                  <AnimatePresence mode="wait">
-                    <div className="relative w-full h-full flex items-center justify-center cursor-pointer">
-                      <motion.img 
-                        key={displayImageRecto} 
-                        initial={{ opacity: 0 }} 
-                        animate={{ opacity: 1 }} 
-                        exit={{ opacity: 0 }} 
-                        src={displayImageRecto} 
-                        className={`max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-opacity duration-500 ${displayImageVerso ? 'group-hover:opacity-0 group-active:opacity-0' : ''}`} 
-                        alt={p.name} 
-                      />
-                      
-                      {displayImageVerso && (
-                        <motion.img 
-                          src={displayImageVerso} 
-                          className="absolute max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-500" 
-                          alt={`${p.name} verso`} 
-                        />
-                      )}
-                    </div>
-                  </AnimatePresence>
+                  <img 
+                    src={currentImg} 
+                    className="max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-300" 
+                    alt={p.name} 
+                  />
                 </div>
 
-                <div className="bg-white/[0.03] border border-white/10 rounded-[40px] p-8 pt-16 group-hover:border-blue-500/30 transition-all duration-500">
+                <div className="bg-white/[0.03] border border-white/10 rounded-[40px] p-8 pt-16">
                   <h3 className={`font-black text-base uppercase mb-6 ${THEME.color}`}>{p.name}</h3>
                   <div className="space-y-4">
                     {p.hasVariants && (
-                      <select value={sel.variant} onChange={(e) => setSelections({...selections, [p.id]:{...sel, variant: e.target.value}})} className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none focus:border-blue-500 transition-colors cursor-pointer">
+                      <select value={sel.variant} onChange={(e) => setSelections({...selections, [p.id]:{...sel, variant: e.target.value}})} className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none">
                         {p.variants.map((v:any)=><option key={v.id} value={v.id}>{v.name}</option>)}
                       </select>
                     )}
-                    <select value={sel.qty} onChange={(e) => setSelections({...selections, [p.id]:{...sel, qty: Number(e.target.value)}})} className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none focus:border-blue-500 transition-colors cursor-pointer">
+                    <select value={sel.qty} onChange={(e) => setSelections({...selections, [p.id]:{...sel, qty: Number(e.target.value)}})} className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none">
                       {p.quantities.map((q:any)=><option key={q} value={q}>{q} exemplaires</option>)}
                     </select>
                     <div className="flex items-center justify-between pt-6 border-t border-white/5 mt-4">
                       <span className="text-2xl font-black">{currentPrice.toFixed(2)}€</span>
-                      <button onClick={() => handleAddToCart(p)} className="bg-white text-[#0f092e] px-8 py-3.5 rounded-2xl font-black uppercase text-[9px] hover:bg-blue-500 hover:text-white transition-all active:scale-90">Ajouter</button>
+                      <button onClick={() => handleAddToCart(p)} className="bg-white text-[#0f092e] px-8 py-3.5 rounded-2xl font-black uppercase text-[9px] hover:bg-blue-500 hover:text-white transition-all">Ajouter</button>
                     </div>
                   </div>
                 </div>
@@ -160,7 +152,7 @@ export default function PersoPage() {
         </div>
       </main>
 
-      <button onClick={() => setIsCartOpen(true)} className="fixed bottom-8 right-8 w-16 h-16 bg-white rounded-full shadow-2xl flex items-center justify-center z-[100] hover:scale-110 active:scale-95 transition-all">
+      <button onClick={() => setIsCartOpen(true)} className="fixed bottom-8 right-8 w-16 h-16 bg-white rounded-full shadow-2xl flex items-center justify-center z-[100] transition-all">
         <div className="relative">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0f092e" strokeWidth="2.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
           {cart.length > 0 && <span className={`absolute -top-3 -right-3 ${THEME.bg} text-white text-[9px] font-black w-6 h-6 rounded-full flex items-center justify-center border-4 border-[#0f092e]`}>{cart.length}</span>}
