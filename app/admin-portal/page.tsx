@@ -109,12 +109,10 @@ export default function AdminPortal() {
       let mainUrl = existingProducts.find(p => p.id === editingId)?.image_recto;
       let versoUrl = existingProducts.find(p => p.id === editingId)?.image_verso;
 
-      // Upload RECTO COMPRESSÉ
       if (imageFile) {
         mainUrl = await compressAndUpload(imageFile, 'recto');
       }
 
-      // Upload VERSO COMPRESSÉ
       if (imageFileVerso) {
         versoUrl = await compressAndUpload(imageFileVerso, 'verso');
       }
@@ -132,7 +130,6 @@ export default function AdminPortal() {
         for (const v of variantsList) {
           let vImg = v.image || mainUrl;
           if (v.file) {
-            // Compression pour chaque variante
             vImg = await compressAndUpload(v.file, 'variant');
           }
           finalPrices[v.id] = v.prices.split(',').map(n => Number(n.trim()));
@@ -157,7 +154,7 @@ export default function AdminPortal() {
 
       if (dbError) throw dbError;
 
-      alert(editingId ? "Modification enregistrée (et compressée) !" : "Produit ajouté (et compressé) !");
+      alert(editingId ? "Modification enregistrée !" : "Produit ajouté !");
       resetForm();
       fetchProducts();
     } catch (err: any) { 
@@ -165,6 +162,19 @@ export default function AdminPortal() {
       alert("Erreur de sauvegarde : " + err.message); 
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  // NOUVELLE FONCTION DE SUPPRESSION AVEC ATTENTE
+  const handleDelete = async (id: string) => {
+    if(confirm('Supprimer définitivement ce produit ?')) {
+      const { error } = await supabase.from('products').delete().eq('id', id);
+      if (error) {
+        alert("Erreur lors de la suppression : " + error.message);
+      } else {
+        // On rafraîchit la liste uniquement après la confirmation de suppression
+        fetchProducts();
+      }
     }
   };
 
@@ -195,7 +205,6 @@ export default function AdminPortal() {
           </div>
           
           <div className="bg-white/5 p-8 rounded-3xl border border-white/10 space-y-6 shadow-2xl relative">
-            {/* Overlay de chargement pendant la compression/upload */}
             {isUploading && (
               <div className="absolute inset-0 bg-[#0f092e]/80 backdrop-blur-sm z-[100] rounded-3xl flex flex-col items-center justify-center space-y-4">
                 <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
@@ -297,7 +306,7 @@ export default function AdminPortal() {
                     </div>
                     <div className="flex gap-2">
                       <button onClick={() => startEdit(p)} className="bg-white text-[#0f092e] px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-blue-500 hover:text-white transition-all">Modifier</button>
-                      <button onClick={() => { if(confirm('Supprimer ?')) { supabase.from('products').delete().eq('id', p.id).then(() => fetchProducts()); } }} className="bg-red-500/10 text-red-500 border border-red-500/20 px-3 py-2.5 rounded-xl text-[9px] font-black uppercase">Suppr.</button>
+                      <button onClick={() => handleDelete(p.id)} className="bg-red-500/10 text-red-500 border border-red-500/20 px-3 py-2.5 rounded-xl text-[9px] font-black uppercase">Suppr.</button>
                     </div>
                   </div>
                 ))}
