@@ -8,7 +8,7 @@ import CartDrawer from '@/components/CartDrawer';
 
 const THEME = { 
   category: 'Signaletique', 
-  label: 'Signalétique & Stock', 
+  label: 'Produits non personnalisés', 
   color: 'text-green-500', 
   bg: 'bg-green-500' 
 };
