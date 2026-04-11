@@ -23,17 +23,38 @@ export default function PersoPage() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const { data, error } = await supabase.from('products').select('*').eq('category', THEME.category).order('created_at', { ascending: true });
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('category', THEME.category)
+          .order('created_at', { ascending: true });
+          
         if (error) throw error;
         if (data) {
           const formatted = data.map(p => ({
-            id: p.id, name: p.name, image: p.image_url, hasVariants: p.has_variants,
-            variants: p.config?.variants || [], quantities: p.config?.quantities || [], prices: p.config?.prices || { default: [] }
+            id: p.id, 
+            name: p.name, 
+            image_recto: p.image_recto, // MODIFIÉ
+            image_verso: p.image_verso, // AJOUTÉ
+            hasVariants: p.has_variants,
+            variants: p.config?.variants || [], 
+            quantities: p.config?.quantities || [], 
+            prices: p.config?.prices || { default: [] }
           }));
           setProducts(formatted);
-          setSelections(formatted.reduce((acc, p) => ({ ...acc, [p.id]: { qty: p.quantities[0] || 0, variant: p.hasVariants ? (p.variants[0]?.id || 'default') : 'default' } }), {}));
+          setSelections(formatted.reduce((acc, p) => ({ 
+            ...acc, 
+            [p.id]: { 
+              qty: p.quantities[0] || 0, 
+              variant: p.hasVariants ? (p.variants[0]?.id || 'default') : 'default' 
+            } 
+          }), {}));
         }
-      } catch (err) { console.error(err); } finally { setLoading(false); }
+      } catch (err) { 
+        console.error(err); 
+      } finally { 
+        setLoading(false); 
+      }
     };
     fetchProducts();
   }, []);
@@ -76,28 +97,52 @@ export default function PersoPage() {
             if (!sel) return null;
             const pList = p.prices[sel.variant] || p.prices.default || [];
             const currentPrice = pList[p.quantities.indexOf(Number(sel.qty))] || 0;
-            const displayImage = p.variants.find((v:any) => v.id === sel.variant)?.image || p.image;
+            
+            // Logique d'image : Variante > Recto
+            const displayImageRecto = p.variants.find((v:any) => v.id === sel.variant)?.image || p.image_recto;
+            const displayImageVerso = p.image_verso;
+
             return (
               <div key={p.id} className="pt-10 relative group">
+                {/* ZONE IMAGE AVEC RECTO/VERSO AU HOVER */}
                 <div className="h-48 w-full flex items-center justify-center relative -mb-10 z-20 group-hover:scale-110 transition-transform duration-500">
                   <AnimatePresence mode="wait">
-                    <motion.img key={displayImage} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} src={displayImage} className="max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]" alt={p.name} />
+                    <div className="relative w-full h-full flex items-center justify-center">
+                      <motion.img 
+                        key={displayImageRecto} 
+                        initial={{ opacity: 0, y: 10 }} 
+                        animate={{ opacity: 1, y: 0 }} 
+                        exit={{ opacity: 0, y: -10 }} 
+                        src={displayImageRecto} 
+                        className={`max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-opacity duration-500 ${displayImageVerso ? 'group-hover:opacity-0' : ''}`} 
+                        alt={p.name} 
+                      />
+                      
+                      {displayImageVerso && (
+                        <motion.img 
+                          src={displayImageVerso} 
+                          className="absolute max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] opacity-0 group-hover:opacity-100 transition-opacity duration-500" 
+                          alt={`${p.name} verso`} 
+                        />
+                      )}
+                    </div>
                   </AnimatePresence>
                 </div>
+
                 <div className="bg-white/[0.03] border border-white/10 rounded-[40px] p-8 pt-16 group-hover:border-blue-500/30 transition-all duration-500">
                   <h3 className={`font-black text-base uppercase mb-6 ${THEME.color}`}>{p.name}</h3>
                   <div className="space-y-4">
                     {p.hasVariants && (
-                      <select value={sel.variant} onChange={(e) => setSelections({...selections, [p.id]:{...sel, variant: e.target.value}})} className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none">
+                      <select value={sel.variant} onChange={(e) => setSelections({...selections, [p.id]:{...sel, variant: e.target.value}})} className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none focus:border-blue-500 transition-colors cursor-pointer">
                         {p.variants.map((v:any)=><option key={v.id} value={v.id}>{v.name}</option>)}
                       </select>
                     )}
-                    <select value={sel.qty} onChange={(e) => setSelections({...selections, [p.id]:{...sel, qty: Number(e.target.value)}})} className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none">
+                    <select value={sel.qty} onChange={(e) => setSelections({...selections, [p.id]:{...sel, qty: Number(e.target.value)}})} className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none focus:border-blue-500 transition-colors cursor-pointer">
                       {p.quantities.map((q:any)=><option key={q} value={q}>{q} exemplaires</option>)}
                     </select>
                     <div className="flex items-center justify-between pt-6 border-t border-white/5 mt-4">
                       <span className="text-2xl font-black">{currentPrice.toFixed(2)}€</span>
-                      <button onClick={() => handleAddToCart(p)} className="bg-white text-[#0f092e] px-8 py-3.5 rounded-2xl font-black uppercase text-[9px] hover:bg-blue-500 hover:text-white transition-all">Ajouter</button>
+                      <button onClick={() => handleAddToCart(p)} className="bg-white text-[#0f092e] px-8 py-3.5 rounded-2xl font-black uppercase text-[9px] hover:bg-blue-500 hover:text-white transition-all active:scale-90">Ajouter</button>
                     </div>
                   </div>
                 </div>

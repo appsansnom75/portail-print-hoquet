@@ -25,14 +25,32 @@ export default function BusinessPage() {
     const init = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) setIsAdmin(true);
-      const { data } = await supabase.from('products').select('*').eq('category', THEME.category).order('created_at', { ascending: true });
+      
+      const { data } = await supabase
+        .from('products')
+        .select('*')
+        .eq('category', THEME.category)
+        .order('created_at', { ascending: true });
+
       if (data) {
         const formatted = data.map(p => ({
-          id: p.id, name: p.name, image: p.image_url, hasVariants: p.has_variants,
-          variants: p.config.variants || [], quantities: p.config.quantities || [], prices: p.config.prices || { default: [] }
+          id: p.id, 
+          name: p.name, 
+          image_recto: p.image_recto, // MODIFIÉ
+          image_verso: p.image_verso, // AJOUTÉ
+          hasVariants: p.has_variants,
+          variants: p.config.variants || [], 
+          quantities: p.config.quantities || [], 
+          prices: p.config.prices || { default: [] }
         }));
         setProducts(formatted);
-        setSelections(formatted.reduce((acc, p) => ({ ...acc, [p.id]: { qty: p.quantities[0], variant: p.hasVariants ? p.variants[0].id : 'default' } }), {}));
+        setSelections(formatted.reduce((acc, p) => ({ 
+          ...acc, 
+          [p.id]: { 
+            qty: p.quantities[0], 
+            variant: p.hasVariants ? p.variants[0].id : 'default' 
+          } 
+        }), {}));
       }
       setLoading(false);
     };
@@ -49,7 +67,7 @@ export default function BusinessPage() {
       price: totalHT / Number(s.qty), 
       qty: Number(s.qty), 
       category: THEME.label,
-      color: THEME.color // AJOUT DE LA COULEUR ORANGE
+      color: THEME.color 
     });
     setIsCartOpen(true);
   };
@@ -59,6 +77,7 @@ export default function BusinessPage() {
   return (
     <div className="min-h-screen bg-[#0f092e] text-white flex flex-col relative overflow-x-hidden">
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+      
       <header className="py-6 px-6 border-b border-white/10 flex justify-between items-center sticky top-0 bg-[#0f092e]/80 backdrop-blur-md z-50">
         <Link href="/" className="text-[10px] font-black uppercase text-white/40 hover:text-white transition-colors">← Retour</Link>
         <h1 className={`text-[10px] font-black uppercase tracking-[0.3em] ${THEME.color} italic`}>{THEME.label}</h1>
@@ -71,23 +90,40 @@ export default function BusinessPage() {
           if (!sel) return null;
           const pList = p.prices[sel.variant] || p.prices.default || [];
           const currentPrice = pList[p.quantities.indexOf(Number(sel.qty))] || 0;
-          const displayImage = p.variants.find((v:any) => v.id === sel.variant)?.image || p.image;
+          
+          // Logique d'image : on utilise l'image de la variante ou le recto par défaut
+          const displayImageRecto = p.variants.find((v:any) => v.id === sel.variant)?.image || p.image_recto;
+          const displayImageVerso = p.image_verso; // On récupère le verso de la DB
 
           return (
             <div key={p.id} className="pt-10 relative group">
+              {/* ZONE IMAGE AVEC EFFET VERSO AU SURVOL */}
               <div className="h-48 w-full flex items-center justify-center relative -mb-10 z-20 transition-transform duration-500 group-hover:scale-110">
                 <AnimatePresence mode="wait">
-                  <motion.img 
-                    key={displayImage}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    src={displayImage} 
-                    className="max-h-full object-contain drop-shadow-2xl" 
-                    alt={p.name} 
-                  />
+                  <div className="relative w-full h-full flex items-center justify-center">
+                    {/* Image RECTO (toujours présente) */}
+                    <motion.img 
+                      key={displayImageRecto}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      src={displayImageRecto} 
+                      className={`max-h-full object-contain drop-shadow-2xl transition-opacity duration-500 ${displayImageVerso ? 'group-hover:opacity-0' : ''}`} 
+                      alt={p.name} 
+                    />
+                    
+                    {/* Image VERSO (apparaît au hover si elle existe) */}
+                    {displayImageVerso && (
+                      <motion.img 
+                        src={displayImageVerso} 
+                        className="absolute max-h-full object-contain drop-shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" 
+                        alt={`${p.name} verso`} 
+                      />
+                    )}
+                  </div>
                 </AnimatePresence>
               </div>
+
               <div className="bg-white/[0.03] border border-white/10 rounded-[40px] p-8 pt-16 group-hover:border-orange-500/30 transition-all duration-500">
                 <h3 className={`font-black text-base uppercase mb-6 ${THEME.color}`}>{p.name}</h3>
                 <div className="space-y-4">
@@ -123,6 +159,7 @@ export default function BusinessPage() {
         })}
       </main>
 
+      {/* Bouton Panier flottant */}
       <button 
         onClick={() => setIsCartOpen(true)} 
         className="fixed bottom-8 right-8 w-16 h-16 bg-white rounded-full shadow-2xl flex items-center justify-center z-[100] hover:scale-110 active:scale-95 transition-all"
