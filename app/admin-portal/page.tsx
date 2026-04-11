@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-// 1. IMPORT DE LA LIB DE COMPRESSION
+// Import pour la compression d'image
 import imageCompression from 'browser-image-compression';
 
 interface VariantItem {
@@ -15,7 +15,7 @@ interface VariantItem {
 export default function AdminPortal() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
-  const [isUploading, setIsUploading] = useState(false); // État pour le chargement
+  const [isUploading, setIsUploading] = useState(false); 
   
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
@@ -28,11 +28,11 @@ export default function AdminPortal() {
   const [variantsList, setVariantsList] = useState<VariantItem[]>([]);
   const [existingProducts, setExistingProducts] = useState<any[]>([]);
 
-  // 2. FONCTION DE COMPRESSION RÉUTILISABLE
+  // FONCTION DE COMPRESSION & UPLOAD
   const compressAndUpload = async (file: File, suffix: string) => {
     const options = {
-      maxSizeMB: 0.8,         // Cible ~800Ko max
-      maxWidthOrHeight: 1200, // Redimensionne si l'image est immense
+      maxSizeMB: 0.8,
+      maxWidthOrHeight: 1200,
       useWebWorker: true,
     };
 
@@ -117,11 +117,6 @@ export default function AdminPortal() {
         versoUrl = await compressAndUpload(imageFileVerso, 'verso');
       }
 
-      if (!mainUrl && !imageFile) {
-        setIsUploading(false);
-        return alert("Image Recto requise");
-      }
-
       const qtyArray = quantities.split(',').map(n => Number(n.trim()));
       const finalPrices: any = {};
       const finalVariants: any[] = [];
@@ -165,25 +160,24 @@ export default function AdminPortal() {
     }
   };
 
-  // NOUVELLE FONCTION DE SUPPRESSION AVEC ATTENTE
+  // FONCTION DE SUPPRESSION AVEC AWAIT POUR SUPABASE
   const handleDelete = async (id: string) => {
     if(confirm('Supprimer définitivement ce produit ?')) {
       const { error } = await supabase.from('products').delete().eq('id', id);
       if (error) {
         alert("Erreur lors de la suppression : " + error.message);
       } else {
-        // On rafraîchit la liste uniquement après la confirmation de suppression
-        fetchProducts();
+        fetchProducts(); 
       }
     }
   };
 
   if (!isAuthenticated) return (
     <div className="min-h-screen bg-[#0f092e] flex items-center justify-center p-6 text-white">
-      <div className="bg-white/5 p-8 rounded-2xl border border-white/10 w-full max-w-md text-center">
+      <div className="bg-white/5 p-8 rounded-2xl border border-white/10 w-full max-w-md text-center shadow-2xl">
         <h2 className="font-black text-blue-500 uppercase tracking-widest mb-6 italic">Admin Dashboard</h2>
         <input type="password" placeholder="Mot de passe" className="w-full bg-[#16103a] border border-white/10 p-4 rounded-xl text-white outline-none mb-4 text-center" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && checkAuth()} />
-        <button onClick={checkAuth} className="w-full bg-blue-500 py-4 rounded-xl font-black uppercase">Connexion</button>
+        <button onClick={checkAuth} className="w-full bg-blue-500 py-4 rounded-xl font-black uppercase shadow-lg shadow-blue-500/20 active:scale-95 transition-all">Connexion</button>
       </div>
     </div>
   );
@@ -192,6 +186,7 @@ export default function AdminPortal() {
     <div className="min-h-screen bg-[#0f092e] text-white p-10 font-sans">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-16">
         
+        {/* COLONNE GAUCHE : FORMULAIRE */}
         <div className="lg:col-span-5 space-y-8">
           <div className="flex justify-between items-center">
             <h1 className="text-3xl font-black uppercase text-blue-500 italic">
@@ -208,7 +203,7 @@ export default function AdminPortal() {
             {isUploading && (
               <div className="absolute inset-0 bg-[#0f092e]/80 backdrop-blur-sm z-[100] rounded-3xl flex flex-col items-center justify-center space-y-4">
                 <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                <p className="font-black uppercase text-[10px] tracking-widest text-blue-400">Compression & Envoi en cours...</p>
+                <p className="font-black uppercase text-[10px] tracking-widest text-blue-400 text-center">Envoi et compression<br/>en cours...</p>
               </div>
             )}
 
@@ -241,7 +236,7 @@ export default function AdminPortal() {
 
             <div className="space-y-2">
               <label className="text-[10px] font-black text-white/40 uppercase">Quantités proposées</label>
-              <input value={quantities} onChange={e => setQuantities(e.target.value)} className="w-full bg-[#16103a] border border-white/10 p-4 rounded-xl outline-none text-sm" placeholder="ex: 1, 5, 10" />
+              <input value={quantities} onChange={e => setQuantities(e.target.value)} className="w-full bg-[#16103a] border border-white/10 p-4 rounded-xl outline-none text-sm" placeholder="ex: 500, 1000" />
             </div>
 
             {!hasVariants && (
@@ -258,27 +253,28 @@ export default function AdminPortal() {
             {hasVariants && (
               <div className="space-y-6 border-l-2 border-blue-500 pl-6 py-2">
                 {variantsList.map((v, idx) => (
-                  <div key={idx} className="bg-white/5 p-5 rounded-2xl space-y-4 relative border border-white/5">
-                    <button onClick={() => setVariantsList(variantsList.filter((_, i) => i !== idx))} className="absolute top-4 right-4 text-red-500 text-[9px] font-black px-2 py-1">SUPPRIMER</button>
+                  <div key={idx} className="bg-white/5 p-5 rounded-2xl space-y-4 relative border border-white/5 shadow-inner">
+                    <button onClick={() => setVariantsList(variantsList.filter((_, i) => i !== idx))} className="absolute top-4 right-4 text-red-500 text-[9px] font-black px-2 py-1 hover:bg-red-500/10 rounded-lg">SUPPRIMER</button>
                     <p className="font-black text-[12px] uppercase text-blue-500">{v.name}</p>
                     <input value={v.prices} onChange={(e) => { const c = [...variantsList]; c[idx].prices = e.target.value; setVariantsList(c); }} className="w-full bg-black/30 border border-white/5 p-3 rounded-lg text-xs outline-none" placeholder="Prix..." />
                     <input type="file" accept="image/*" onChange={(e) => { const c = [...variantsList]; c[idx].file = e.target.files?.[0] || null; setVariantsList(c); }} className="text-[8px] opacity-60" />
                   </div>
                 ))}
-                <button onClick={() => { const n = prompt("Nom de l'option :"); if(n) setVariantsList([...variantsList, { id: n.toLowerCase().replace(/\s/g, ''), name: n, prices: basePrices }]); }} className="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black text-blue-400 uppercase">+ Ajouter un modèle</button>
+                <button onClick={() => { const n = prompt("Nom de l'option :"); if(n) setVariantsList([...variantsList, { id: n.toLowerCase().replace(/\s/g, ''), name: n, prices: basePrices }]); }} className="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black text-blue-400 uppercase hover:bg-white/10 transition-all">+ Ajouter un modèle</button>
               </div>
             )}
 
             <button 
               disabled={isUploading}
               onClick={handleSaveProduct} 
-              className={`w-full py-5 rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl transition-all active:scale-95 ${isUploading ? 'bg-gray-700 cursor-not-allowed' : (editingId ? 'bg-orange-600 hover:bg-orange-500' : 'bg-blue-600 hover:bg-blue-500')}`}
+              className={`w-full py-5 rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl transition-all active:scale-95 ${isUploading ? 'bg-gray-700 cursor-not-allowed opacity-50' : (editingId ? 'bg-orange-600 hover:bg-orange-500' : 'bg-blue-600 hover:bg-blue-500')}`}
             >
               {editingId ? 'Enregistrer les modifications' : 'Publier sur le site'}
             </button>
           </div>
         </div>
 
+        {/* COLONNE DROITE : LISTING */}
         <div className="lg:col-span-7 space-y-12">
           {[
             { id: 'Perso', name: 'Produits personnalisés', color: 'text-blue-500', bg: 'bg-blue-500' },
@@ -287,29 +283,32 @@ export default function AdminPortal() {
           ].map(section => (
             <div key={section.id} className="space-y-4">
               <div className="flex items-center gap-4">
-                <div className={`w-1 h-6 ${section.bg}`}></div>
+                <div className={`w-1 h-6 ${section.bg} rounded-full`}></div>
                 <h2 className={`text-xl font-black uppercase italic tracking-tighter ${section.color}`}>{section.name}</h2>
               </div>
               
               <div className="grid grid-cols-1 gap-3">
                 {existingProducts.filter(p => p.category === section.id).map(p => (
-                  <div key={p.id} className="flex items-center gap-5 bg-white/[0.03] p-5 rounded-3xl border border-white/5 hover:bg-white/[0.06] transition-all group">
-                    <div className="flex gap-1">
-                        <img src={p.image_recto} className="w-10 h-10 object-contain bg-black/40 rounded-lg p-1" alt="" />
-                        {p.image_verso && <img src={p.image_verso} className="w-10 h-10 object-contain bg-black/40 rounded-lg p-1 border border-white/10" alt="" />}
+                  <div key={p.id} className="flex items-center gap-5 bg-white/[0.03] p-5 rounded-3xl border border-white/5 hover:bg-white/[0.06] transition-all group shadow-sm">
+                    <div className="flex gap-1 bg-black/40 p-1.5 rounded-xl">
+                        <img src={p.image_recto} className="w-10 h-10 object-contain rounded-lg" alt="recto" />
+                        {p.image_verso && <img src={p.image_verso} className="w-10 h-10 object-contain rounded-lg border-l border-white/10 pl-1" alt="verso" />}
                     </div>
                     <div className="flex-1">
                       <p className="font-black uppercase text-[11px] tracking-widest text-white/90">{p.name}</p>
                       <div className="flex gap-3 mt-1">
-                        <span className="text-[7px] text-white/30 font-black uppercase">{p.config.quantities.length} Tarifs</span>
+                        <span className="text-[7px] text-white/30 font-black uppercase">{p.config.quantities.length} Tarifs configurés</span>
                       </div>
                     </div>
                     <div className="flex gap-2">
                       <button onClick={() => startEdit(p)} className="bg-white text-[#0f092e] px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-blue-500 hover:text-white transition-all">Modifier</button>
-                      <button onClick={() => handleDelete(p.id)} className="bg-red-500/10 text-red-500 border border-red-500/20 px-3 py-2.5 rounded-xl text-[9px] font-black uppercase">Suppr.</button>
+                      <button onClick={() => handleDelete(p.id)} className="bg-red-500/10 text-red-500 border border-red-500/20 px-3 py-2.5 rounded-xl text-[9px] font-black uppercase hover:bg-red-500 hover:text-white transition-all">Suppr.</button>
                     </div>
                   </div>
                 ))}
+                {existingProducts.filter(p => p.category === section.id).length === 0 && (
+                  <p className="text-[9px] uppercase font-black text-white/10 italic ml-6">Aucun produit dans cette catégorie</p>
+                )}
               </div>
             </div>
           ))}
