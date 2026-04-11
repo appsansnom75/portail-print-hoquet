@@ -134,7 +134,7 @@ export default function HomePage() {
           
           <Link href="/perso" className="group relative">
             <div className="h-40 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-blue-600/10 group-hover:border-blue-500/40 group-hover:-translate-y-1 shadow-2xl">
-              <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-blue-400 transition-colors">Impression Perso</span>
+              <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-blue-400 transition-colors">Produits personnalisables</span>
               <div className="h-[2px] w-6 bg-blue-500 my-4 group-hover:w-20 transition-all duration-700"></div>
               <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.3em] group-hover:text-blue-500/50">Sur-Mesure</span>
             </div>
@@ -142,7 +142,7 @@ export default function HomePage() {
 
           <Link href="/stock" className="group relative">
             <div className="h-40 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-green-600/10 group-hover:border-green-500/40 group-hover:-translate-y-1 shadow-2xl">
-              <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-green-400 transition-colors">Produit sans personnalisation</span>
+              <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-green-400 transition-colors">Produits non personnalisés</span>
               <div className="h-[2px] w-6 bg-green-500 my-4 group-hover:w-20 transition-all duration-700"></div>
               <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.3em] group-hover:text-green-500/50">Catalogue Direct</span>
             </div>
