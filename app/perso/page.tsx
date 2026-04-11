@@ -34,8 +34,8 @@ export default function PersoPage() {
           const formatted = data.map(p => ({
             id: p.id, 
             name: p.name, 
-            image_recto: p.image_recto, // MODIFIÉ
-            image_verso: p.image_verso, // AJOUTÉ
+            image_recto: p.image_recto, 
+            image_verso: p.image_verso, 
             hasVariants: p.has_variants,
             variants: p.config?.variants || [], 
             quantities: p.config?.quantities || [], 
@@ -98,30 +98,38 @@ export default function PersoPage() {
             const pList = p.prices[sel.variant] || p.prices.default || [];
             const currentPrice = pList[p.quantities.indexOf(Number(sel.qty))] || 0;
             
-            // Logique d'image : Variante > Recto
             const displayImageRecto = p.variants.find((v:any) => v.id === sel.variant)?.image || p.image_recto;
             const displayImageVerso = p.image_verso;
 
             return (
               <div key={p.id} className="pt-10 relative group">
-                {/* ZONE IMAGE AVEC RECTO/VERSO AU HOVER */}
+                {/* ZONE IMAGE */}
                 <div className="h-48 w-full flex items-center justify-center relative -mb-10 z-20 group-hover:scale-110 transition-transform duration-500">
+                  
+                  {/* INDICATEUR FLÈCHE VERSO (Mobile & Desktop) */}
+                  {displayImageVerso && (
+                    <div className="absolute -right-2 bottom-4 z-30 flex flex-col items-center gap-1 animate-bounce">
+                      <span className="text-[7px] font-black uppercase text-blue-500 bg-white/10 backdrop-blur-md px-2 py-1 rounded-full border border-blue-500/20">Verso</span>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                    </div>
+                  )}
+
                   <AnimatePresence mode="wait">
-                    <div className="relative w-full h-full flex items-center justify-center">
+                    <div className="relative w-full h-full flex items-center justify-center cursor-pointer">
                       <motion.img 
                         key={displayImageRecto} 
-                        initial={{ opacity: 0, y: 10 }} 
-                        animate={{ opacity: 1, y: 0 }} 
-                        exit={{ opacity: 0, y: -10 }} 
+                        initial={{ opacity: 0 }} 
+                        animate={{ opacity: 1 }} 
+                        exit={{ opacity: 0 }} 
                         src={displayImageRecto} 
-                        className={`max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-opacity duration-500 ${displayImageVerso ? 'group-hover:opacity-0' : ''}`} 
+                        className={`max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-opacity duration-500 ${displayImageVerso ? 'group-hover:opacity-0 group-active:opacity-0' : ''}`} 
                         alt={p.name} 
                       />
                       
                       {displayImageVerso && (
                         <motion.img 
                           src={displayImageVerso} 
-                          className="absolute max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] opacity-0 group-hover:opacity-100 transition-opacity duration-500" 
+                          className="absolute max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-500" 
                           alt={`${p.name} verso`} 
                         />
                       )}
