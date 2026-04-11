@@ -19,6 +19,8 @@ export default function SignaletiquePage() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selections, setSelections] = useState<any>({});
+  // État pour gérer le basculement recto/verso par produit
+  const [flippedProducts, setFlippedProducts] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -32,7 +34,8 @@ export default function SignaletiquePage() {
         const formatted = data.map(p => ({
           id: p.id, 
           name: p.name, 
-          image: p.image_url, 
+          image_recto: p.image_recto, // MODIFIÉ
+          image_verso: p.image_verso, // AJOUTÉ
           hasVariants: p.has_variants,
           variants: p.config.variants || [], 
           quantities: p.config.quantities || [], 
@@ -52,6 +55,10 @@ export default function SignaletiquePage() {
     fetchProducts();
   }, []);
 
+  const toggleFlip = (id: string) => {
+    setFlippedProducts(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
   const handleAddToCart = (p: any) => {
     const s = selections[p.id];
     const pList = p.prices[s.variant] || p.prices.default || [];
@@ -63,7 +70,7 @@ export default function SignaletiquePage() {
       price: totalHT / Number(s.qty), 
       qty: Number(s.qty), 
       category: THEME.label,
-      color: THEME.color // AJOUT DE LA COULEUR VERTE ICI
+      color: THEME.color 
     });
     setIsCartOpen(true);
   };
@@ -76,7 +83,6 @@ export default function SignaletiquePage() {
 
   return (
     <div className="min-h-screen bg-[#0f092e] text-white flex flex-col relative overflow-x-hidden">
-      {/* LE PANIER COULISSANT */}
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
       
       <header className="py-6 px-6 border-b border-white/10 flex justify-between items-center sticky top-0 bg-[#0f092e]/80 backdrop-blur-md z-50">
@@ -92,25 +98,38 @@ export default function SignaletiquePage() {
 
           const pList = p.prices[sel.variant] || p.prices.default || [];
           const currentPrice = pList[p.quantities.indexOf(Number(sel.qty))] || 0;
-          const displayImage = p.variants.find((v:any) => v.id === sel.variant)?.image || p.image;
+          
+          // Logique d'affichage de l'image (Recto ou Verso)
+          const isFlipped = flippedProducts[p.id] || false;
+          const currentImg = (isFlipped && p.image_verso) 
+            ? p.image_verso 
+            : (p.variants.find((v:any) => v.id === sel.variant)?.image || p.image_recto);
 
           return (
-            <div key={p.id} className="pt-10 relative group">
-              <div className="h-48 w-full flex items-center justify-center relative -mb-10 z-20 transition-transform duration-500 group-hover:scale-110">
-                <AnimatePresence mode="wait">
-                  <motion.img 
-                    key={displayImage}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    src={displayImage} 
-                    className="max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]" 
-                    alt={p.name}
-                  />
-                </AnimatePresence>
+            <div key={p.id} className="pt-10 relative">
+              {/* ZONE IMAGE */}
+              <div className="h-48 w-full flex items-center justify-center relative -mb-10 z-20 transition-transform duration-500">
+                
+                {/* BOUTON FLÈCHE FIXE (Uniquement si le verso existe) */}
+                {p.image_verso && (
+                  <button 
+                    onClick={() => toggleFlip(p.id)}
+                    className="absolute right-0 bottom-4 z-30 bg-white text-black p-2 rounded-full shadow-xl hover:bg-green-500 hover:text-white transition-all active:scale-90"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="m15 18 6-6-6-6"/><path d="M3 12h18"/>
+                    </svg>
+                  </button>
+                )}
+
+                <img 
+                  src={currentImg} 
+                  className="max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-300" 
+                  alt={p.name}
+                />
               </div>
 
-              <div className="bg-white/[0.03] border border-white/10 rounded-[40px] p-8 pt-16 group-hover:border-green-500/30 transition-all duration-500">
+              <div className="bg-white/[0.03] border border-white/10 rounded-[40px] p-8 pt-16 hover:border-green-500/30 transition-all duration-500">
                 <h3 className={`font-black text-base uppercase mb-6 ${THEME.color} tracking-tight`}>{p.name}</h3>
                 
                 <div className="space-y-4">
@@ -159,7 +178,6 @@ export default function SignaletiquePage() {
         })}
       </main>
 
-      {/* BOUTON FLOTTANT PANIER (BLANC) */}
       <button 
         onClick={() => setIsCartOpen(true)} 
         className="fixed bottom-8 right-8 w-16 h-16 bg-white rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-center z-[100] hover:scale-110 active:scale-95 transition-all group"
