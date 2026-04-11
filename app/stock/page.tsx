@@ -28,7 +28,8 @@ export default function SignaletiquePage() {
           .from('products')
           .select('*')
           .eq('category', THEME.category)
-          .order('created_at', { ascending: true });
+          // MODIFICATION : Utilisation de sort_order pour l'affichage
+          .order('sort_order', { ascending: true });
 
         if (error) throw error;
         if (data) {
@@ -83,7 +84,7 @@ export default function SignaletiquePage() {
 
   if (loading) return (
     <div className="min-h-screen bg-[#0f092e] flex items-center justify-center font-black text-green-500 uppercase animate-pulse tracking-widest">
-      Chargement Stock...
+      Chargement Signalétique...
     </div>
   );
 
@@ -92,7 +93,7 @@ export default function SignaletiquePage() {
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
       
       <header className="py-6 px-6 border-b border-white/10 flex justify-between items-center sticky top-0 bg-[#0f092e]/80 backdrop-blur-md z-50">
-        <Link href="/" className="text-[10px] font-black uppercase text-white/40 hover:text-white transition-colors">← Retour</Link>
+        <Link href="/" className="text-[10px] font-black uppercase text-white/40 hover:text-white transition-all">← Retour</Link>
         <h1 className={`text-[10px] font-black uppercase tracking-[0.3em] ${THEME.color} italic`}>{THEME.label}</h1>
         <div className="w-10"></div>
       </header>
@@ -108,7 +109,7 @@ export default function SignaletiquePage() {
           const isFlipped = flippedProducts[p.id] || false;
           const currentVariant = p.variants.find((v: any) => v.id === sel.variant);
 
-          // Logique d'image unifiée (Variante d'abord, sinon Produit par défaut)
+          // Logique d'image (Variante > Produit défaut)
           let currentImg = p.image_recto;
           if (isFlipped) {
             currentImg = currentVariant?.image_verso || p.image_verso || p.image_recto;
@@ -119,13 +120,13 @@ export default function SignaletiquePage() {
           return (
             <div key={p.id} className="pt-10 relative group">
               {/* ZONE IMAGE */}
-              <div className="h-48 w-full flex items-center justify-center relative -mb-10 z-20">
+              <div className="h-48 w-full flex items-center justify-center relative -mb-10 z-20 transition-transform duration-500 group-hover:scale-105">
                 
-                {/* BOUTON VOIR VERSO / RECTO */}
+                {/* BOUTON DYNAMIQUE VOIR VERSO / RECTO */}
                 {(p.image_verso || currentVariant?.image_verso) && (
                   <button 
                     onClick={() => toggleFlip(p.id)}
-                    className="absolute right-0 bottom-4 z-30 bg-white text-black px-4 py-2 rounded-full shadow-xl hover:bg-green-500 hover:text-white transition-all active:scale-95 flex items-center gap-2"
+                    className="absolute right-0 bottom-4 z-30 bg-white text-black px-4 py-2 rounded-full shadow-xl hover:bg-green-500 hover:text-white transition-all active:scale-95 flex items-center gap-2 shadow-black/20"
                   >
                     <span className="text-[9px] font-black uppercase tracking-wider">
                       {isFlipped ? 'Voir Recto' : 'Voir Verso'}
@@ -142,7 +143,7 @@ export default function SignaletiquePage() {
                     initial={{ opacity: 0, x: isFlipped ? 20 : -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: isFlipped ? -20 : 20 }}
-                    transition={{ duration: 0.3 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
                     src={currentImg} 
                     className="max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]" 
                     alt={p.name}
@@ -150,7 +151,7 @@ export default function SignaletiquePage() {
                 </AnimatePresence>
               </div>
 
-              <div className="bg-white/[0.03] border border-white/10 rounded-[40px] p-8 pt-16 hover:border-green-500/30 transition-all duration-500">
+              <div className="bg-white/[0.03] border border-white/10 rounded-[40px] p-8 pt-16 hover:bg-white/[0.05] hover:border-green-500/30 transition-all duration-500 shadow-xl">
                 <h3 className={`font-black text-base uppercase mb-6 ${THEME.color} tracking-tight`}>{p.name}</h3>
                 
                 <div className="space-y-4">
@@ -163,7 +164,7 @@ export default function SignaletiquePage() {
                           setSelections({...selections, [p.id]:{...sel, variant: e.target.value}});
                           setFlippedProducts(prev => ({ ...prev, [p.id]: false }));
                         }} 
-                        className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none focus:border-green-500 transition-colors cursor-pointer"
+                        className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none focus:border-green-500 transition-all cursor-pointer"
                       >
                         {p.variants.map((v:any)=><option key={v.id} value={v.id}>{v.name}</option>)}
                       </select>
@@ -171,11 +172,11 @@ export default function SignaletiquePage() {
                   )}
 
                   <div className="space-y-1">
-                    <p className="text-[7px] font-black text-white/20 uppercase tracking-widest ml-1">Quantité</p>
+                    <p className="text-[7px] font-black text-white/20 uppercase tracking-widest ml-1">Quantité souhaitée</p>
                     <select 
                       value={sel.qty} 
                       onChange={(e) => setSelections({...selections, [p.id]:{...sel, qty: Number(e.target.value)}})} 
-                      className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none focus:border-green-500 transition-colors cursor-pointer"
+                      className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none focus:border-green-500 transition-all cursor-pointer"
                     >
                       {p.quantities.map((q:any)=><option key={q} value={q}>{q} exemplaires</option>)}
                     </select>
@@ -186,11 +187,11 @@ export default function SignaletiquePage() {
                       <span className="text-2xl font-black text-white">
                         {currentPrice.toFixed(2)}€
                       </span>
-                      <span className="text-[7px] font-bold text-white/30 uppercase tracking-widest italic">HT</span>
+                      <span className="text-[7px] font-bold text-white/30 uppercase tracking-widest italic">Hors Taxes (HT)</span>
                     </div>
                     <button 
                       onClick={() => handleAddToCart(p)} 
-                      className="bg-white text-[#0f092e] px-8 py-3.5 rounded-2xl font-black uppercase text-[9px] tracking-widest hover:bg-green-500 hover:text-white transition-all active:scale-90 shadow-lg"
+                      className="bg-white text-[#0f092e] px-8 py-3.5 rounded-2xl font-black uppercase text-[9px] tracking-widest hover:bg-green-500 hover:text-white transition-all active:scale-95 shadow-lg shadow-white/5"
                     >
                       Ajouter
                     </button>
@@ -207,7 +208,9 @@ export default function SignaletiquePage() {
         className="fixed bottom-8 right-8 w-16 h-16 bg-white rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-center z-[100] hover:scale-110 active:scale-95 transition-all group"
       >
         <div className="relative">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0f092e" strokeWidth="2.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0f092e" strokeWidth="2.5" className="group-hover:stroke-green-500 transition-colors">
+            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>
+          </svg>
           {cart.length > 0 && (
             <span className={`absolute -top-3 -right-3 ${THEME.bg} text-white text-[9px] font-black w-6 h-6 rounded-full flex items-center justify-center border-4 border-[#0f092e]`}>
               {cart.length}
