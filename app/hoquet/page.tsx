@@ -20,7 +20,6 @@ export default function BusinessPage() {
   const [loading, setLoading] = useState(true);
   const [selections, setSelections] = useState<any>({});
   const [isAdmin, setIsAdmin] = useState(false);
-  // État pour gérer le basculement recto/verso par produit
   const [flippedProducts, setFlippedProducts] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -41,16 +40,16 @@ export default function BusinessPage() {
           image_recto: p.image_recto, 
           image_verso: p.image_verso, 
           hasVariants: p.has_variants,
-          variants: p.config.variants || [], 
-          quantities: p.config.quantities || [], 
-          prices: p.config.prices || { default: [] }
+          variants: p.config?.variants || [], 
+          quantities: p.config?.quantities || [], 
+          prices: p.config?.prices || { default: [] }
         }));
         setProducts(formatted);
         setSelections(formatted.reduce((acc, p) => ({ 
           ...acc, 
           [p.id]: { 
-            qty: p.quantities[0], 
-            variant: p.hasVariants ? p.variants[0].id : 'default' 
+            qty: p.quantities[0] || 0, 
+            variant: p.hasVariants ? (p.variants[0]?.id || 'default') : 'default' 
           } 
         }), {}));
       }
@@ -66,11 +65,13 @@ export default function BusinessPage() {
   const handleAddToCart = (p: any) => {
     const s = selections[p.id];
     const pList = p.prices[s.variant] || p.prices.default || [];
-    const totalHT = pList[p.quantities.indexOf(Number(s.qty))];
+    const priceIndex = p.quantities.indexOf(Number(s.qty));
+    const totalHT = pList[priceIndex] || 0;
+
     addToCart({ 
       id: `${p.id}-${s.variant}`, 
-      name: `${p.name}${p.hasVariants ? ' - ' + p.variants.find((v:any)=>v.id===s.variant).name : ''}`, 
-      price: totalHT / Number(s.qty), 
+      name: `${p.name}${p.hasVariants ? ' - ' + (p.variants.find((v:any)=>v.id===s.variant)?.name || '') : ''}`, 
+      price: totalHT / (Number(s.qty) || 1), 
       qty: Number(s.qty), 
       category: THEME.label,
       color: THEME.color 
@@ -94,60 +95,90 @@ export default function BusinessPage() {
         {products.map((p) => {
           const sel = selections[p.id];
           if (!sel) return null;
+
           const pList = p.prices[sel.variant] || p.prices.default || [];
           const currentPrice = pList[p.quantities.indexOf(Number(sel.qty))] || 0;
           
-          // Logique d'affichage (Recto ou Verso)
           const isFlipped = flippedProducts[p.id] || false;
-          const currentImg = (isFlipped && p.image_verso) 
-            ? p.image_verso 
-            : (p.variants.find((v:any) => v.id === sel.variant)?.image || p.image_recto);
+          const currentVariant = p.variants.find((v: any) => v.id === sel.variant);
+
+          // Logique d'affichage unifiée
+          let currentImg = p.image_recto;
+          if (isFlipped) {
+            currentImg = currentVariant?.image_verso || p.image_verso || p.image_recto;
+          } else {
+            currentImg = currentVariant?.image_recto || p.image_recto;
+          }
 
           return (
             <div key={p.id} className="pt-10 relative">
               {/* ZONE IMAGE */}
               <div className="h-48 w-full flex items-center justify-center relative -mb-10 z-20">
                 
-                {/* BOUTON FLÈCHE FIXE (Uniquement si le verso existe) */}
-                {p.image_verso && (
+                {/* BOUTON DYNAMIQUE VOIR VERSO / RECTO */}
+                {(p.image_verso || currentVariant?.image_verso) && (
                   <button 
                     onClick={() => toggleFlip(p.id)}
-                    className="absolute right-0 bottom-4 z-30 bg-white text-black p-2 rounded-full shadow-xl hover:bg-orange-500 hover:text-white transition-all active:scale-90"
+                    className="absolute right-0 bottom-4 z-30 bg-white text-black px-4 py-2 rounded-full shadow-xl hover:bg-orange-500 hover:text-white transition-all active:scale-95 flex items-center gap-2"
                   >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <span className="text-[9px] font-black uppercase tracking-wider">
+                      {isFlipped ? 'Voir Recto' : 'Voir Verso'}
+                    </span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-500 ${isFlipped ? 'rotate-180' : ''}`}>
                       <path d="m15 18 6-6-6-6"/><path d="M3 12h18"/>
                     </svg>
                   </button>
                 )}
 
-                <img 
-                  src={currentImg} 
-                  className="max-h-full object-contain drop-shadow-2xl transition-all duration-300" 
-                  alt={p.name} 
-                />
+                <AnimatePresence mode="wait">
+                  <motion.img 
+                    key={currentImg}
+                    initial={{ opacity: 0, x: isFlipped ? 20 : -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: isFlipped ? -20 : 20 }}
+                    transition={{ duration: 0.3 }}
+                    src={currentImg} 
+                    className="max-h-full object-contain drop-shadow-2xl" 
+                    alt={p.name} 
+                  />
+                </AnimatePresence>
               </div>
 
               <div className="bg-white/[0.03] border border-white/10 rounded-[40px] p-8 pt-16 hover:border-orange-500/30 transition-all duration-500">
                 <h3 className={`font-black text-base uppercase mb-6 ${THEME.color}`}>{p.name}</h3>
                 <div className="space-y-4">
                   {p.hasVariants && (
+                    <div className="space-y-1">
+                      <p className="text-[7px] font-black text-white/20 uppercase tracking-widest ml-1">Taille / Modèle</p>
+                      <select 
+                        value={sel.variant} 
+                        onChange={(e) => {
+                          setSelections({...selections, [p.id]:{...sel, variant: e.target.value}});
+                          setFlippedProducts(prev => ({ ...prev, [p.id]: false }));
+                        }} 
+                        className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none focus:border-orange-500 transition-colors cursor-pointer"
+                      >
+                        {p.variants.map((v:any)=><option key={v.id} value={v.id}>{v.name}</option>)}
+                      </select>
+                    </div>
+                  )}
+                  
+                  <div className="space-y-1">
+                    <p className="text-[7px] font-black text-white/20 uppercase tracking-widest ml-1">Quantité</p>
                     <select 
-                      value={sel.variant} 
-                      onChange={(e) => setSelections({...selections, [p.id]:{...sel, variant: e.target.value}})} 
+                      value={sel.qty} 
+                      onChange={(e) => setSelections({...selections, [p.id]:{...sel, qty: Number(e.target.value)}})} 
                       className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none focus:border-orange-500 transition-colors cursor-pointer"
                     >
-                      {p.variants.map((v:any)=><option key={v.id} value={v.id}>{v.name}</option>)}
+                      {p.quantities.map((q:any)=><option key={q} value={q}>{q} exemplaires</option>)}
                     </select>
-                  )}
-                  <select 
-                    value={sel.qty} 
-                    onChange={(e) => setSelections({...selections, [p.id]:{...sel, qty: Number(e.target.value)}})} 
-                    className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none focus:border-orange-500 transition-colors cursor-pointer"
-                  >
-                    {p.quantities.map((q:any)=><option key={q} value={q}>{q} exemplaires</option>)}
-                  </select>
+                  </div>
+
                   <div className="flex items-center justify-between pt-6 border-t border-white/5 mt-4">
-                    <span className="font-black text-2xl text-white">{currentPrice.toFixed(2)}€</span>
+                    <div className="flex flex-col">
+                      <span className="font-black text-2xl text-white">{currentPrice.toFixed(2)}€</span>
+                      <span className="text-[7px] font-bold text-white/30 uppercase tracking-widest italic">HT</span>
+                    </div>
                     <button 
                       onClick={() => handleAddToCart(p)} 
                       className="bg-white text-[#0f092e] px-8 py-3.5 rounded-2xl font-black uppercase text-[9px] hover:bg-orange-500 hover:text-white transition-all active:scale-90"
@@ -162,7 +193,6 @@ export default function BusinessPage() {
         })}
       </main>
 
-      {/* Bouton Panier flottant */}
       <button 
         onClick={() => setIsCartOpen(true)} 
         className="fixed bottom-8 right-8 w-16 h-16 bg-white rounded-full shadow-2xl flex items-center justify-center z-[100] hover:scale-110 active:scale-95 transition-all"

@@ -8,7 +8,7 @@ import CartDrawer from '@/components/CartDrawer';
 
 const THEME = { 
   category: 'Signaletique', 
-  label: 'Produit sans personnalisation', 
+  label: 'Signalétique & Stock', 
   color: 'text-green-500', 
   bg: 'bg-green-500' 
 };
@@ -19,38 +19,43 @@ export default function SignaletiquePage() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selections, setSelections] = useState<any>({});
-  // État pour gérer le basculement recto/verso par produit
   const [flippedProducts, setFlippedProducts] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const fetchProducts = async () => {
-      const { data } = await supabase
-        .from('products')
-        .select('*')
-        .eq('category', THEME.category)
-        .order('created_at', { ascending: true });
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('category', THEME.category)
+          .order('created_at', { ascending: true });
 
-      if (data) {
-        const formatted = data.map(p => ({
-          id: p.id, 
-          name: p.name, 
-          image_recto: p.image_recto, // MODIFIÉ
-          image_verso: p.image_verso, // AJOUTÉ
-          hasVariants: p.has_variants,
-          variants: p.config.variants || [], 
-          quantities: p.config.quantities || [], 
-          prices: p.config.prices || { default: [] }
-        }));
-        setProducts(formatted);
-        
-        setSelections(formatted.reduce((acc, p) => ({ 
-          ...acc, [p.id]: { 
-            qty: p.quantities[0], 
-            variant: p.hasVariants ? p.variants[0].id : 'default' 
-          } 
-        }), {}));
+        if (error) throw error;
+        if (data) {
+          const formatted = data.map(p => ({
+            id: p.id, 
+            name: p.name, 
+            image_recto: p.image_recto, 
+            image_verso: p.image_verso, 
+            hasVariants: p.has_variants,
+            variants: p.config?.variants || [], 
+            quantities: p.config?.quantities || [], 
+            prices: p.config?.prices || { default: [] }
+          }));
+          setProducts(formatted);
+          
+          setSelections(formatted.reduce((acc, p) => ({ 
+            ...acc, [p.id]: { 
+              qty: p.quantities[0] || 0, 
+              variant: p.hasVariants ? (p.variants[0]?.id || 'default') : 'default' 
+            } 
+          }), {}));
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     fetchProducts();
   }, []);
@@ -62,12 +67,13 @@ export default function SignaletiquePage() {
   const handleAddToCart = (p: any) => {
     const s = selections[p.id];
     const pList = p.prices[s.variant] || p.prices.default || [];
-    const totalHT = pList[p.quantities.indexOf(Number(s.qty))];
+    const priceIndex = p.quantities.indexOf(Number(s.qty));
+    const totalHT = pList[priceIndex] || 0;
     
     addToCart({ 
       id: `${p.id}-${s.variant}`, 
-      name: `${p.name}${p.hasVariants ? ' - ' + p.variants.find((v:any)=>v.id===s.variant).name : ''}`, 
-      price: totalHT / Number(s.qty), 
+      name: `${p.name}${p.hasVariants ? ' - ' + (p.variants.find((v:any)=>v.id===s.variant)?.name || '') : ''}`, 
+      price: totalHT / (Number(s.qty) || 1), 
       qty: Number(s.qty), 
       category: THEME.label,
       color: THEME.color 
@@ -99,34 +105,49 @@ export default function SignaletiquePage() {
           const pList = p.prices[sel.variant] || p.prices.default || [];
           const currentPrice = pList[p.quantities.indexOf(Number(sel.qty))] || 0;
           
-          // Logique d'affichage de l'image (Recto ou Verso)
           const isFlipped = flippedProducts[p.id] || false;
-          const currentImg = (isFlipped && p.image_verso) 
-            ? p.image_verso 
-            : (p.variants.find((v:any) => v.id === sel.variant)?.image || p.image_recto);
+          const currentVariant = p.variants.find((v: any) => v.id === sel.variant);
+
+          // Logique d'image unifiée (Variante d'abord, sinon Produit par défaut)
+          let currentImg = p.image_recto;
+          if (isFlipped) {
+            currentImg = currentVariant?.image_verso || p.image_verso || p.image_recto;
+          } else {
+            currentImg = currentVariant?.image_recto || p.image_recto;
+          }
 
           return (
-            <div key={p.id} className="pt-10 relative">
+            <div key={p.id} className="pt-10 relative group">
               {/* ZONE IMAGE */}
-              <div className="h-48 w-full flex items-center justify-center relative -mb-10 z-20 transition-transform duration-500">
+              <div className="h-48 w-full flex items-center justify-center relative -mb-10 z-20">
                 
-                {/* BOUTON FLÈCHE FIXE (Uniquement si le verso existe) */}
-                {p.image_verso && (
+                {/* BOUTON VOIR VERSO / RECTO */}
+                {(p.image_verso || currentVariant?.image_verso) && (
                   <button 
                     onClick={() => toggleFlip(p.id)}
-                    className="absolute right-0 bottom-4 z-30 bg-white text-black p-2 rounded-full shadow-xl hover:bg-green-500 hover:text-white transition-all active:scale-90"
+                    className="absolute right-0 bottom-4 z-30 bg-white text-black px-4 py-2 rounded-full shadow-xl hover:bg-green-500 hover:text-white transition-all active:scale-95 flex items-center gap-2"
                   >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <span className="text-[9px] font-black uppercase tracking-wider">
+                      {isFlipped ? 'Voir Recto' : 'Voir Verso'}
+                    </span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-500 ${isFlipped ? 'rotate-180' : ''}`}>
                       <path d="m15 18 6-6-6-6"/><path d="M3 12h18"/>
                     </svg>
                   </button>
                 )}
 
-                <img 
-                  src={currentImg} 
-                  className="max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-300" 
-                  alt={p.name}
-                />
+                <AnimatePresence mode="wait">
+                  <motion.img 
+                    key={currentImg}
+                    initial={{ opacity: 0, x: isFlipped ? 20 : -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: isFlipped ? -20 : 20 }}
+                    transition={{ duration: 0.3 }}
+                    src={currentImg} 
+                    className="max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]" 
+                    alt={p.name}
+                  />
+                </AnimatePresence>
               </div>
 
               <div className="bg-white/[0.03] border border-white/10 rounded-[40px] p-8 pt-16 hover:border-green-500/30 transition-all duration-500">
@@ -135,10 +156,13 @@ export default function SignaletiquePage() {
                 <div className="space-y-4">
                   {p.hasVariants && (
                     <div className="space-y-1">
-                      <p className="text-[7px] font-black text-white/20 uppercase tracking-widest ml-1">Modèle</p>
+                      <p className="text-[7px] font-black text-white/20 uppercase tracking-widest ml-1">Modèle / Option</p>
                       <select 
                         value={sel.variant} 
-                        onChange={(e) => setSelections({...selections, [p.id]:{...sel, variant: e.target.value}})} 
+                        onChange={(e) => {
+                          setSelections({...selections, [p.id]:{...sel, variant: e.target.value}});
+                          setFlippedProducts(prev => ({ ...prev, [p.id]: false }));
+                        }} 
                         className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none focus:border-green-500 transition-colors cursor-pointer"
                       >
                         {p.variants.map((v:any)=><option key={v.id} value={v.id}>{v.name}</option>)}
@@ -159,7 +183,7 @@ export default function SignaletiquePage() {
 
                   <div className="flex items-center justify-between pt-6 border-t border-white/5 mt-4">
                     <div className="flex flex-col">
-                      <span className="text-[10px] font-black text-white tracking-tighter text-2xl">
+                      <span className="text-2xl font-black text-white">
                         {currentPrice.toFixed(2)}€
                       </span>
                       <span className="text-[7px] font-bold text-white/30 uppercase tracking-widest italic">HT</span>
