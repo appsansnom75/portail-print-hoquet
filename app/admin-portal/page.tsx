@@ -29,25 +29,21 @@ export default function AdminPortal() {
   const [variantsList, setVariantsList] = useState<VariantItem[]>([]);
   const [existingProducts, setExistingProducts] = useState<any[]>([]);
 
-  // 1. CHARGEMENT AVEC TRI PAR SORT_ORDER
+  // CHARGEMENT INITIAL
   const fetchProducts = async () => {
     const { data } = await supabase
       .from('products')
       .select('*')
-      .order('sort_order', { ascending: true }); // Tri par position
+      .order('sort_order', { ascending: true });
     if (data) setExistingProducts(data);
   };
 
-  // 2. FONCTION POUR CHANGER L'ORDRE
-  const moveOrder = async (product: any, direction: 'up' | 'down') => {
-    const currentIndex = product.sort_order || 0;
-    const newOrder = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-
+  // MISE À JOUR RAPIDE (ORDRE OU LIGNE)
+  const quickUpdate = async (id: string, field: string, value: number) => {
     const { error } = await supabase
       .from('products')
-      .update({ sort_order: newOrder })
-      .eq('id', product.id);
-
+      .update({ [field]: value })
+      .eq('id', id);
     if (!error) fetchProducts();
   };
 
@@ -126,10 +122,8 @@ export default function AdminPortal() {
         for (const v of variantsList) {
           let vImgRecto = v.image_recto || mainUrl;
           let vImgVerso = v.image_verso || versoUrl;
-
           if (v.fileRecto) vImgRecto = await compressAndUpload(v.fileRecto, `v-${v.id}-recto`);
           if (v.fileVerso) vImgVerso = await compressAndUpload(v.fileVerso, `v-${v.id}-verso`);
-
           finalPrices[v.id] = v.prices.split(',').map(n => Number(n.trim()));
           finalVariants.push({ id: v.id, name: v.name, image_recto: vImgRecto, image_verso: vImgVerso });
         }
@@ -146,8 +140,11 @@ export default function AdminPortal() {
         config: { quantities: qtyArray, prices: finalPrices, variants: finalVariants }
       };
 
-      // 3. ON GARDE L'ORDRE EXISTANT OU ON MET À 0
-      if (!editingId) payload.sort_order = existingProducts.length;
+      // Si création, on ajoute à la fin
+      if (!editingId) {
+        payload.sort_order = existingProducts.length + 1;
+        payload.line_position = 1;
+      }
 
       const { error: dbError } = editingId 
         ? await supabase.from('products').update(payload).eq('id', editingId)
@@ -176,8 +173,8 @@ export default function AdminPortal() {
     <div className="min-h-screen bg-[#0f092e] flex items-center justify-center p-6 text-white">
       <div className="bg-white/5 p-8 rounded-2xl border border-white/10 w-full max-w-md text-center">
         <h2 className="font-black text-blue-500 uppercase tracking-widest mb-6">Admin Dashboard</h2>
-        <input type="password" placeholder="Mot de passe" className="w-full bg-[#16103a] border border-white/10 p-4 rounded-xl mb-4 text-center" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && checkAuth()} />
-        <button onClick={checkAuth} className="w-full bg-blue-500 py-4 rounded-xl font-black uppercase">Connexion</button>
+        <input type="password" placeholder="Mot de passe" className="w-full bg-[#16103a] border border-white/10 p-4 rounded-xl mb-4 text-center outline-none focus:border-blue-500" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && checkAuth()} />
+        <button onClick={checkAuth} className="w-full bg-blue-500 py-4 rounded-xl font-black uppercase hover:bg-blue-400 transition-all">Connexion</button>
       </div>
     </div>
   );
@@ -188,59 +185,79 @@ export default function AdminPortal() {
         
         {/* FORMULAIRE (GAUCHE) */}
         <div className="lg:col-span-5 space-y-8">
-          <div className="flex justify-between items-center sticky top-10 z-40 bg-[#0f092e]/80 p-2 backdrop-blur-sm">
+          <div className="flex justify-between items-center sticky top-0 z-40 bg-[#0f092e]/90 py-4 backdrop-blur-md">
             <h1 className="text-3xl font-black uppercase text-blue-500 italic">{editingId ? 'Édition' : 'Ajouter'}</h1>
-            {editingId && <button onClick={resetForm} className="text-red-500 text-[9px] font-black uppercase">Annuler</button>}
+            {editingId && <button onClick={resetForm} className="bg-red-500/10 text-red-500 px-4 py-2 rounded-full text-[9px] font-black uppercase hover:bg-red-500 hover:text-white transition-all">Annuler</button>}
           </div>
           
-          <div className="bg-white/5 p-8 rounded-3xl border border-white/10 space-y-6 relative">
-            {isUploading && <div className="absolute inset-0 bg-[#0f092e]/80 z-[100] flex flex-col items-center justify-center"><div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div></div>}
-
-            <select value={category} onChange={e => setCategory(e.target.value)} className="w-full bg-[#16103a] border border-white/10 p-4 rounded-xl text-[11px] font-bold uppercase">
-              <option value="Perso">Produits personnalisés (Bleu)</option>
-              <option value="Signaletique">Produits sans personnalisation (Vert)</option>
-              <option value="Vetements">Gamme Business (Orange)</option>
-            </select>
-
-            <input value={name} onChange={e => setName(e.target.value)} className="w-full bg-[#16103a] border border-white/10 p-4 rounded-xl text-sm" placeholder="Nom du produit" />
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-[9px] font-black uppercase text-white/40">Recto Principal</label>
-                <input type="file" onChange={e => setImageFile(e.target.files?.[0] || null)} className="text-[8px]" />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[9px] font-black uppercase text-white/40">Verso Principal</label>
-                <input type="file" onChange={e => setImageFileVerso(e.target.files?.[0] || null)} className="text-[8px]" />
-              </div>
-            </div>
-
-            <input value={quantities} onChange={e => setQuantities(e.target.value)} className="w-full bg-[#16103a] border border-white/10 p-4 rounded-xl text-sm" placeholder="Quantités (ex: 500, 1000)" />
-            {!hasVariants && <input value={basePrices} onChange={e => setBasePrices(e.target.value)} className="w-full bg-[#16103a] border border-white/10 p-4 rounded-xl text-sm" placeholder="Prix HT" />}
-
-            <button onClick={() => setHasVariants(!hasVariants)} className="w-full py-4 border-2 border-dashed border-white/10 rounded-2xl text-[9px] font-black uppercase">
-              {hasVariants ? "✓ Modèles activés" : "+ Configurer modèles"}
-            </button>
-
-            {hasVariants && (
-              <div className="space-y-4 border-l-2 border-blue-500 pl-4">
-                {variantsList.map((v, idx) => (
-                  <div key={idx} className="bg-white/5 p-4 rounded-xl space-y-3 relative">
-                    <button onClick={() => setVariantsList(variantsList.filter((_, i) => i !== idx))} className="absolute top-2 right-2 text-red-500 text-[8px] font-black">SUPPR</button>
-                    <p className="text-[10px] font-black text-blue-500 uppercase">{v.name}</p>
-                    <input value={v.prices} onChange={(e) => { const c = [...variantsList]; c[idx].prices = e.target.value; setVariantsList(c); }} className="w-full bg-black/20 p-2 rounded text-xs" placeholder="Prix..." />
-                    <div className="grid grid-cols-2 gap-2">
-                        <input type="file" onChange={(e) => { const c = [...variantsList]; c[idx].fileRecto = e.target.files?.[0] || null; setVariantsList(c); }} className="text-[8px]" />
-                        <input type="file" onChange={(e) => { const c = [...variantsList]; c[idx].fileVerso = e.target.files?.[0] || null; setVariantsList(c); }} className="text-[8px]" />
-                    </div>
-                  </div>
-                ))}
-                <button onClick={() => { const n = prompt("Nom :"); if(n) setVariantsList([...variantsList, { id: n.toLowerCase().replace(/\s/g, ''), name: n, prices: basePrices }]); }} className="text-[9px] font-black text-blue-400">+ Ajouter une variante</button>
+          <div className="bg-white/5 p-8 rounded-3xl border border-white/10 space-y-6 relative shadow-2xl">
+            {isUploading && (
+              <div className="absolute inset-0 bg-[#0f092e]/80 z-[100] flex flex-col items-center justify-center rounded-3xl backdrop-blur-sm">
+                <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p className="text-[10px] font-black uppercase tracking-widest animate-pulse">Upload en cours...</p>
               </div>
             )}
 
-            <button onClick={handleSaveProduct} disabled={isUploading} className="w-full py-5 rounded-2xl font-black uppercase bg-blue-600">
-              {editingId ? 'Sauvegarder' : 'Publier'}
+            <div className="space-y-1">
+              <label className="text-[9px] font-black uppercase text-white/30 ml-2">Type de produit</label>
+              <select value={category} onChange={e => setCategory(e.target.value)} className="w-full bg-[#16103a] border border-white/10 p-4 rounded-xl text-[11px] font-bold uppercase outline-none focus:border-blue-500">
+                <option value="Perso">Impression (Bleu)</option>
+                <option value="Signaletique">Signalétique (Vert)</option>
+                <option value="Vetements">Business (Orange)</option>
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[9px] font-black uppercase text-white/30 ml-2">Nom affiché</label>
+              <input value={name} onChange={e => setName(e.target.value)} className="w-full bg-[#16103a] border border-white/10 p-4 rounded-xl text-sm font-bold outline-none focus:border-blue-500" placeholder="Ex: Panneau Akilux 3mm" />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[9px] font-black uppercase text-white/40 ml-1">Image Recto (Main)</label>
+                <input type="file" onChange={e => setImageFile(e.target.files?.[0] || null)} className="block w-full text-[8px] text-white/40 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-black file:bg-blue-500/10 file:text-blue-500 hover:file:bg-blue-500/20 cursor-pointer" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[9px] font-black uppercase text-white/40 ml-1">Image Verso</label>
+                <input type="file" onChange={e => setImageFileVerso(e.target.files?.[0] || null)} className="block w-full text-[8px] text-white/40 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-black file:bg-white/5 file:text-white/40 hover:file:bg-white/10 cursor-pointer" />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[9px] font-black uppercase text-white/30 ml-2">Paliers Quantités (séparés par virgule)</label>
+              <input value={quantities} onChange={e => setQuantities(e.target.value)} className="w-full bg-[#16103a] border border-white/10 p-4 rounded-xl text-sm font-mono" placeholder="500, 1000, 2500" />
+            </div>
+
+            {!hasVariants && (
+              <div className="space-y-1">
+                <label className="text-[9px] font-black uppercase text-white/30 ml-2">Prix HT par palier (séparés par virgule)</label>
+                <input value={basePrices} onChange={e => setBasePrices(e.target.value)} className="w-full bg-[#16103a] border border-white/10 p-4 rounded-xl text-sm font-mono text-blue-400" placeholder="120, 200, 450" />
+              </div>
+            )}
+
+            <button onClick={() => setHasVariants(!hasVariants)} className={`w-full py-4 border-2 border-dashed rounded-2xl text-[9px] font-black uppercase transition-all ${hasVariants ? 'border-blue-500 text-blue-500 bg-blue-500/5' : 'border-white/10 text-white/40 hover:border-white/20'}`}>
+              {hasVariants ? "✓ Plusieurs modèles configurés" : "+ Activer différents modèles/tailles"}
+            </button>
+
+            {hasVariants && (
+              <div className="space-y-4 border-l-2 border-blue-500 pl-4 py-2">
+                {variantsList.map((v, idx) => (
+                  <div key={idx} className="bg-white/5 p-4 rounded-2xl space-y-3 relative group">
+                    <button onClick={() => setVariantsList(variantsList.filter((_, i) => i !== idx))} className="absolute top-2 right-2 text-red-500 text-[8px] font-black opacity-0 group-hover:opacity-100 transition-all">SUPPRIMER</button>
+                    <p className="text-[10px] font-black text-blue-500 uppercase italic tracking-tighter">{v.name}</p>
+                    <input value={v.prices} onChange={(e) => { const c = [...variantsList]; c[idx].prices = e.target.value; setVariantsList(c); }} className="w-full bg-black/40 border border-white/5 p-3 rounded-xl text-[10px] font-mono" placeholder="Prix HT (ex: 10, 20, 30)" />
+                    <div className="grid grid-cols-2 gap-2">
+                        <input type="file" onChange={(e) => { const c = [...variantsList]; c[idx].fileRecto = e.target.files?.[0] || null; setVariantsList(c); }} className="text-[7px] w-full" />
+                        <input type="file" onChange={(e) => { const c = [...variantsList]; c[idx].fileVerso = e.target.files?.[0] || null; setVariantsList(c); }} className="text-[7px] w-full" />
+                    </div>
+                  </div>
+                ))}
+                <button onClick={() => { const n = prompt("Nom de la variante (ex: Format A3, Taille L) :"); if(n) setVariantsList([...variantsList, { id: n.toLowerCase().replace(/\s/g, '-'), name: n, prices: basePrices }]); }} className="w-full py-3 bg-blue-500/10 text-blue-500 rounded-xl text-[9px] font-black uppercase hover:bg-blue-500/20 transition-all">+ Ajouter une option</button>
+              </div>
+            )}
+
+            <button onClick={handleSaveProduct} disabled={isUploading} className="w-full py-5 rounded-2xl font-black uppercase bg-blue-600 hover:bg-blue-500 shadow-xl shadow-blue-500/20 active:scale-95 transition-all">
+              {editingId ? 'Mettre à jour le produit' : 'Publier sur le portail'}
             </button>
           </div>
         </div>
@@ -248,35 +265,73 @@ export default function AdminPortal() {
         {/* LISTING (DROITE) */}
         <div className="lg:col-span-7 space-y-12">
           {[
-            { id: 'Perso', name: 'Personnalisés', color: 'text-blue-500' },
-            { id: 'Signaletique', name: 'Signalétique', color: 'text-green-500' },
-            { id: 'Vetements', name: 'Business', color: 'text-orange-500' }
+            { id: 'Perso', name: 'Catalogue Impression', color: 'text-blue-500', bg: 'bg-blue-500/10' },
+            { id: 'Signaletique', name: 'Catalogue Signalétique', color: 'text-green-500', bg: 'bg-green-500/10' },
+            { id: 'Vetements', name: 'Catalogue Business', color: 'text-orange-500', bg: 'bg-orange-500/10' }
           ].map(section => (
-            <div key={section.id} className="space-y-4">
-              <h2 className={`text-xl font-black uppercase italic ${section.color}`}>{section.name}</h2>
-              <div className="space-y-2">
-                {existingProducts.filter(p => p.category === section.id).map(p => (
-                  <div key={p.id} className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/5 group">
+            <div key={section.id} className="space-y-6">
+              <div className={`inline-block px-4 py-2 rounded-full ${section.bg}`}>
+                <h2 className={`text-xs font-black uppercase tracking-[0.2em] ${section.color}`}>{section.name}</h2>
+              </div>
+              
+              <div className="grid gap-3">
+                {existingProducts.filter(p => p.category === section.id).map((p) => (
+                  <div key={p.id} className="flex items-center gap-6 bg-white/[0.03] p-4 rounded-[24px] border border-white/5 hover:border-white/10 transition-all group">
                     
-                    {/* 4. BOUTONS DE TRI */}
-                    <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                        <button onClick={() => moveOrder(p, 'up')} className="text-white/40 hover:text-white text-[10px]">▲</button>
-                        <button onClick={() => moveOrder(p, 'down')} className="text-white/40 hover:text-white text-[10px]">▼</button>
+                    {/* POSITION & LIGNE */}
+                    <div className="flex items-center gap-3 bg-black/40 p-3 rounded-2xl border border-white/5">
+                        <div className="flex flex-col items-center">
+                            <span className="text-[7px] font-black text-white/20 uppercase mb-1">Rang</span>
+                            <input 
+                                type="number" 
+                                value={p.sort_order} 
+                                onChange={(e) => quickUpdate(p.id, 'sort_order', parseInt(e.target.value))}
+                                className="w-8 bg-transparent text-center font-black text-blue-500 text-xs outline-none"
+                            />
+                        </div>
+                        <div className="w-[1px] h-6 bg-white/10"></div>
+                        <div className="flex flex-col items-center">
+                            <span className="text-[7px] font-black text-white/20 uppercase mb-1">Ligne</span>
+                            <div className="flex gap-1">
+                                {[1, 2, 3].map(col => (
+                                    <button 
+                                        key={col}
+                                        onClick={() => quickUpdate(p.id, 'line_position', col)}
+                                        className={`w-5 h-5 rounded-md text-[8px] font-black transition-all ${p.line_position === col ? 'bg-blue-500 text-white' : 'bg-white/5 text-white/20 hover:bg-white/10'}`}
+                                    >
+                                        {col}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="flex gap-1 bg-black/20 p-1 rounded-lg">
-                        <img src={p.image_recto} className="w-8 h-8 object-contain" />
-                        {p.image_verso && <img src={p.image_verso} className="w-8 h-8 object-contain border-l border-white/10" />}
+                    {/* MINIATURES */}
+                    <div className="flex -space-x-3 group-hover:space-x-1 transition-all">
+                        <div className="w-12 h-12 bg-black rounded-xl p-1 border border-white/10 shadow-lg relative z-20">
+                            <img src={p.image_recto} className="w-full h-full object-contain" />
+                        </div>
+                        {p.image_verso && (
+                            <div className="w-12 h-12 bg-black/40 rounded-xl p-1 border border-white/10 opacity-40 group-hover:opacity-100 transition-all relative z-10">
+                                <img src={p.image_verso} className="w-full h-full object-contain" />
+                            </div>
+                        )}
                     </div>
 
-                    <div className="flex-1">
-                      <p className="font-black uppercase text-[10px] tracking-widest">{p.name}</p>
-                      <p className="text-[7px] text-white/20 uppercase font-black">Position: {p.sort_order || 0}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-black uppercase text-[11px] tracking-widest truncate">{p.name}</p>
+                      <p className="text-[8px] text-white/30 font-bold mt-0.5">
+                        {p.has_variants ? `${p.config.variants.length} modèles` : 'Unique'} • {p.config.quantities.length} paliers
+                      </p>
                     </div>
 
                     <div className="flex gap-2">
-                      <button onClick={() => startEdit(p)} className="bg-white text-black px-3 py-1.5 rounded-lg text-[8px] font-black uppercase">Modifier</button>
-                      <button onClick={() => handleDelete(p.id)} className="bg-red-500/20 text-red-500 px-3 py-1.5 rounded-lg text-[8px] font-black uppercase">Suppr.</button>
+                      <button onClick={() => startEdit(p)} className="p-3 bg-white/5 hover:bg-white text-white hover:text-black rounded-xl transition-all">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                      </button>
+                      <button onClick={() => handleDelete(p.id)} className="p-3 bg-white/5 hover:bg-red-500 text-white rounded-xl transition-all">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                      </button>
                     </div>
                   </div>
                 ))}
