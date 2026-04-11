@@ -19,7 +19,6 @@ export default function PersoPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selections, setSelections] = useState<any>({});
-  // État pour gérer quelle face est affichée par produit
   const [flippedProducts, setFlippedProducts] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -99,50 +98,80 @@ export default function PersoPage() {
           {products.map((p) => {
             const sel = selections[p.id];
             if (!sel) return null;
+            
             const pList = p.prices[sel.variant] || p.prices.default || [];
             const currentPrice = pList[p.quantities.indexOf(Number(sel.qty))] || 0;
             
             const isFlipped = flippedProducts[p.id] || false;
-            const currentImg = (isFlipped && p.image_verso) ? p.image_verso : (p.variants.find((v:any) => v.id === sel.variant)?.image || p.image_recto);
+            
+            // --- LOGIQUE D'IMAGE MODIFIÉE ---
+            const currentVariant = p.variants.find((v: any) => v.id === sel.variant);
+            let currentImg = p.image_recto;
+
+            if (isFlipped) {
+              // Si on regarde le verso : image_verso de la variante, sinon image_verso du produit
+              currentImg = currentVariant?.image_verso || p.image_verso || p.image_recto;
+            } else {
+              // Si on regarde le recto : image_recto de la variante, sinon image_recto du produit
+              currentImg = currentVariant?.image_recto || p.image_recto;
+            }
+            // --------------------------------
 
             return (
               <div key={p.id} className="pt-10 relative">
-                {/* ZONE IMAGE */}
                 <div className="h-48 w-full flex items-center justify-center relative -mb-10 z-20">
                   
-                  {/* BOUTON FLÈCHE POUR TOURNER (Uniquement si verso existe) */}
-                  {p.image_verso && (
+                  {/* Le bouton flip n'apparaît que si le produit OU la variante a un verso */}
+                  {(p.image_verso || currentVariant?.image_verso) && (
                     <button 
                       onClick={() => toggleFlip(p.id)}
                       className="absolute right-0 bottom-4 z-30 bg-white text-black p-2 rounded-full shadow-xl hover:bg-blue-500 hover:text-white transition-all active:scale-90"
                     >
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="m15 18 6-6-6-6"/><path d="M3 12h18"/>
+                        <path d="M7 10l5-5 5 5M7 14l5 5 5-5"/>
                       </svg>
                     </button>
                   )}
 
-                  <img 
-                    src={currentImg} 
-                    className="max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-300" 
-                    alt={p.name} 
-                  />
+                  <AnimatePresence mode="wait">
+                    <motion.img 
+                      key={currentImg}
+                      initial={{ opacity: 0, scale: 0.9, rotateY: isFlipped ? 90 : -90 }}
+                      animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ duration: 0.4 }}
+                      src={currentImg} 
+                      className="max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,20,100,0.5)]" 
+                      alt={p.name} 
+                    />
+                  </AnimatePresence>
                 </div>
 
-                <div className="bg-white/[0.03] border border-white/10 rounded-[40px] p-8 pt-16">
+                <div className="bg-white/[0.03] border border-white/10 rounded-[40px] p-8 pt-16 hover:bg-white/[0.05] transition-all">
                   <h3 className={`font-black text-base uppercase mb-6 ${THEME.color}`}>{p.name}</h3>
                   <div className="space-y-4">
                     {p.hasVariants && (
-                      <select value={sel.variant} onChange={(e) => setSelections({...selections, [p.id]:{...sel, variant: e.target.value}})} className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none">
+                      <select 
+                        value={sel.variant} 
+                        onChange={(e) => {
+                            setSelections({...selections, [p.id]:{...sel, variant: e.target.value}});
+                            // Optionnel: on remet la face Recto quand on change de variante
+                            setFlippedProducts(prev => ({ ...prev, [p.id]: false }));
+                        }} 
+                        className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none cursor-pointer hover:border-blue-500/50 transition-all"
+                      >
                         {p.variants.map((v:any)=><option key={v.id} value={v.id}>{v.name}</option>)}
                       </select>
                     )}
-                    <select value={sel.qty} onChange={(e) => setSelections({...selections, [p.id]:{...sel, qty: Number(e.target.value)}})} className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none">
+                    <select value={sel.qty} onChange={(e) => setSelections({...selections, [p.id]:{...sel, qty: Number(e.target.value)}})} className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none cursor-pointer">
                       {p.quantities.map((q:any)=><option key={q} value={q}>{q} exemplaires</option>)}
                     </select>
                     <div className="flex items-center justify-between pt-6 border-t border-white/5 mt-4">
-                      <span className="text-2xl font-black">{currentPrice.toFixed(2)}€</span>
-                      <button onClick={() => handleAddToCart(p)} className="bg-white text-[#0f092e] px-8 py-3.5 rounded-2xl font-black uppercase text-[9px] hover:bg-blue-500 hover:text-white transition-all">Ajouter</button>
+                      <div className="flex flex-col">
+                        <span className="text-2xl font-black">{currentPrice.toFixed(2)}€</span>
+                        <span className="text-[8px] text-white/30 font-bold uppercase tracking-widest italic">TVA incluse</span>
+                      </div>
+                      <button onClick={() => handleAddToCart(p)} className="bg-white text-[#0f092e] px-8 py-3.5 rounded-2xl font-black uppercase text-[9px] hover:bg-blue-500 hover:text-white transition-all active:scale-95">Ajouter</button>
                     </div>
                   </div>
                 </div>
@@ -152,7 +181,7 @@ export default function PersoPage() {
         </div>
       </main>
 
-      <button onClick={() => setIsCartOpen(true)} className="fixed bottom-8 right-8 w-16 h-16 bg-white rounded-full shadow-2xl flex items-center justify-center z-[100] transition-all">
+      <button onClick={() => setIsCartOpen(true)} className="fixed bottom-8 right-8 w-16 h-16 bg-white rounded-full shadow-2xl flex items-center justify-center z-[100] transition-all hover:scale-110 active:scale-90">
         <div className="relative">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0f092e" strokeWidth="2.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
           {cart.length > 0 && <span className={`absolute -top-3 -right-3 ${THEME.bg} text-white text-[9px] font-black w-6 h-6 rounded-full flex items-center justify-center border-4 border-[#0f092e]`}>{cart.length}</span>}

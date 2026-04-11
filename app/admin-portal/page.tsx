@@ -1,15 +1,18 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-// Import pour la compression d'image
+// 1. IMPORT DE LA LIB DE COMPRESSION
 import imageCompression from 'browser-image-compression';
 
+// 2. MODIFICATION DE L'INTERFACE VARIANTITEM (RECTO/VERSO)
 interface VariantItem {
   id: string;
   name: string;
   prices: string;
-  file?: File | null;
-  image?: string; 
+  fileRecto?: File | null; // NOUVEAU
+  fileVerso?: File | null; // NOUVEAU
+  image_recto?: string;    // MODIFIÉ
+  image_verso?: string;    // AJOUTÉ
 }
 
 export default function AdminPortal() {
@@ -28,7 +31,7 @@ export default function AdminPortal() {
   const [variantsList, setVariantsList] = useState<VariantItem[]>([]);
   const [existingProducts, setExistingProducts] = useState<any[]>([]);
 
-  // FONCTION DE COMPRESSION & UPLOAD
+  // FONCTION DE COMPRESSION RÉUTILISABLE
   const compressAndUpload = async (file: File, suffix: string) => {
     const options = {
       maxSizeMB: 0.8,
@@ -38,7 +41,9 @@ export default function AdminPortal() {
 
     try {
       const compressedFile = await imageCompression(file, options);
-      const fileName = `${Date.now()}-${suffix}-${file.name.replace(/\s/g, '_')}`;
+      // Nettoyage du nom de fichier
+      const cleanedName = file.name.replace(/\s/g, '_').replace(/[^a-zA-Z0-9_.-]/g, '');
+      const fileName = `${Date.now()}-${suffix}-${cleanedName}`;
       
       const { error: uploadError } = await supabase.storage
         .from('product-images')
@@ -88,10 +93,12 @@ export default function AdminPortal() {
     setHasVariants(p.has_variants);
     
     if (p.has_variants) {
+      // 3. CHARGEMENT DES DONNÉES DE VARIANTE (RECTO/VERSO)
       setVariantsList(p.config.variants.map((v: any) => ({
         id: v.id,
         name: v.name,
-        image: v.image,
+        image_recto: v.image_recto, // MODIFIÉ
+        image_verso: v.image_verso, // AJOUTÉ
         prices: p.config.prices[v.id]?.join(', ') || ""
       })));
     } else {
@@ -106,8 +113,10 @@ export default function AdminPortal() {
     setIsUploading(true);
 
     try {
-      let mainUrl = existingProducts.find(p => p.id === editingId)?.image_recto;
-      let versoUrl = existingProducts.find(p => p.id === editingId)?.image_verso;
+      // Récupération des anciennes URLs en mode édition
+      const existingP = existingProducts.find(p => p.id === editingId);
+      let mainUrl = existingP?.image_recto;
+      let versoUrl = existingP?.image_verso;
 
       if (imageFile) {
         mainUrl = await compressAndUpload(imageFile, 'recto');
@@ -122,13 +131,29 @@ export default function AdminPortal() {
       const finalVariants: any[] = [];
 
       if (hasVariants) {
+        // 4. BOUCLE DE SAUVEGARDE DES VARIANTES (RECTO/VERSO)
         for (const v of variantsList) {
-          let vImg = v.image || mainUrl;
-          if (v.file) {
-            vImg = await compressAndUpload(v.file, 'variant');
+          let vImgRecto = v.image_recto || mainUrl; // Par défaut: image principale recto
+          let vImgVerso = v.image_verso || versoUrl; // Par défaut: image principale verso
+
+          // Upload RECTO Variante
+          if (v.fileRecto) {
+            vImgRecto = await compressAndUpload(v.fileRecto, `v-${v.id}-recto`);
           }
+          // Upload VERSO Variante
+          if (v.fileVerso) {
+            vImgVerso = await compressAndUpload(v.fileVerso, `v-${v.id}-verso`);
+          }
+
           finalPrices[v.id] = v.prices.split(',').map(n => Number(n.trim()));
-          finalVariants.push({ id: v.id, name: v.name, image: vImg });
+          
+          // Construction de l'objet variante final
+          finalVariants.push({ 
+            id: v.id, 
+            name: v.name, 
+            image_recto: vImgRecto, // MODIFIÉ
+            image_verso: vImgVerso  // AJOUTÉ
+          });
         }
       } else {
         finalPrices['default'] = basePrices.split(',').map(n => Number(n.trim()));
@@ -160,7 +185,6 @@ export default function AdminPortal() {
     }
   };
 
-  // FONCTION DE SUPPRESSION AVEC AWAIT POUR SUPABASE
   const handleDelete = async (id: string) => {
     if(confirm('Supprimer définitivement ce produit ?')) {
       const { error } = await supabase.from('products').delete().eq('id', id);
@@ -183,12 +207,12 @@ export default function AdminPortal() {
   );
 
   return (
-    <div className="min-h-screen bg-[#0f092e] text-white p-10 font-sans">
+    <div className="min-h-screen bg-[#0f092e] text-white p-10 font-sans relative overflow-x-hidden">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-16">
         
         {/* COLONNE GAUCHE : FORMULAIRE */}
         <div className="lg:col-span-5 space-y-8">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center sticky top-10 z-40 bg-[#0f092e]/80 p-2 backdrop-blur-sm rounded-xl">
             <h1 className="text-3xl font-black uppercase text-blue-500 italic">
               {editingId ? 'Mode Édition' : 'Ajouter un produit'}
             </h1>
@@ -224,11 +248,11 @@ export default function AdminPortal() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-white/40 uppercase">Image Recto</label>
+                  <label className="text-[10px] font-black text-white/40 uppercase">Image Recto principale</label>
                   <input type="file" accept="image/*" onChange={e => setImageFile(e.target.files?.[0] || null)} className="text-[9px] block w-full file:bg-blue-500 file:border-0 file:text-white file:px-3 file:py-1 file:rounded file:font-black file:uppercase" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-white/40 uppercase">Image Verso (Optionnel)</label>
+                  <label className="text-[10px] font-black text-white/40 uppercase">Image Verso principale</label>
                   <input type="file" accept="image/*" onChange={e => setImageFileVerso(e.target.files?.[0] || null)} className="text-[9px] block w-full file:bg-gray-500 file:border-0 file:text-white file:px-3 file:py-1 file:rounded file:font-black file:uppercase" />
                 </div>
               </div>
@@ -257,17 +281,30 @@ export default function AdminPortal() {
                     <button onClick={() => setVariantsList(variantsList.filter((_, i) => i !== idx))} className="absolute top-4 right-4 text-red-500 text-[9px] font-black px-2 py-1 hover:bg-red-500/10 rounded-lg">SUPPRIMER</button>
                     <p className="font-black text-[12px] uppercase text-blue-500">{v.name}</p>
                     <input value={v.prices} onChange={(e) => { const c = [...variantsList]; c[idx].prices = e.target.value; setVariantsList(c); }} className="w-full bg-black/30 border border-white/5 p-3 rounded-lg text-xs outline-none" placeholder="Prix..." />
-                    <input type="file" accept="image/*" onChange={(e) => { const c = [...variantsList]; c[idx].file = e.target.files?.[0] || null; setVariantsList(c); }} className="text-[8px] opacity-60" />
+                    
+                    {/* 5. GRILLE IMAGES RECTO/VERSO POUR LA VARIANTE */}
+                    <div className="grid grid-cols-2 gap-3 pt-2">
+                        <div className="space-y-1">
+                            <label className="text-[8px] font-black text-white/30 uppercase">Image Recto (Option)</label>
+                            <input type="file" accept="image/*" onChange={(e) => { const c = [...variantsList]; c[idx].fileRecto = e.target.files?.[0] || null; setVariantsList(c); }} className="text-[8px] opacity-80 block w-full" />
+                            {v.image_recto && <img src={v.image_recto} className="h-8 w-8 object-contain rounded bg-black/40 p-0.5 mt-1" />}
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-[8px] font-black text-white/30 uppercase">Image Verso (Option)</label>
+                            <input type="file" accept="image/*" onChange={(e) => { const c = [...variantsList]; c[idx].fileVerso = e.target.files?.[0] || null; setVariantsList(c); }} className="text-[8px] opacity-80 block w-full" />
+                            {v.image_verso && <img src={v.image_verso} className="h-8 w-8 object-contain rounded bg-black/40 p-0.5 mt-1" />}
+                        </div>
+                    </div>
                   </div>
                 ))}
-                <button onClick={() => { const n = prompt("Nom de l'option :"); if(n) setVariantsList([...variantsList, { id: n.toLowerCase().replace(/\s/g, ''), name: n, prices: basePrices }]); }} className="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black text-blue-400 uppercase hover:bg-white/10 transition-all">+ Ajouter un modèle</button>
+                <button onClick={() => { const n = prompt("Nom de l'option :"); if(n) setVariantsList([...variantsList, { id: n.toLowerCase().replace(/\s/g, '').replace(/[^a-z0-9]/g, ''), name: n, prices: basePrices }]); }} className="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black text-blue-400 uppercase hover:bg-white/10 transition-all">+ Ajouter un modèle</button>
               </div>
             )}
 
             <button 
               disabled={isUploading}
               onClick={handleSaveProduct} 
-              className={`w-full py-5 rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl transition-all active:scale-95 ${isUploading ? 'bg-gray-700 cursor-not-allowed opacity-50' : (editingId ? 'bg-orange-600 hover:bg-orange-500' : 'bg-blue-600 hover:bg-blue-500')}`}
+              className={`w-full py-5 rounded-2xl font-black uppercase tracking-widest ${isUploading ? 'bg-gray-700 cursor-not-allowed opacity-50' : (editingId ? 'bg-orange-600 hover:bg-orange-500' : 'bg-blue-600 hover:bg-blue-500')}`}
             >
               {editingId ? 'Enregistrer les modifications' : 'Publier sur le site'}
             </button>
@@ -281,8 +318,8 @@ export default function AdminPortal() {
             { id: 'Signaletique', name: 'Produits sans personnalisation', color: 'text-green-500', bg: 'bg-green-500' },
             { id: 'Vetements', name: 'Gamme Business', color: 'text-orange-500', bg: 'bg-orange-500' }
           ].map(section => (
-            <div key={section.id} className="space-y-4">
-              <div className="flex items-center gap-4">
+            <div key={section.id} className="space-y-4 sticky top-10">
+              <div className="flex items-center gap-4 bg-[#0f092e] p-2 rounded-xl backdrop-blur-sm">
                 <div className={`w-1 h-6 ${section.bg} rounded-full`}></div>
                 <h2 className={`text-xl font-black uppercase italic tracking-tighter ${section.color}`}>{section.name}</h2>
               </div>
@@ -290,9 +327,12 @@ export default function AdminPortal() {
               <div className="grid grid-cols-1 gap-3">
                 {existingProducts.filter(p => p.category === section.id).map(p => (
                   <div key={p.id} className="flex items-center gap-5 bg-white/[0.03] p-5 rounded-3xl border border-white/5 hover:bg-white/[0.06] transition-all group shadow-sm">
-                    <div className="flex gap-1 bg-black/40 p-1.5 rounded-xl">
+                    <div className="flex gap-1 bg-black/40 p-1.5 rounded-xl relative group-hover:scale-105 transition-transform">
                         <img src={p.image_recto} className="w-10 h-10 object-contain rounded-lg" alt="recto" />
                         {p.image_verso && <img src={p.image_verso} className="w-10 h-10 object-contain rounded-lg border-l border-white/10 pl-1" alt="verso" />}
+                        {p.has_variants && (
+                            <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-[7px] font-black px-1.5 py-0.5 rounded-full">{p.config.variants?.length} mod.</span>
+                        )}
                     </div>
                     <div className="flex-1">
                       <p className="font-black uppercase text-[11px] tracking-widest text-white/90">{p.name}</p>
@@ -301,7 +341,7 @@ export default function AdminPortal() {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <button onClick={() => startEdit(p)} className="bg-white text-[#0f092e] px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-blue-500 hover:text-white transition-all">Modifier</button>
+                      <button onClick={() => startEdit(p)} className="bg-white text-[#0f092e] px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-blue-500 hover:text-white transition-all active:scale-95">Modifier</button>
                       <button onClick={() => handleDelete(p.id)} className="bg-red-500/10 text-red-500 border border-red-500/20 px-3 py-2.5 rounded-xl text-[9px] font-black uppercase hover:bg-red-500 hover:text-white transition-all">Suppr.</button>
                     </div>
                   </div>
