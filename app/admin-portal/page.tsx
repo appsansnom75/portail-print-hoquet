@@ -49,21 +49,25 @@ function SortableItem({ p, startEdit, handleDelete }: any) {
       style={style} 
       className="flex items-center gap-4 bg-white/[0.02] p-4 rounded-[24px] border border-white/5 hover:border-blue-500/30 transition-all group"
     >
+      {/* POIGNÉE DE DRAG */}
       <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-2 text-white/10 hover:text-blue-500 transition-colors">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M7 11h10M7 15h10M7 19h10M7 7h10"/></svg>
       </div>
 
-      <div className="w-12 h-12 bg-black rounded-xl overflow-hidden border border-white/10 flex items-center justify-center">
+      {/* MINIATURE */}
+      <div className="w-12 h-12 bg-black rounded-xl overflow-hidden border border-white/10 flex items-center justify-center shrink-0">
         <img src={p.image_recto} className="max-w-full max-h-full object-contain" alt="" />
       </div>
 
+      {/* INFOS ÉPURÉES */}
       <div className="flex-1 min-w-0">
         <p className="font-black uppercase text-[10px] tracking-widest truncate">{p.name}</p>
         <p className="text-[7px] text-white/20 font-bold uppercase">
-          {p.has_variants ? `${p.config.variants?.length} modèles` : 'Unique'} • Rang {p.sort_order}
+          {p.has_variants ? `${p.config.variants?.length} modèles` : 'Modèle unique'}
         </p>
       </div>
 
+      {/* ACTIONS */}
       <div className="flex gap-2">
         <button onClick={() => startEdit(p)} className="p-2.5 bg-white/5 hover:bg-blue-500 rounded-xl transition-all">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
@@ -167,7 +171,7 @@ export default function AdminPortal() {
         ? await supabase.from('products').update(payload).eq('id', editingId)
         : await supabase.from('products').insert([payload]);
 
-      if (!error) { resetForm(); fetchProducts(); alert("Enregistré !"); }
+      if (!error) { resetForm(); fetchProducts(); }
     } catch (err: any) { alert(err.message); } finally { setIsUploading(false); }
   };
 
@@ -192,11 +196,11 @@ export default function AdminPortal() {
   const handleDelete = async (id: string) => { if(confirm('Supprimer ?')) { await supabase.from('products').delete().eq('id', id); fetchProducts(); } };
 
   if (!isAuthenticated) return (
-    <div className="min-h-screen bg-[#0f092e] flex items-center justify-center p-6 text-white">
-      <div className="bg-white/5 p-8 rounded-3xl border border-white/10 w-full max-w-md text-center">
-        <h2 className="font-black text-blue-500 uppercase tracking-widest mb-6">Guy Hoquet Admin</h2>
-        <input type="password" placeholder="Mot de passe" className="w-full bg-black/40 border border-white/10 p-4 rounded-xl mb-4 text-center outline-none focus:border-blue-500 transition-all" onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && password === "123" && setIsAuthenticated(true)} />
-        <button onClick={() => password === "123" ? setIsAuthenticated(true) : alert("Refusé")} className="w-full bg-blue-600 py-4 rounded-xl font-black uppercase hover:bg-blue-500 transition-all">Connexion</button>
+    <div className="min-h-screen bg-[#0f092e] flex items-center justify-center p-6 text-white text-center">
+      <div className="bg-white/5 p-10 rounded-[40px] border border-white/10 w-full max-w-md shadow-2xl">
+        <h2 className="font-black text-blue-500 uppercase tracking-[0.3em] mb-8 italic text-xl">Gestion Portal</h2>
+        <input type="password" placeholder="Passcode" className="w-full bg-black/40 border border-white/10 p-5 rounded-2xl mb-4 text-center outline-none focus:border-blue-500 transition-all font-bold" onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && password === "123" && setIsAuthenticated(true)} />
+        <button onClick={() => password === "123" ? setIsAuthenticated(true) : alert("Refusé")} className="w-full bg-blue-600 py-5 rounded-2xl font-black uppercase tracking-widest hover:bg-blue-500 active:scale-95 transition-all">Connecter</button>
       </div>
     </div>
   );
@@ -205,106 +209,101 @@ export default function AdminPortal() {
     <div className="min-h-screen bg-[#0f092e] text-white p-10 font-sans relative">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-16">
         
-        {/* --- FORMULAIRE D'ÉDITION (GAUCHE) --- */}
+        {/* --- FORMULAIRE (GAUCHE) --- */}
         <div className="lg:col-span-5 space-y-8">
           <div className="flex justify-between items-center sticky top-0 z-40 bg-[#0f092e]/90 py-4 backdrop-blur-md">
-            <h1 className="text-3xl font-black uppercase text-blue-500 italic">{editingId ? 'Modification' : 'Ajout Produit'}</h1>
-            {editingId && <button onClick={resetForm} className="bg-red-500/10 text-red-500 px-4 py-2 rounded-full text-[9px] font-black uppercase hover:bg-red-500 hover:text-white transition-all">Annuler</button>}
+            <h1 className="text-3xl font-black uppercase text-blue-500 italic tracking-tighter">{editingId ? 'Édition' : 'Nouveau'}</h1>
+            {editingId && <button onClick={resetForm} className="bg-red-500/10 text-red-500 px-4 py-2 rounded-full text-[9px] font-black uppercase">Annuler</button>}
           </div>
 
           <div className="bg-white/5 p-8 rounded-[40px] border border-white/10 space-y-6 relative shadow-2xl">
             {isUploading && (
               <div className="absolute inset-0 bg-[#0f092e]/80 z-[100] flex flex-col items-center justify-center rounded-[40px] backdrop-blur-sm">
-                <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] animate-pulse">Sauvegarde...</p>
+                <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
               </div>
             )}
 
             <div className="space-y-1">
-              <label className="text-[9px] font-black uppercase text-white/30 ml-2">Catégorie</label>
+              <label className="text-[9px] font-black uppercase text-white/30 ml-2">Emplacement</label>
               <select value={category} onChange={e => setCategory(e.target.value)} className="w-full bg-[#16103a] border border-white/10 p-4 rounded-2xl text-[11px] font-black uppercase outline-none focus:border-blue-500">
-                <option value="Perso">Impression (Bleu)</option>
-                <option value="Signaletique">Signalétique (Vert)</option>
-                <option value="Vetements">Business (Orange)</option>
+                <option value="Perso">Produits personnalisables</option>
+                <option value="Signaletique">Produits non personnalisés</option>
+                <option value="Vetements">Gamme business</option>
               </select>
             </div>
 
             <div className="space-y-1">
               <label className="text-[9px] font-black uppercase text-white/30 ml-2">Nom du produit</label>
-              <input value={name} onChange={e => setName(e.target.value)} className="w-full bg-black/40 border border-white/10 p-4 rounded-2xl text-sm font-bold outline-none focus:border-blue-500" placeholder="Ex: Brochure 16 pages" />
+              <input value={name} onChange={e => setName(e.target.value)} className="w-full bg-black/40 border border-white/10 p-4 rounded-2xl text-sm font-bold outline-none" placeholder="Ex: Panneau de chantier" />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                <p className="text-[8px] font-black text-white/30 uppercase mb-2">Visuel Recto</p>
+                <p className="text-[8px] font-black text-white/30 uppercase mb-2">Image Recto</p>
                 <input type="file" onChange={e => setImageFile(e.target.files?.[0] || null)} className="text-[8px] w-full" />
               </div>
               <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                <p className="text-[8px] font-black text-white/30 uppercase mb-2">Visuel Verso</p>
+                <p className="text-[8px] font-black text-white/30 uppercase mb-2">Image Verso</p>
                 <input type="file" onChange={e => setImageFileVerso(e.target.files?.[0] || null)} className="text-[8px] w-full" />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-[9px] font-black uppercase text-white/30 ml-2">Quantités disponibles</label>
-              <input value={quantities} onChange={e => setQuantities(e.target.value)} className="w-full bg-black/40 border border-white/10 p-4 rounded-2xl text-sm font-mono" placeholder="100, 200, 500" />
+              <label className="text-[9px] font-black uppercase text-white/30 ml-2">Paliers de quantités</label>
+              <input value={quantities} onChange={e => setQuantities(e.target.value)} className="w-full bg-black/40 border border-white/10 p-4 rounded-2xl text-sm font-mono" placeholder="500, 1000, 2000" />
             </div>
 
             {!hasVariants && (
               <div className="space-y-1">
-                <label className="text-[9px] font-black uppercase text-white/30 ml-2">Prix HT par quantité</label>
-                <input value={basePrices} onChange={e => setBasePrices(e.target.value)} className="w-full bg-black/40 border border-white/10 p-4 rounded-2xl text-sm font-mono text-blue-400" placeholder="50, 90, 180" />
+                <label className="text-[9px] font-black uppercase text-white/30 ml-2">Prix par palier</label>
+                <input value={basePrices} onChange={e => setBasePrices(e.target.value)} className="w-full bg-black/40 border border-white/10 p-4 rounded-2xl text-sm font-mono text-blue-400" placeholder="100, 180, 300" />
               </div>
             )}
 
-            <button onClick={() => setHasVariants(!hasVariants)} className={`w-full py-4 border-2 border-dashed rounded-2xl text-[9px] font-black uppercase transition-all ${hasVariants ? 'border-blue-500 text-blue-500 bg-blue-500/5' : 'border-white/10 text-white/30 hover:border-white/20'}`}>
-              {hasVariants ? "✓ Plusieurs modèles activés" : "+ Gérer plusieurs tailles / modèles"}
+            <button onClick={() => setHasVariants(!hasVariants)} className={`w-full py-4 border-2 border-dashed rounded-2xl text-[9px] font-black uppercase transition-all ${hasVariants ? 'border-blue-500 text-blue-500 bg-blue-500/5' : 'border-white/10 text-white/30'}`}>
+              {hasVariants ? "✓ Plusieurs modèles configurés" : "+ Ajouter des options / tailles"}
             </button>
 
             {hasVariants && (
               <div className="space-y-4 border-l-2 border-blue-500 pl-4 py-2">
                 {variantsList.map((v, idx) => (
                   <div key={idx} className="bg-white/5 p-4 rounded-2xl space-y-3 relative group">
-                    <button onClick={() => setVariantsList(variantsList.filter((_, i) => i !== idx))} className="absolute top-2 right-2 text-red-500 text-[8px] font-black opacity-0 group-hover:opacity-100 transition-all">SUPPRIMER</button>
+                    <button onClick={() => setVariantsList(variantsList.filter((_, i) => i !== idx))} className="absolute top-2 right-2 text-red-500 text-[8px] font-black opacity-0 group-hover:opacity-100 transition-all uppercase">Supprimer</button>
                     <p className="text-[10px] font-black text-blue-500 uppercase italic tracking-tighter">{v.name}</p>
-                    <input value={v.prices} onChange={(e) => { const c = [...variantsList]; c[idx].prices = e.target.value; setVariantsList(c); }} className="w-full bg-black/40 border border-white/5 p-3 rounded-xl text-[10px] font-mono" placeholder="Prix HT (ex: 10, 20, 30)" />
+                    <input value={v.prices} onChange={(e) => { const c = [...variantsList]; c[idx].prices = e.target.value; setVariantsList(c); }} className="w-full bg-black/40 border border-white/5 p-3 rounded-xl text-[10px] font-mono outline-none" placeholder="Prix..." />
                     <div className="grid grid-cols-2 gap-2">
-                        <div className="space-y-1">
-                          <p className="text-[7px] text-white/20 uppercase">Recto</p>
-                          <input type="file" onChange={(e) => { const c = [...variantsList]; c[idx].fileRecto = e.target.files?.[0] || null; setVariantsList(c); }} className="text-[7px] w-full" />
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-[7px] text-white/20 uppercase">Verso</p>
-                          <input type="file" onChange={(e) => { const c = [...variantsList]; c[idx].fileVerso = e.target.files?.[0] || null; setVariantsList(c); }} className="text-[7px] w-full" />
-                        </div>
+                        <input type="file" onChange={(e) => { const c = [...variantsList]; c[idx].fileRecto = e.target.files?.[0] || null; setVariantsList(c); }} className="text-[7px]" />
+                        <input type="file" onChange={(e) => { const c = [...variantsList]; c[idx].fileVerso = e.target.files?.[0] || null; setVariantsList(c); }} className="text-[7px]" />
                     </div>
                   </div>
                 ))}
-                <button onClick={() => { const n = prompt("Nom de l'option (ex: Format A3, Taille L) :"); if(n) setVariantsList([...variantsList, { id: n.toLowerCase().replace(/\s/g, '-'), name: n, prices: basePrices }]); }} className="w-full py-3 bg-blue-500/10 text-blue-500 rounded-xl text-[9px] font-black uppercase hover:bg-blue-500/20 transition-all">+ Ajouter une option</button>
+                <button onClick={() => { const n = prompt("Nom de l'option :"); if(n) setVariantsList([...variantsList, { id: n.toLowerCase().replace(/\s/g, '-'), name: n, prices: basePrices }]); }} className="w-full py-3 bg-blue-500/10 text-blue-500 rounded-xl text-[9px] font-black uppercase hover:bg-blue-500/20 transition-all">+ Nouvelle variante</button>
               </div>
             )}
 
             <button onClick={handleSaveProduct} disabled={isUploading} className="w-full py-5 rounded-2xl font-black uppercase bg-blue-600 hover:bg-blue-500 shadow-xl shadow-blue-500/20 active:scale-95 transition-all tracking-[0.2em]">
-              {editingId ? 'Sauvegarder les modifications' : 'Publier le produit'}
+              {editingId ? 'Sauvegarder' : 'Publier'}
             </button>
           </div>
         </div>
 
-        {/* --- LISTING AVEC DRAG & DROP (DROITE) --- */}
-        <div className="lg:col-span-7 space-y-12">
-          {['Perso', 'Signaletique', 'Vetements'].map(catId => (
-            <div key={catId} className="space-y-6">
+        {/* --- LISTING DRAG & DROP (DROITE) --- */}
+        <div className="lg:col-span-7 space-y-12 pb-20">
+          {[
+            { id: 'Perso', label: 'Produits personnalisables', color: 'text-blue-500' },
+            { id: 'Signaletique', label: 'Produits non personnalisés', color: 'text-green-500' },
+            { id: 'Vetements', label: 'Gamme business', color: 'text-orange-500' }
+          ].map(section => (
+            <div key={section.id} className="space-y-6">
               <div className="flex items-center gap-4">
-                <h2 className={`text-xs font-black uppercase tracking-[0.3em] italic ${catId === 'Perso' ? 'text-blue-500' : catId === 'Signaletique' ? 'text-green-500' : 'text-orange-500'}`}>
-                  {catId === 'Perso' ? 'Impression' : catId === 'Signaletique' ? 'Signalétique' : 'Business'}
-                </h2>
+                <h2 className={`text-xs font-black uppercase tracking-[0.3em] italic ${section.color}`}>{section.label}</h2>
                 <div className="h-[1px] flex-1 bg-white/5"></div>
               </div>
               
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                <SortableContext items={existingProducts.filter(p => p.category === catId)} strategy={verticalListSortingStrategy}>
+                <SortableContext items={existingProducts.filter(p => p.category === section.id)} strategy={verticalListSortingStrategy}>
                   <div className="grid gap-2">
-                    {existingProducts.filter(p => p.category === catId).map((p) => (
+                    {existingProducts.filter(p => p.category === section.id).map((p) => (
                       <SortableItem key={p.id} p={p} startEdit={startEdit} handleDelete={handleDelete} />
                     ))}
                   </div>
