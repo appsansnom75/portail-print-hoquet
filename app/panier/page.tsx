@@ -62,23 +62,33 @@ export default function CartPage() {
     
     setIsSubmitting(true);
     try {
-      // --- LOGIQUE DU COMPTEUR SUPABASE ---
-      const { data: counterData, error: counterError } = await supabase
+      // --- LOGIQUE DU COMPTEUR SUPABASE SÉCURISÉE ---
+      // On utilise .maybeSingle() pour éviter l'erreur 406 si la ligne n'est pas trouvée
+      let { data: counterData, error: counterError } = await supabase
         .from('config')
         .select('last_value')
         .eq('counter_name', 'order_id')
-        .single();
+        .maybeSingle();
 
       if (counterError) throw counterError;
 
-      const nextOrderId = counterData.last_value + 1;
+      let nextOrderId;
 
-      // Mise à jour immédiate du compteur
-      await supabase
-        .from('config')
-        .update({ last_value: nextOrderId })
-        .eq('counter_name', 'order_id');
-      // ------------------------------------
+      if (!counterData) {
+        // Si la ligne n'existe pas encore, on l'initialise à 1
+        nextOrderId = 1;
+        await supabase
+          .from('config')
+          .insert([{ counter_name: 'order_id', last_value: 1 }]);
+      } else {
+        // Si elle existe, on incrémente normalement
+        nextOrderId = counterData.last_value + 1;
+        await supabase
+          .from('config')
+          .update({ last_value: nextOrderId })
+          .eq('counter_name', 'order_id');
+      }
+      // ----------------------------------------------
 
       const nomsProduits = cart.map(item => item.name).join(', ');
       const quantitésProduits = cart.map(item => item.qty).join(', ');
@@ -92,7 +102,7 @@ export default function CartPage() {
 
       // Insertion dans Supabase avec le nouvel ID
       const { error } = await supabase.from('orders').insert([{
-        order_number: nextOrderId, // Ton ID séquentiel (1, 2, 3...)
+        order_number: nextOrderId, 
         agency_name: agencyData.name,
         client_email: email,
         client_phone: phone,
@@ -115,7 +125,7 @@ export default function CartPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          order_number: nextOrderId, // C'est cette valeur que Make recevra pour faire GH-00001
+          order_number: nextOrderId, 
           agency_name: agencyData.name,
           client_name: selectedUser,
           items: itemsFormatted,
