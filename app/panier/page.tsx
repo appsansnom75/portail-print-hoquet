@@ -62,9 +62,17 @@ export default function CartPage() {
     
     setIsSubmitting(true);
     try {
-      // SÉPARATION DES PRODUITS ET DES QUANTITÉS POUR LE SHEETS
+      // 1. FORMAT TEXTE (Pour compatibilité ou colonnes simples)
       const nomsProduits = cart.map(item => item.name).join(', ');
       const quantitésProduits = cart.map(item => item.qty).join(', ');
+
+      // 2. FORMAT TABLEAU (La clé pour ton Iterator Make sans erreurs)
+      const itemsFormatted = cart.map(item => ({
+        name: item.name,
+        qty: item.qty,
+        price_unit: item.price,
+        total_row: (item.price * item.qty).toFixed(2)
+      }));
 
       const { error } = await supabase.from('orders').insert([{
         agency_name: agencyData.name,
@@ -74,8 +82,9 @@ export default function CartPage() {
         zip_code: zipCode,
         city: city,
         siret: siret,
-        produits_liste: nomsProduits,     // Ira dans la colonne B via Make
-        quantite_liste: quantitésProduits, // Ira dans la colonne C via Make
+        produits_liste: nomsProduits,     
+        quantite_liste: quantitésProduits, 
+        items: itemsFormatted,             // NOUVEAU CHAMP JSONB
         total_ht: totalHT,
         instructions: `Commandé par : ${selectedUser} -- ${instructions}`,
         status: 'En attente'
@@ -118,7 +127,6 @@ export default function CartPage() {
       <main className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-3 gap-16">
         <div className="lg:col-span-2 space-y-12">
           
-          {/* 01. IDENTIFICATION */}
           <section className="bg-blue-600/5 border border-blue-500/20 rounded-[45px] p-10 space-y-8">
              <h2 className="text-[11px] font-black uppercase text-blue-400 italic tracking-widest">01. Identification</h2>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -135,7 +143,6 @@ export default function CartPage() {
              </div>
           </section>
 
-          {/* 02. VOTRE PANIER */}
           <section className="bg-white/[0.02] border border-white/10 rounded-[45px] p-10">
              <h2 className="text-[11px] font-black uppercase text-white/60 italic tracking-widest mb-10">02. Votre Panier</h2>
              <div className="space-y-6">
@@ -154,7 +161,6 @@ export default function CartPage() {
              </div>
           </section>
 
-          {/* 03. LIVRAISON & CONTACT */}
           <section className="bg-white/[0.02] border border-white/10 rounded-[45px] p-10 space-y-8">
             <h2 className="text-[11px] font-black uppercase text-white/60 italic tracking-widest">03. Livraison & Contact</h2>
             <div className="space-y-6">
@@ -171,14 +177,12 @@ export default function CartPage() {
             </div>
           </section>
 
-          {/* 04. NOTES */}
           <section className="bg-blue-600/5 border border-blue-500/10 rounded-[45px] p-10">
             <h2 className="text-[10px] font-black uppercase text-blue-400/50 italic mb-6">04. Instructions Particulières</h2>
             <textarea value={instructions} onChange={(e) => setInstructions(e.target.value)} placeholder="Précisions pour le façonnage ou l'impression..." className="w-full h-24 bg-black/40 border border-white/5 rounded-3xl p-6 text-[11px] text-white/80 outline-none focus:border-blue-500/40 resize-none uppercase italic" />
           </section>
         </div>
 
-        {/* SIDEBAR TOTAL */}
         <div className="lg:col-span-1">
           <div className="bg-white p-12 rounded-[50px] text-[#0f092e] sticky top-12 shadow-2xl text-center">
             <h2 className="text-[10px] font-black uppercase mb-4 opacity-30 italic tracking-[0.2em]">Total à régler HT</h2>
@@ -188,7 +192,6 @@ export default function CartPage() {
         </div>
       </main>
 
-      {/* POPUP RÉCAPITULATIF COMPLET */}
       <AnimatePresence>
         {showConfirm && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
