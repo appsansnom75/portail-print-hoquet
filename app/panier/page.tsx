@@ -55,15 +55,17 @@ export default function CartPage() {
   }, []);
 
   const handleFinalSubmit = async () => {
+    if (isSubmitting) return; // Sécurité anti-double clic
+
     if (!agencyData || !selectedUser || !email || !address || !zipCode || !city || !phone) {
       alert("⚠️ Merci de remplir tous les champs de livraison.");
       return;
     }
     
     setIsSubmitting(true);
+
     try {
       // --- LOGIQUE DU COMPTEUR SUPABASE SÉCURISÉE ---
-      // On utilise .maybeSingle() pour éviter l'erreur 406 si la ligne n'est pas trouvée
       let { data: counterData, error: counterError } = await supabase
         .from('config')
         .select('last_value')
@@ -72,26 +74,15 @@ export default function CartPage() {
 
       if (counterError) throw counterError;
 
-      let nextOrderId;
+      let nextOrderId = (counterData?.last_value || 0) + 1;
 
-      if (!counterData) {
-        // Si la ligne n'existe pas encore, on l'initialise à 1
-        nextOrderId = 1;
-        await supabase
-          .from('config')
-          .insert([{ counter_name: 'order_id', last_value: 1 }]);
-      } else {
-        // Si elle existe, on incrémente normalement
-        nextOrderId = counterData.last_value + 1;
-        await supabase
-          .from('config')
-          .update({ last_value: nextOrderId })
-          .eq('counter_name', 'order_id');
-      }
+      // Mise à jour immédiate du compteur pour bloquer l'ID
+      const { error: upsertError } = await supabase
+        .from('config')
+        .upsert({ counter_name: 'order_id', last_value: nextOrderId }, { onConflict: 'counter_name' });
+
+      if (upsertError) throw upsertError;
       // ----------------------------------------------
-
-      const nomsProduits = cart.map(item => item.name).join(', ');
-      const quantitésProduits = cart.map(item => item.qty).join(', ');
 
       const itemsFormatted = cart.map(item => ({
         name: item.name,
@@ -100,8 +91,8 @@ export default function CartPage() {
         total_row: (item.price * item.qty).toFixed(2)
       }));
 
-      // Insertion dans Supabase avec le nouvel ID
-      const { error } = await supabase.from('orders').insert([{
+      // Insertion dans la table orders
+      const { error: insertError } = await supabase.from('orders').insert([{
         order_number: nextOrderId, 
         agency_name: agencyData.name,
         client_email: email,
@@ -110,18 +101,18 @@ export default function CartPage() {
         zip_code: zipCode,
         city: city,
         siret: siret,
-        produits_liste: nomsProduits,     
-        quantite_liste: quantitésProduits, 
+        produits_liste: cart.map(item => item.name).join(', '),     
+        quantite_liste: cart.map(item => item.qty).join(', '), 
         items: itemsFormatted,
         total_ht: totalHT,
         instructions: `Commandé par : ${selectedUser} -- ${instructions}`,
         status: 'En attente'
       }]);
 
-      if (error) throw error;
+      if (insertError) throw insertError;
 
       // Envoi vers le Webhook Make
-      await fetch('https://hook.eu1.make.com/mb6ok4o2jv41vrhd37r101wi98b1lfz4', {
+      const makeResponse = await fetch('https://hook.eu1.make.com/mb6ok4o2jv41vrhd37r101wi98b1lfz4', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -135,18 +126,26 @@ export default function CartPage() {
         })
       });
 
+      if (!makeResponse.ok) {
+        console.warn("Webhook Make non atteint, mais commande enregistrée en base.");
+      }
+
       setOrderSent(true);
       setShowConfirm(false);
       clearCart();
     } catch (err) {
       console.error(err);
-      alert("Erreur lors de l'envoi vers la production.");
+      alert("Erreur lors de la transmission. Merci de réessayer.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-[#0f092e] flex items-center justify-center text-white font-black uppercase text-[10px] tracking-[0.2em] animate-pulse">Synchronisation agence...</div>;
+  if (loading) return (
+    <div className="min-h-screen bg-[#0f092e] flex items-center justify-center text-white font-black uppercase text-[10px] tracking-[0.2em] animate-pulse">
+      Synchronisation agence...
+    </div>
+  );
 
   if (orderSent) return (
     <div className="min-h-screen bg-[#0f092e] flex flex-col items-center justify-center text-center p-6 italic font-black uppercase text-white">
@@ -181,7 +180,11 @@ export default function CartPage() {
                 <div className="space-y-3">
                     <label className="text-[9px] font-black uppercase opacity-30 ml-2 italic">Qui commande ?</label>
                     <select value={selectedUser} onChange={(e) => setSelectedUser(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none focus:border-blue-500/50 uppercase text-white appearance-none cursor-pointer">
-                        {membres.map((m, idx) => <option key={idx} value={m.full_name || `${m.first_name} ${m.last_name}`}>{m.full_name || `${m.first_name} ${m.last_name}`}</option>)}
+                        {membres.map((m, idx) => (
+                          <option key={idx} value={m.full_name || `${m.first_name} ${m.last_name}`}>
+                            {m.full_name || `${m.first_name} ${m.last_name}`}
+                          </option>
+                        ))}
                     </select>
                 </div>
              </div>
@@ -286,8 +289,20 @@ export default function CartPage() {
                 </div>
 
                 <div className="flex flex-col gap-4">
-                  <button onClick={handleFinalSubmit} disabled={isSubmitting} className="w-full py-7 bg-blue-600 text-white rounded-[25px] font-black uppercase text-[11px] tracking-[0.2em] shadow-xl hover:bg-blue-700 transition-all active:scale-[0.98]">
-                    {isSubmitting ? "Envoi en cours..." : "Confirmer la commande"}
+                  <button 
+                    onClick={handleFinalSubmit} 
+                    disabled={isSubmitting} 
+                    className={`w-full py-7 bg-blue-600 text-white rounded-[25px] font-black uppercase text-[11px] tracking-[0.2em] shadow-xl transition-all active:scale-[0.98] ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'}`}
+                  >
+                    {isSubmitting ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Transmission...
+                      </span>
+                    ) : "Confirmer la commande"}
                   </button>
                   <button onClick={() => setShowConfirm(false)} className="py-2 text-[9px] font-black uppercase opacity-30 hover:opacity-100 transition-opacity tracking-widest italic">Modifier la saisie</button>
                 </div>
