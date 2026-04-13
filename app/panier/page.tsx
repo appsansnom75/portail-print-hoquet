@@ -62,11 +62,27 @@ export default function CartPage() {
     
     setIsSubmitting(true);
     try {
-      // 1. FORMAT TEXTE (Pour compatibilité ou colonnes simples)
+      // --- LOGIQUE DU COMPTEUR SUPABASE ---
+      const { data: counterData, error: counterError } = await supabase
+        .from('config')
+        .select('last_value')
+        .eq('counter_name', 'order_id')
+        .single();
+
+      if (counterError) throw counterError;
+
+      const nextOrderId = counterData.last_value + 1;
+
+      // Mise à jour immédiate du compteur
+      await supabase
+        .from('config')
+        .update({ last_value: nextOrderId })
+        .eq('counter_name', 'order_id');
+      // ------------------------------------
+
       const nomsProduits = cart.map(item => item.name).join(', ');
       const quantitésProduits = cart.map(item => item.qty).join(', ');
 
-      // 2. FORMAT TABLEAU (La clé pour ton Iterator Make sans erreurs)
       const itemsFormatted = cart.map(item => ({
         name: item.name,
         qty: item.qty,
@@ -74,7 +90,9 @@ export default function CartPage() {
         total_row: (item.price * item.qty).toFixed(2)
       }));
 
+      // Insertion dans Supabase avec le nouvel ID
       const { error } = await supabase.from('orders').insert([{
+        order_number: nextOrderId, // Ton ID séquentiel (1, 2, 3...)
         agency_name: agencyData.name,
         client_email: email,
         client_phone: phone,
@@ -84,13 +102,29 @@ export default function CartPage() {
         siret: siret,
         produits_liste: nomsProduits,     
         quantite_liste: quantitésProduits, 
-        items: itemsFormatted,             // NOUVEAU CHAMP JSONB
+        items: itemsFormatted,
         total_ht: totalHT,
         instructions: `Commandé par : ${selectedUser} -- ${instructions}`,
         status: 'En attente'
       }]);
 
       if (error) throw error;
+
+      // Envoi vers le Webhook Make
+      await fetch('TON_URL_WEBHOOK_MAKE', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          order_number: nextOrderId, // C'est cette valeur que Make recevra pour faire GH-00001
+          agency_name: agencyData.name,
+          client_name: selectedUser,
+          items: itemsFormatted,
+          total_ht: totalHT,
+          full_address: `${address}, ${zipCode} ${city}`,
+          date: new Date().toLocaleString('fr-FR')
+        })
+      });
+
       setOrderSent(true);
       setShowConfirm(false);
       clearCart();
