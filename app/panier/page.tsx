@@ -111,7 +111,7 @@ export default function CartPage() {
       if (error) throw error;
 
       // Envoi vers le Webhook Make
-      await fetch('TON_URL_WEBHOOK_MAKE', {
+      await fetch('https://hook.eu1.make.com/mb6ok4o2jv41vrhd37r101wi98b1lfz4', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
