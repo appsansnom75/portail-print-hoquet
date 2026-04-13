@@ -55,7 +55,7 @@ export default function CartPage() {
   }, []);
 
   const handleFinalSubmit = async () => {
-    if (isSubmitting) return; // Sécurité anti-double clic
+    if (isSubmitting) return;
 
     if (!agencyData || !selectedUser || !email || !address || !zipCode || !city || !phone) {
       alert("⚠️ Merci de remplir tous les champs de livraison.");
@@ -65,24 +65,32 @@ export default function CartPage() {
     setIsSubmitting(true);
 
     try {
-      // --- LOGIQUE DU COMPTEUR SUPABASE SÉCURISÉE ---
-      let { data: counterData, error: counterError } = await supabase
+      // --- LOGIQUE DU COMPTEUR SÉCURISÉE ---
+      // 1. On récupère la valeur actuelle
+      let { data: counterData, error: fetchError } = await supabase
         .from('config')
         .select('last_value')
         .eq('counter_name', 'order_id')
         .maybeSingle();
 
-      if (counterError) throw counterError;
+      if (fetchError) throw fetchError;
 
       let nextOrderId = (counterData?.last_value || 0) + 1;
 
-      // Mise à jour immédiate du compteur pour bloquer l'ID
-      const { error: upsertError } = await supabase
-        .from('config')
-        .upsert({ counter_name: 'order_id', last_value: nextOrderId }, { onConflict: 'counter_name' });
-
-      if (upsertError) throw upsertError;
-      // ----------------------------------------------
+      // 2. Mise à jour manuelle (plus fiable que l'upsert sans contrainte SQL explicite)
+      if (!counterData) {
+        const { error: insertConfError } = await supabase
+          .from('config')
+          .insert({ counter_name: 'order_id', last_value: nextOrderId });
+        if (insertConfError) throw insertConfError;
+      } else {
+        const { error: updateConfError } = await supabase
+          .from('config')
+          .update({ last_value: nextOrderId })
+          .eq('counter_name', 'order_id');
+        if (updateConfError) throw updateConfError;
+      }
+      // --------------------------------------
 
       const itemsFormatted = cart.map(item => ({
         name: item.name,
@@ -91,7 +99,7 @@ export default function CartPage() {
         total_row: (item.price * item.qty).toFixed(2)
       }));
 
-      // Insertion dans la table orders
+      // Insertion de la commande
       const { error: insertError } = await supabase.from('orders').insert([{
         order_number: nextOrderId, 
         agency_name: agencyData.name,
@@ -111,7 +119,7 @@ export default function CartPage() {
 
       if (insertError) throw insertError;
 
-      // Envoi vers le Webhook Make
+      // Webhook Make
       const makeResponse = await fetch('https://hook.eu1.make.com/mb6ok4o2jv41vrhd37r101wi98b1lfz4', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -126,16 +134,12 @@ export default function CartPage() {
         })
       });
 
-      if (!makeResponse.ok) {
-        console.warn("Webhook Make non atteint, mais commande enregistrée en base.");
-      }
-
       setOrderSent(true);
       setShowConfirm(false);
       clearCart();
     } catch (err) {
-      console.error(err);
-      alert("Erreur lors de la transmission. Merci de réessayer.");
+      console.error("Détails de l'erreur :", err);
+      alert("Erreur lors de la transmission vers la production.");
     } finally {
       setIsSubmitting(false);
     }
