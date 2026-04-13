@@ -45,7 +45,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-[#0f092e] text-white font-sans flex flex-col selection:bg-blue-500/30">
       
-      {/* HEADER LOGOS (MODIFIÉ : PLUS DE SURBRILLANCE) */}
+      {/* HEADER LOGOS */}
       <header className="py-10 px-4">
         <div className="max-w-6xl mx-auto flex items-center justify-center gap-8 md:gap-16">
           <img src="/logo-imprimeur.png" alt="Mon Imprimerie" className="h-6 md:h-8 object-contain" />
@@ -128,12 +128,12 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* GRILLE DES PRODUITS */}
-      <main className="flex-grow container mx-auto max-w-6xl px-6 py-20">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* GRILLE DES PRODUITS - CONFIGURATION 2x2 */}
+      <main className="flex-grow container mx-auto max-w-5xl px-6 py-20">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           
           <Link href="/perso" className="group relative">
-            <div className="h-40 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-blue-600/10 group-hover:border-blue-500/40 group-hover:-translate-y-1 shadow-2xl">
+            <div className="h-44 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-blue-600/10 group-hover:border-blue-500/40 group-hover:-translate-y-1 shadow-2xl">
               <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-blue-400 transition-colors">Produits personnalisables</span>
               <div className="h-[2px] w-6 bg-blue-500 my-4 group-hover:w-20 transition-all duration-700"></div>
               <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.3em] group-hover:text-blue-500/50">Sur-Mesure</span>
@@ -141,7 +141,7 @@ export default function HomePage() {
           </Link>
 
           <Link href="/stock" className="group relative">
-            <div className="h-40 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-green-600/10 group-hover:border-green-500/40 group-hover:-translate-y-1 shadow-2xl">
+            <div className="h-44 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-green-600/10 group-hover:border-green-500/40 group-hover:-translate-y-1 shadow-2xl">
               <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-green-400 transition-colors">Produits non personnalisés</span>
               <div className="h-[2px] w-6 bg-green-500 my-4 group-hover:w-20 transition-all duration-700"></div>
               <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.3em] group-hover:text-green-500/50">Catalogue Direct</span>
@@ -149,10 +149,19 @@ export default function HomePage() {
           </Link>
 
           <Link href="/hoquet" className="group relative">
-            <div className="h-40 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-orange-600/10 group-hover:border-orange-500/40 group-hover:-translate-y-1 shadow-2xl">
+            <div className="h-44 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-orange-600/10 group-hover:border-orange-500/40 group-hover:-translate-y-1 shadow-2xl">
               <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-orange-400 transition-colors">Gamme Business</span>
               <div className="h-[2px] w-6 bg-orange-500 my-4 group-hover:w-20 transition-all duration-700"></div>
               <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.3em] group-hover:text-orange-500/50">Guy Hoquet Exclusive</span>
+            </div>
+          </Link>
+
+          {/* NOUVELLE CATÉGORIE : OPÉRATIONS DU MOMENT */}
+          <Link href="/operations" className="group relative">
+            <div className="h-44 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-purple-600/15 group-hover:border-purple-500/50 group-hover:-translate-y-1 shadow-2xl shadow-purple-500/5">
+              <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-purple-400 transition-colors">Opérations du moment</span>
+              <div className="h-[2px] w-6 bg-purple-500 my-4 group-hover:w-20 transition-all duration-700"></div>
+              <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.3em] group-hover:text-purple-500/50">Offres Ephémères</span>
             </div>
           </Link>
 
