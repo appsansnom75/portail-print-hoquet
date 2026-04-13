@@ -56,7 +56,7 @@ function SortableItem({ p, startEdit, handleDelete }: any) {
 
       {/* MINIATURE */}
       <div className="w-12 h-12 bg-black rounded-xl overflow-hidden border border-white/10 flex items-center justify-center shrink-0">
-        <img src={p.image_recto} className="max-w-full max-h-full object-contain" alt="" />
+        <img src={p.image_recto || '/placeholder.png'} className="max-w-full max-h-full object-contain" alt="" />
       </div>
 
       {/* INFOS ÉPURÉES */}
@@ -102,7 +102,8 @@ export default function AdminPortal() {
   useEffect(() => { fetchProducts(); }, []);
 
   const fetchProducts = async () => {
-    const { data } = await supabase.from('products').select('*').order('sort_order', { ascending: true });
+    const { data, error } = await supabase.from('products').select('*').order('sort_order', { ascending: true });
+    if (error) console.error("Erreur fetch:", error.message);
     if (data) setExistingProducts(data);
   };
 
@@ -229,6 +230,7 @@ export default function AdminPortal() {
                 <option value="Perso">Produits personnalisables</option>
                 <option value="Signaletique">Produits non personnalisés</option>
                 <option value="Vetements">Gamme business</option>
+                <option value="Operations">Opérations du moment</option>
               </select>
             </div>
 
@@ -292,7 +294,8 @@ export default function AdminPortal() {
           {[
             { id: 'Perso', label: 'Produits personnalisables', color: 'text-blue-500' },
             { id: 'Signaletique', label: 'Produits non personnalisés', color: 'text-green-500' },
-            { id: 'Vetements', label: 'Gamme business', color: 'text-orange-500' }
+            { id: 'Vetements', label: 'Gamme business', color: 'text-orange-500' },
+            { id: 'Operations', label: 'Opérations du moment', color: 'text-purple-500' }
           ].map(section => (
             <div key={section.id} className="space-y-6">
               <div className="flex items-center gap-4">
