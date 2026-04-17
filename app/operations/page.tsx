@@ -124,7 +124,7 @@ export default function OperationsPage() {
 
   if (loading) return (
     <div className={`min-h-screen bg-[#0f092e] flex items-center justify-center font-black ${THEME.color} uppercase animate-pulse tracking-widest text-[10px]`}>
-      Chargement Opérations...
+      Chargement Opérations du moment...
     </div>
   );
 

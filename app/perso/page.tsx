@@ -123,7 +123,7 @@ export default function PersoPage() {
 
   if (loading) return (
     <div className="min-h-screen bg-[#0f092e] flex items-center justify-center font-black text-blue-500 uppercase animate-pulse tracking-widest">
-      Chargement Impression...
+      Chargement Produits Personnalisables...
     </div>
   );
 

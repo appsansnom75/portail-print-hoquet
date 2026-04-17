@@ -123,7 +123,7 @@ export default function BusinessPage() {
 
   if (loading) return (
     <div className="min-h-screen bg-[#0f092e] flex items-center justify-center font-black text-orange-500 uppercase animate-pulse tracking-widest">
-      Chargement Business...
+      Chargement Gamme Business...
     </div>
   );
 
