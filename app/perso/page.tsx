@@ -45,7 +45,7 @@ function ImageModal({ isOpen, onClose, imageSrc, imageAlt }: { isOpen: boolean, 
 
 const THEME = { 
   category: 'Perso', 
-  label: 'Portail Impression', 
+  label: 'Produits Personnalisables', 
   color: 'text-blue-500', 
   bg: 'bg-blue-500' 
 };
