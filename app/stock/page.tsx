@@ -6,6 +6,43 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import CartDrawer from '@/components/CartDrawer';
 
+// --- COMPOSANT MODAL ZOOM ---
+function ImageModal({ isOpen, onClose, imageSrc, imageAlt }: { isOpen: boolean, onClose: () => void, imageSrc: string, imageAlt: string }) {
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 md:p-10">
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="absolute inset-0 bg-black/95 backdrop-blur-sm cursor-zoom-out"
+          />
+          <motion.div 
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.8, opacity: 0 }}
+            className="relative max-w-full max-h-full flex items-center justify-center"
+          >
+            <img 
+              src={imageSrc} 
+              alt={imageAlt} 
+              className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl"
+            />
+            <button 
+              onClick={onClose}
+              className="absolute -top-12 right-0 text-white font-black uppercase text-[10px] tracking-widest hover:text-green-500 transition-colors"
+            >
+              Fermer ×
+            </button>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 const THEME = { 
   category: 'Signaletique', 
   label: 'Produits non personnalisés', 
@@ -20,6 +57,9 @@ export default function SignaletiquePage() {
   const [loading, setLoading] = useState(true);
   const [selections, setSelections] = useState<any>({});
   const [flippedProducts, setFlippedProducts] = useState<Record<string, boolean>>({});
+  
+  // État pour le zoom
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -28,7 +68,6 @@ export default function SignaletiquePage() {
           .from('products')
           .select('*')
           .eq('category', THEME.category)
-          // MODIFICATION : Utilisation de sort_order pour l'affichage
           .order('sort_order', { ascending: true });
 
         if (error) throw error;
@@ -92,6 +131,14 @@ export default function SignaletiquePage() {
     <div className="min-h-screen bg-[#0f092e] text-white flex flex-col relative overflow-x-hidden">
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
       
+      {/* MODAL DE ZOOM */}
+      <ImageModal 
+        isOpen={!!selectedImage} 
+        onClose={() => setSelectedImage(null)} 
+        imageSrc={selectedImage || ''} 
+        imageAlt="Aperçu produit"
+      />
+      
       <header className="py-6 px-6 border-b border-white/10 flex justify-between items-center sticky top-0 bg-[#0f092e]/80 backdrop-blur-md z-50">
         <Link href="/" className="text-[10px] font-black uppercase text-white/40 hover:text-white transition-all">← Retour</Link>
         <h1 className={`text-[10px] font-black uppercase tracking-[0.3em] ${THEME.color} italic`}>{THEME.label}</h1>
@@ -109,7 +156,6 @@ export default function SignaletiquePage() {
           const isFlipped = flippedProducts[p.id] || false;
           const currentVariant = p.variants.find((v: any) => v.id === sel.variant);
 
-          // Logique d'image (Variante > Produit défaut)
           let currentImg = p.image_recto;
           if (isFlipped) {
             currentImg = currentVariant?.image_verso || p.image_verso || p.image_recto;
@@ -120,12 +166,15 @@ export default function SignaletiquePage() {
           return (
             <div key={p.id} className="pt-10 relative group">
               {/* ZONE IMAGE */}
-              <div className="h-48 w-full flex items-center justify-center relative -mb-10 z-20 transition-transform duration-500 group-hover:scale-105">
+              <div className="h-48 w-full flex items-center justify-center relative -mb-10 z-20">
                 
                 {/* BOUTON DYNAMIQUE VOIR VERSO / RECTO */}
                 {(p.image_verso || currentVariant?.image_verso) && (
                   <button 
-                    onClick={() => toggleFlip(p.id)}
+                    onClick={(e) => {
+                      e.stopPropagation(); // Empêche l'ouverture du zoom lors du flip
+                      toggleFlip(p.id);
+                    }}
                     className="absolute right-0 bottom-4 z-30 bg-white text-black px-4 py-2 rounded-full shadow-xl hover:bg-green-500 hover:text-white transition-all active:scale-95 flex items-center gap-2 shadow-black/20"
                   >
                     <span className="text-[9px] font-black uppercase tracking-wider">
@@ -145,7 +194,8 @@ export default function SignaletiquePage() {
                     exit={{ opacity: 0, x: isFlipped ? -20 : 20 }}
                     transition={{ duration: 0.3, ease: "easeOut" }}
                     src={currentImg} 
-                    className="max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]" 
+                    onClick={() => setSelectedImage(currentImg)} // Ouvre le zoom au clic
+                    className="max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] cursor-zoom-in transition-transform duration-500 group-hover:scale-110" 
                     alt={p.name}
                   />
                 </AnimatePresence>
