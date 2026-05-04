@@ -21,6 +21,46 @@ export default function GestionEquipe() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
+  const compressImage = (file: File): Promise<File> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.src = url;
+
+      img.onload = () => {
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 800;
+        let { width, height } = img;
+
+        if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+          const ratio = Math.min(MAX_WIDTH / width, MAX_HEIGHT / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0, width, height);
+        URL.revokeObjectURL(url);
+
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) return resolve(file);
+            const compressed = new File([blob], file.name.replace(/\.[^.]+$/, '.webp'), {
+              type: 'image/webp',
+            });
+            resolve(compressed);
+          },
+          'image/webp',
+          0.85
+        );
+      };
+    });
+  };
+
   const chargerEquipe = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -66,13 +106,13 @@ export default function GestionEquipe() {
     if (!monAgencyId) return;
     setSubmitting(true);
 
-    // 1. Upload photo si fournie
     let avatarUrl = '';
     if (avatarFile) {
-      const fileName = `${Date.now()}-${avatarFile.name}`;
+      const compressed = await compressImage(avatarFile);
+      const fileName = `${Date.now()}-${compressed.name}`;
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(fileName, avatarFile);
+        .upload(fileName, compressed);
 
       if (!uploadError) {
         const { data: urlData } = supabase.storage
@@ -82,7 +122,6 @@ export default function GestionEquipe() {
       }
     }
 
-    // 2. Insérer dans collaborateurs
     const { error } = await supabase
       .from('collaborateurs')
       .insert([{
@@ -170,8 +209,12 @@ export default function GestionEquipe() {
               </div>
               <div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-white/50">Photo de profil</p>
-                <p className="text-[9px] text-white/30 mt-1">Optionnel — JPG, PNG max 2Mo</p>
-                <button type="button" onClick={() => fileInputRef.current?.click()} className="mt-2 text-[9px] font-black uppercase text-blue-400 hover:text-blue-300 transition-colors">
+                <p className="text-[9px] text-white/30 mt-1">Optionnel — compressée automatiquement en WebP</p>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="mt-2 text-[9px] font-black uppercase text-blue-400 hover:text-blue-300 transition-colors"
+                >
                   Choisir une photo →
                 </button>
               </div>
@@ -194,7 +237,7 @@ export default function GestionEquipe() {
 
             <button type="submit" disabled={submitting}
               className="w-full bg-blue-600 p-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/20 active:scale-95 disabled:opacity-50">
-              {submitting ? 'Ajout en cours...' : 'Ajouter au répertoire'}
+              {submitting ? 'Compression & ajout en cours...' : 'Ajouter au répertoire'}
             </button>
           </form>
         </div>
@@ -203,7 +246,9 @@ export default function GestionEquipe() {
         <div className="space-y-6">
           <div className="flex items-center justify-between px-4">
             <h2 className="text-sm font-black uppercase tracking-[0.2em] text-white/30 italic">Répertoire de l'agence</h2>
-            <span className="text-[10px] font-bold text-blue-400 bg-blue-400/10 px-3 py-1 rounded-full border border-blue-400/20">{membres.length} Membres</span>
+            <span className="text-[10px] font-bold text-blue-400 bg-blue-400/10 px-3 py-1 rounded-full border border-blue-400/20">
+              {membres.length} Membres
+            </span>
           </div>
 
           <div className="grid grid-cols-1 gap-4">
@@ -225,7 +270,9 @@ export default function GestionEquipe() {
                     <div className="space-y-1">
                       <div className="text-sm font-black uppercase tracking-tight flex items-center gap-2">
                         {m.first_name} {m.last_name}
-                        {m.id === monId && <span className="text-[7px] bg-blue-600 text-white px-2 py-0.5 rounded-md font-black tracking-widest">VOUS</span>}
+                        {m.id === monId && (
+                          <span className="text-[7px] bg-blue-600 text-white px-2 py-0.5 rounded-md font-black tracking-widest">VOUS</span>
+                        )}
                       </div>
                       <div className="text-[9px] font-bold text-white/40 uppercase tracking-widest">
                         {m.fonction || m.role || '—'}
@@ -250,8 +297,10 @@ export default function GestionEquipe() {
 
                   <div className="shrink-0">
                     {m.id !== monId && (
-                      <button onClick={() => supprimerMembre(m.id, m._source)}
-                        className="bg-red-500/10 hover:bg-red-600 text-red-500 hover:text-white text-[8px] font-black uppercase px-5 py-3 rounded-xl transition-all border border-red-500/20">
+                      <button
+                        onClick={() => supprimerMembre(m.id, m._source)}
+                        className="bg-red-500/10 hover:bg-red-600 text-red-500 hover:text-white text-[8px] font-black uppercase px-5 py-3 rounded-xl transition-all border border-red-500/20"
+                      >
                         Supprimer
                       </button>
                     )}
