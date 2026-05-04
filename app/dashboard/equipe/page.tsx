@@ -21,7 +21,6 @@ export default function GestionEquipe() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  // État édition
   const [editId, setEditId] = useState<string | null>(null);
   const [editData, setEditData] = useState<any>({});
   const [editAvatarFile, setEditAvatarFile] = useState<File | null>(null);
@@ -277,6 +276,7 @@ export default function GestionEquipe() {
                       </div>
                     </div>
 
+                    {/* ACTIONS — Modifier sur tout le monde, Supprimer bloqué sur soi */}
                     <div className="flex items-center gap-3 shrink-0">
                       <button onClick={() => ouvrirEdition(m)} className="bg-white/5 hover:bg-blue-600 text-white/50 hover:text-white text-[8px] font-black uppercase px-5 py-3 rounded-xl transition-all border border-white/10 hover:border-blue-500">
                         Modifier
@@ -294,8 +294,6 @@ export default function GestionEquipe() {
                 {editId === m.id && (
                   <div className="p-6 space-y-4 bg-white/[0.03] border-t border-white/10">
                     <p className="text-[9px] font-black uppercase tracking-widest text-blue-400">Modifier le collaborateur</p>
-
-                    {/* PHOTO */}
                     <div className="flex items-center gap-4">
                       <div onClick={() => editFileInputRef.current?.click()} className="h-16 w-16 rounded-full border-2 border-dashed border-white/20 bg-white/5 flex items-center justify-center cursor-pointer hover:border-blue-500 transition-all overflow-hidden shrink-0">
                         {editAvatarPreview
@@ -308,7 +306,6 @@ export default function GestionEquipe() {
                       </button>
                       <input ref={editFileInputRef} type="file" accept="image/*" onChange={handleEditAvatarChange} className="hidden" />
                     </div>
-
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <input type="text" placeholder="Prénom" value={editData.first_name} onChange={(e) => setEditData({ ...editData, first_name: e.target.value })} className="bg-white/10 border border-white/10 p-3 rounded-2xl outline-none focus:border-blue-500 text-sm text-white" />
                       <input type="text" placeholder="Nom" value={editData.last_name} onChange={(e) => setEditData({ ...editData, last_name: e.target.value })} className="bg-white/10 border border-white/10 p-3 rounded-2xl outline-none focus:border-blue-500 text-sm text-white" />
@@ -316,7 +313,6 @@ export default function GestionEquipe() {
                       <input type="tel" placeholder="Téléphone" value={editData.phone} onChange={(e) => setEditData({ ...editData, phone: e.target.value })} className="bg-white/10 border border-white/10 p-3 rounded-2xl outline-none focus:border-blue-500 text-sm text-white" />
                       <input type="text" placeholder="Fonction" value={editData.fonction} onChange={(e) => setEditData({ ...editData, fonction: e.target.value })} className="bg-white/10 border border-white/10 p-3 rounded-2xl outline-none focus:border-blue-500 text-sm text-white md:col-span-2" />
                     </div>
-
                     <div className="flex gap-3">
                       <button onClick={() => sauvegarderEdition(m.id)} className="bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all">
                         Sauvegarder
