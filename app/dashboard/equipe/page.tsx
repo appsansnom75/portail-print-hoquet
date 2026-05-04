@@ -32,23 +32,33 @@ export default function GestionEquipe() {
       const img = new Image();
       const url = URL.createObjectURL(file);
       img.src = url;
+
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+
       img.onload = () => {
+        URL.revokeObjectURL(url);
+
         const MAX = 800;
-        let { width, height } = img;
-        if (width > MAX || height > MAX) {
-          const ratio = Math.min(MAX / width, MAX / height);
-          width = Math.round(width * ratio);
-          height = Math.round(height * ratio);
-        }
+        // Garde les dimensions originales si déjà inférieures à MAX
+        const width = Math.min(img.width, MAX);
+        const height = Math.min(img.height, MAX);
+
         const canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
-        canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
-        URL.revokeObjectURL(url);
-        canvas.toBlob((blob) => {
-          if (!blob) return resolve(file);
-          resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.webp'), { type: 'image/webp' }));
-        }, 'image/webp', 0.85);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return resolve(file);
+
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (!blob || blob.size < 100) { resolve(file); return; }
+            resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.webp'), { type: 'image/webp' }));
+          },
+          'image/webp',
+          0.85
+        );
       };
     });
   };
@@ -150,9 +160,7 @@ export default function GestionEquipe() {
     }
 
     const table = editData._source === 'collaborateurs' ? 'collaborateurs' : 'profiles';
-    console.log('Table:', table);
-    console.log('ID:', id);
-    console.log('Data to update:', { first_name: editData.first_name, last_name: editData.last_name, email: editData.email, phone: editData.phone, fonction: editData.fonction, avatar_url: avatarUrl });
+    console.log('Table:', table, '| ID:', id);
 
     const { data, error } = await supabase.from(table).update({
       first_name: editData.first_name,
@@ -164,8 +172,7 @@ export default function GestionEquipe() {
       avatar_url: avatarUrl,
     }).eq('id', id).select();
 
-    console.log('Update result:', data);
-    console.log('Update error:', error);
+    console.log('Update result:', data, '| Error:', error);
 
     if (!error) {
       setEditId(null);
@@ -255,7 +262,7 @@ export default function GestionEquipe() {
                       <div className="relative">
                         <div className="h-14 w-14 rounded-full overflow-hidden border-2 border-white/10 bg-white/5 flex items-center justify-center shadow-2xl">
                           {m.avatar_url
-                            ? <img src={m.avatar_url} alt={m.first_name} className="h-full w-full object-cover" />
+                            ? <img src={m.avatar_url} alt={m.first_name} className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                             : <span className="text-xs font-black text-white/20 uppercase">{m.first_name?.[0]}{m.last_name?.[0]}</span>
                           }
                         </div>
@@ -305,7 +312,7 @@ export default function GestionEquipe() {
                     <div className="flex items-center gap-4">
                       <div onClick={() => editFileInputRef.current?.click()} className="h-16 w-16 rounded-full border-2 border-dashed border-white/20 bg-white/5 flex items-center justify-center cursor-pointer hover:border-blue-500 transition-all overflow-hidden shrink-0">
                         {editAvatarPreview
-                          ? <img src={editAvatarPreview} className="h-full w-full object-cover" alt="preview" />
+                          ? <img src={editAvatarPreview} className="h-full w-full object-cover" alt="preview" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                           : <span className="text-xl">📷</span>
                         }
                       </div>
