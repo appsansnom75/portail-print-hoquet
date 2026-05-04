@@ -75,6 +75,15 @@ export default function GestionEquipe() {
       .replace(/[^a-zA-Z0-9._-]/g, '-')}`;
   };
 
+  const uploadAvatar = async (file: File): Promise<string> => {
+    const compressed = await compressImage(file);
+    const fileName = getCleanFileName(compressed);
+    const { error } = await supabase.storage.from('avatars').upload(fileName, compressed);
+    if (error) return '';
+    const { data } = supabase.storage.from('avatars').getPublicUrl(fileName);
+    return data.publicUrl;
+  };
+
   const chargerEquipe = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -108,15 +117,6 @@ export default function GestionEquipe() {
     if (!file) return;
     setEditAvatarFile(file);
     setEditAvatarPreview(URL.createObjectURL(file));
-  };
-
-  const uploadAvatar = async (file: File): Promise<string> => {
-    const compressed = await compressImage(file);
-    const fileName = getCleanFileName(compressed);
-    const { error } = await supabase.storage.from('avatars').upload(fileName, compressed);
-    if (error) return '';
-    const { data } = supabase.storage.from('avatars').getPublicUrl(fileName);
-    return data.publicUrl;
   };
 
   const ajouterCollaborateur = async (e: React.FormEvent) => {
@@ -270,9 +270,8 @@ export default function GestionEquipe() {
                         <div className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#0f092e] ${m._source === 'profiles' ? 'bg-blue-500' : 'bg-green-500'}`}></div>
                       </div>
                       <div className="space-y-1">
-                        <div className="text-sm font-black uppercase tracking-tight flex items-center gap-2">
+                        <div className="text-sm font-black uppercase tracking-tight">
                           {m.first_name} {m.last_name}
-                          {m.id === monId && <span className="text-[7px] bg-blue-600 text-white px-2 py-0.5 rounded-md font-black tracking-widest">VOUS</span>}
                         </div>
                         <div className="text-[9px] font-bold text-white/40 uppercase tracking-widest">{m.fonction || m.role || '—'}</div>
                       </div>
@@ -293,16 +292,17 @@ export default function GestionEquipe() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3 shrink-0">
-                      <button onClick={() => ouvrirEdition(m)} className="bg-white/5 hover:bg-blue-600 text-white/50 hover:text-white text-[8px] font-black uppercase px-5 py-3 rounded-xl transition-all border border-white/10 hover:border-blue-500">
-                        Modifier
-                      </button>
-                      {m.id !== monId && (
+                    {/* ACTIONS — masquées pour le compte admin */}
+                    {m.id !== monId && (
+                      <div className="flex items-center gap-3 shrink-0">
+                        <button onClick={() => ouvrirEdition(m)} className="bg-white/5 hover:bg-blue-600 text-white/50 hover:text-white text-[8px] font-black uppercase px-5 py-3 rounded-xl transition-all border border-white/10 hover:border-blue-500">
+                          Modifier
+                        </button>
                         <button onClick={() => supprimerMembre(m.id, m._source)} className="bg-red-500/10 hover:bg-red-600 text-red-500 hover:text-white text-[8px] font-black uppercase px-5 py-3 rounded-xl transition-all border border-red-500/20">
                           Supprimer
                         </button>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
