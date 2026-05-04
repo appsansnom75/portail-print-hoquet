@@ -42,7 +42,6 @@ export default function GestionEquipe() {
         let width = img.width;
         let height = img.height;
 
-        // Redimensionne en gardant le ratio, seulement si > MAX
         if (width > MAX || height > MAX) {
           const ratio = Math.min(MAX / width, MAX / height);
           width = Math.round(width * ratio);
@@ -67,6 +66,13 @@ export default function GestionEquipe() {
         );
       };
     });
+  };
+
+  const getCleanFileName = (file: File): string => {
+    return `${Date.now()}-${file.name
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9._-]/g, '-')}`;
   };
 
   const chargerEquipe = async () => {
@@ -104,21 +110,21 @@ export default function GestionEquipe() {
     setEditAvatarPreview(URL.createObjectURL(file));
   };
 
+  const uploadAvatar = async (file: File): Promise<string> => {
+    const compressed = await compressImage(file);
+    const fileName = getCleanFileName(compressed);
+    const { error } = await supabase.storage.from('avatars').upload(fileName, compressed);
+    if (error) return '';
+    const { data } = supabase.storage.from('avatars').getPublicUrl(fileName);
+    return data.publicUrl;
+  };
+
   const ajouterCollaborateur = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!monAgencyId) return;
     setSubmitting(true);
 
-    let avatarUrl = '';
-    if (avatarFile) {
-      const compressed = await compressImage(avatarFile);
-      const fileName = `${Date.now()}-${compressed.name}`;
-      const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, compressed);
-      if (!uploadError) {
-        const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
-        avatarUrl = urlData.publicUrl;
-      }
-    }
+    const avatarUrl = avatarFile ? await uploadAvatar(avatarFile) : '';
 
     const { error } = await supabase.from('collaborateurs').insert([{
       first_name: prenom, last_name: nom, full_name: `${prenom} ${nom}`,
@@ -152,15 +158,9 @@ export default function GestionEquipe() {
 
   const sauvegarderEdition = async (id: string) => {
     let avatarUrl = editData.avatar_url;
-
     if (editAvatarFile) {
-      const compressed = await compressImage(editAvatarFile);
-      const fileName = `${Date.now()}-${compressed.name}`;
-      const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, compressed);
-      if (!uploadError) {
-        const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
-        avatarUrl = urlData.publicUrl;
-      }
+      const newUrl = await uploadAvatar(editAvatarFile);
+      if (newUrl) avatarUrl = newUrl;
     }
 
     const table = editData._source === 'collaborateurs' ? 'collaborateurs' : 'profiles';
