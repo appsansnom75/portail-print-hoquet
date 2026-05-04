@@ -39,9 +39,15 @@ export default function GestionEquipe() {
         URL.revokeObjectURL(url);
 
         const MAX = 800;
-        // Garde les dimensions originales si déjà inférieures à MAX
-        const width = Math.min(img.width, MAX);
-        const height = Math.min(img.height, MAX);
+        let width = img.width;
+        let height = img.height;
+
+        // Redimensionne en gardant le ratio, seulement si > MAX
+        if (width > MAX || height > MAX) {
+          const ratio = Math.min(MAX / width, MAX / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
 
         const canvas = document.createElement('canvas');
         canvas.width = width;
@@ -151,18 +157,15 @@ export default function GestionEquipe() {
       const compressed = await compressImage(editAvatarFile);
       const fileName = `${Date.now()}-${compressed.name}`;
       const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, compressed);
-      console.log('Upload error:', uploadError);
       if (!uploadError) {
         const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
         avatarUrl = urlData.publicUrl;
-        console.log('Avatar URL:', avatarUrl);
       }
     }
 
     const table = editData._source === 'collaborateurs' ? 'collaborateurs' : 'profiles';
-    console.log('Table:', table, '| ID:', id);
 
-    const { data, error } = await supabase.from(table).update({
+    const { error } = await supabase.from(table).update({
       first_name: editData.first_name,
       last_name: editData.last_name,
       full_name: `${editData.first_name} ${editData.last_name}`,
@@ -170,9 +173,7 @@ export default function GestionEquipe() {
       phone: editData.phone,
       fonction: editData.fonction,
       avatar_url: avatarUrl,
-    }).eq('id', id).select();
-
-    console.log('Update result:', data, '| Error:', error);
+    }).eq('id', id);
 
     if (!error) {
       setEditId(null);
