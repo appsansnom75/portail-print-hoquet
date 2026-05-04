@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -10,6 +10,11 @@ export default function GestionEquipe() {
   const [prenom, setPrenom] = useState('');
   const [nom, setNom] = useState('');
   const [fonction, setFonction] = useState('');
+  const [phone, setPhone] = useState('');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [membres, setMembres] = useState<any[]>([]);
   const [monAgencyId, setMonAgencyId] = useState<string | null>(null);
   const [monId, setMonId] = useState<string | null>(null);
@@ -49,25 +54,52 @@ export default function GestionEquipe() {
 
   useEffect(() => { chargerEquipe(); }, []);
 
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+  };
+
   const ajouterCollaborateur = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!monAgencyId) return;
     setSubmitting(true);
 
+    // 1. Upload photo si fournie
+    let avatarUrl = '';
+    if (avatarFile) {
+      const fileName = `${Date.now()}-${avatarFile.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, avatarFile);
+
+      if (!uploadError) {
+        const { data: urlData } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(fileName);
+        avatarUrl = urlData.publicUrl;
+      }
+    }
+
+    // 2. Insérer dans collaborateurs
     const { error } = await supabase
       .from('collaborateurs')
       .insert([{
         first_name: prenom,
         last_name: nom,
         full_name: `${prenom} ${nom}`,
-        email: email,
-        fonction: fonction,
+        email,
+        fonction,
+        phone,
+        avatar_url: avatarUrl,
         agency_id: monAgencyId,
       }]);
 
     if (!error) {
-      alert("Collaborateur ajouté !");
-      setEmail(''); setPrenom(''); setNom(''); setFonction('');
+      setEmail(''); setPrenom(''); setNom('');
+      setFonction(''); setPhone('');
+      setAvatarFile(null); setAvatarPreview(null);
       chargerEquipe();
     } else {
       alert("Erreur : " + error.message);
@@ -108,16 +140,13 @@ export default function GestionEquipe() {
             <button className="bg-blue-600 px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-tighter shadow-lg shadow-blue-900/40">
               Équipe
             </button>
-            <Link
-              href="/dashboard/commandes"
-              className="px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-tighter text-white/40 hover:text-white transition-colors"
-            >
+            <Link href="/dashboard/commandes" className="px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-tighter text-white/40 hover:text-white transition-colors">
               Historique Achats
             </Link>
           </div>
 
           <div className="text-right">
-            <h1 className="text-2xl font-black uppercase italic tracking-tighter text-white">Espace Agence</h1>
+            <h1 className="text-2xl font-black uppercase italic tracking-tighter">Espace Agence</h1>
             <p className="text-[9px] font-bold text-blue-500 uppercase tracking-[0.3em]">Équipe & Collaborateurs</p>
           </div>
         </div>
@@ -125,34 +154,46 @@ export default function GestionEquipe() {
         {/* FORMULAIRE */}
         <div className="bg-white/5 p-8 rounded-[40px] border border-white/10 backdrop-blur-xl shadow-2xl">
           <h2 className="text-xl font-black uppercase mb-6 text-blue-500 tracking-tighter italic">Nouveau Collaborateur</h2>
-          <form onSubmit={ajouterCollaborateur} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
-              type="text" placeholder="Prénom" value={prenom}
-              onChange={(e) => setPrenom(e.target.value)}
-              className="bg-white/10 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 text-sm transition-all text-white"
-              required
-            />
-            <input
-              type="text" placeholder="Nom" value={nom}
-              onChange={(e) => setNom(e.target.value)}
-              className="bg-white/10 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 text-sm transition-all text-white"
-              required
-            />
-            <input
-              type="email" placeholder="Email professionnel" value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="bg-white/10 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 text-sm transition-all text-white"
-              required
-            />
-            <input
-              type="text" placeholder="Fonction (ex: Négociateur, Directeur...)" value={fonction}
-              onChange={(e) => setFonction(e.target.value)}
-              className="bg-white/10 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 text-sm transition-all text-white"
-            />
-            <button
-              type="submit" disabled={submitting}
-              className="md:col-span-2 bg-blue-600 p-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/20 active:scale-95 disabled:opacity-50"
-            >
+          <form onSubmit={ajouterCollaborateur} className="space-y-4">
+
+            {/* UPLOAD PHOTO */}
+            <div className="flex items-center gap-6 mb-2">
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="h-20 w-20 rounded-full border-2 border-dashed border-white/20 bg-white/5 flex items-center justify-center cursor-pointer hover:border-blue-500 transition-all overflow-hidden shrink-0"
+              >
+                {avatarPreview ? (
+                  <img src={avatarPreview} className="h-full w-full object-cover" alt="preview" />
+                ) : (
+                  <span className="text-2xl">📷</span>
+                )}
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-white/50">Photo de profil</p>
+                <p className="text-[9px] text-white/30 mt-1">Optionnel — JPG, PNG max 2Mo</p>
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="mt-2 text-[9px] font-black uppercase text-blue-400 hover:text-blue-300 transition-colors">
+                  Choisir une photo →
+                </button>
+              </div>
+              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+            </div>
+
+            {/* CHAMPS */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input type="text" placeholder="Prénom" value={prenom} onChange={(e) => setPrenom(e.target.value)}
+                className="bg-white/10 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 text-sm transition-all text-white" required />
+              <input type="text" placeholder="Nom" value={nom} onChange={(e) => setNom(e.target.value)}
+                className="bg-white/10 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 text-sm transition-all text-white" required />
+              <input type="email" placeholder="Email professionnel" value={email} onChange={(e) => setEmail(e.target.value)}
+                className="bg-white/10 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 text-sm transition-all text-white" required />
+              <input type="tel" placeholder="Téléphone" value={phone} onChange={(e) => setPhone(e.target.value)}
+                className="bg-white/10 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 text-sm transition-all text-white" />
+              <input type="text" placeholder="Fonction (ex: Négociateur, Directeur...)" value={fonction} onChange={(e) => setFonction(e.target.value)}
+                className="bg-white/10 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 text-sm transition-all text-white md:col-span-2" />
+            </div>
+
+            <button type="submit" disabled={submitting}
+              className="w-full bg-blue-600 p-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/20 active:scale-95 disabled:opacity-50">
               {submitting ? 'Ajout en cours...' : 'Ajouter au répertoire'}
             </button>
           </form>
@@ -162,37 +203,29 @@ export default function GestionEquipe() {
         <div className="space-y-6">
           <div className="flex items-center justify-between px-4">
             <h2 className="text-sm font-black uppercase tracking-[0.2em] text-white/30 italic">Répertoire de l'agence</h2>
-            <span className="text-[10px] font-bold text-blue-400 bg-blue-400/10 px-3 py-1 rounded-full border border-blue-400/20">
-              {membres.length} Membres
-            </span>
+            <span className="text-[10px] font-bold text-blue-400 bg-blue-400/10 px-3 py-1 rounded-full border border-blue-400/20">{membres.length} Membres</span>
           </div>
 
           <div className="grid grid-cols-1 gap-4">
             {membres.map((m) => (
-              <div key={m.id} className="relative group overflow-hidden bg-white/5 border border-white/5 p-6 rounded-[35px] hover:bg-white/[0.08] hover:border-white/20 transition-all duration-300 shadow-xl">
+              <div key={m.id} className="relative group bg-white/5 border border-white/5 p-6 rounded-[35px] hover:bg-white/[0.08] hover:border-white/20 transition-all duration-300 shadow-xl">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
 
-                  {/* AVATAR */}
                   <div className="flex items-center gap-5">
                     <div className="relative">
                       <div className="h-14 w-14 rounded-full overflow-hidden border-2 border-white/10 bg-white/5 flex items-center justify-center shadow-2xl">
                         {m.avatar_url ? (
                           <img src={m.avatar_url} alt={m.first_name} className="h-full w-full object-cover" />
                         ) : (
-                          <span className="text-xs font-black text-white/20 uppercase tracking-tighter">
-                            {m.first_name?.[0]}{m.last_name?.[0]}
-                          </span>
+                          <span className="text-xs font-black text-white/20 uppercase">{m.first_name?.[0]}{m.last_name?.[0]}</span>
                         )}
                       </div>
                       <div className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#0f092e] ${m._source === 'profiles' ? 'bg-blue-500' : 'bg-green-500'}`}></div>
                     </div>
-
                     <div className="space-y-1">
                       <div className="text-sm font-black uppercase tracking-tight flex items-center gap-2">
                         {m.first_name} {m.last_name}
-                        {m.id === monId && (
-                          <span className="text-[7px] bg-blue-600 text-white px-2 py-0.5 rounded-md font-black tracking-widest">VOUS</span>
-                        )}
+                        {m.id === monId && <span className="text-[7px] bg-blue-600 text-white px-2 py-0.5 rounded-md font-black tracking-widest">VOUS</span>}
                       </div>
                       <div className="text-[9px] font-bold text-white/40 uppercase tracking-widest">
                         {m.fonction || m.role || '—'}
@@ -200,25 +233,25 @@ export default function GestionEquipe() {
                     </div>
                   </div>
 
-                  {/* INFOS */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 flex-grow px-0 md:px-10">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 flex-grow px-0 md:px-10">
                     <div className="flex flex-col gap-1">
                       <span className="text-[7px] font-black text-white/20 uppercase tracking-widest">Email</span>
-                      <span className="text-[10px] font-medium text-white/70 truncate max-w-[180px]">{m.email || '—'}</span>
+                      <span className="text-[10px] font-medium text-white/70 truncate max-w-[160px]">{m.email || '—'}</span>
                     </div>
                     <div className="flex flex-col gap-1">
                       <span className="text-[7px] font-black text-white/20 uppercase tracking-widest">Téléphone</span>
                       <span className="text-[10px] font-medium text-white/70">{m.phone || '—'}</span>
                     </div>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[7px] font-black text-white/20 uppercase tracking-widest">Fonction</span>
+                      <span className="text-[10px] font-medium text-white/70">{m.fonction || '—'}</span>
+                    </div>
                   </div>
 
-                  {/* ACTIONS */}
-                  <div className="flex items-center gap-3 shrink-0">
+                  <div className="shrink-0">
                     {m.id !== monId && (
-                      <button
-                        onClick={() => supprimerMembre(m.id, m._source)}
-                        className="bg-red-500/10 hover:bg-red-600 text-red-500 hover:text-white text-[8px] font-black uppercase px-5 py-3 rounded-xl transition-all border border-red-500/20"
-                      >
+                      <button onClick={() => supprimerMembre(m.id, m._source)}
+                        className="bg-red-500/10 hover:bg-red-600 text-red-500 hover:text-white text-[8px] font-black uppercase px-5 py-3 rounded-xl transition-all border border-red-500/20">
                         Supprimer
                       </button>
                     )}
@@ -229,7 +262,6 @@ export default function GestionEquipe() {
             ))}
           </div>
         </div>
-
       </div>
     </div>
   );
