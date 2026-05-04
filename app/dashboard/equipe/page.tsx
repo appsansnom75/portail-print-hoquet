@@ -141,14 +141,20 @@ export default function GestionEquipe() {
       const compressed = await compressImage(editAvatarFile);
       const fileName = `${Date.now()}-${compressed.name}`;
       const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, compressed);
+      console.log('Upload error:', uploadError);
       if (!uploadError) {
         const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
         avatarUrl = urlData.publicUrl;
+        console.log('Avatar URL:', avatarUrl);
       }
     }
 
     const table = editData._source === 'collaborateurs' ? 'collaborateurs' : 'profiles';
-    const { error } = await supabase.from(table).update({
+    console.log('Table:', table);
+    console.log('ID:', id);
+    console.log('Data to update:', { first_name: editData.first_name, last_name: editData.last_name, email: editData.email, phone: editData.phone, fonction: editData.fonction, avatar_url: avatarUrl });
+
+    const { data, error } = await supabase.from(table).update({
       first_name: editData.first_name,
       last_name: editData.last_name,
       full_name: `${editData.first_name} ${editData.last_name}`,
@@ -156,7 +162,10 @@ export default function GestionEquipe() {
       phone: editData.phone,
       fonction: editData.fonction,
       avatar_url: avatarUrl,
-    }).eq('id', id);
+    }).eq('id', id).select();
+
+    console.log('Update result:', data);
+    console.log('Update error:', error);
 
     if (!error) {
       setEditId(null);
@@ -276,7 +285,6 @@ export default function GestionEquipe() {
                       </div>
                     </div>
 
-                    {/* ACTIONS — Modifier sur tout le monde, Supprimer bloqué sur soi */}
                     <div className="flex items-center gap-3 shrink-0">
                       <button onClick={() => ouvrirEdition(m)} className="bg-white/5 hover:bg-blue-600 text-white/50 hover:text-white text-[8px] font-black uppercase px-5 py-3 rounded-xl transition-all border border-white/10 hover:border-blue-500">
                         Modifier
@@ -292,7 +300,7 @@ export default function GestionEquipe() {
 
                 {/* FORMULAIRE ÉDITION INLINE */}
                 {editId === m.id && (
-                  <div className="p-6 space-y-4 bg-white/[0.03] border-t border-white/10">
+                  <div className="p-6 space-y-4 bg-white/[0.03]">
                     <p className="text-[9px] font-black uppercase tracking-widest text-blue-400">Modifier le collaborateur</p>
                     <div className="flex items-center gap-4">
                       <div onClick={() => editFileInputRef.current?.click()} className="h-16 w-16 rounded-full border-2 border-dashed border-white/20 bg-white/5 flex items-center justify-center cursor-pointer hover:border-blue-500 transition-all overflow-hidden shrink-0">
