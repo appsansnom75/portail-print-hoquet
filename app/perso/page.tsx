@@ -718,7 +718,7 @@ export default function PersoPage() {
 
       <footer className="py-10 border-t border-white/5 text-center">
         <p className="text-[7px] font-black text-white/10 uppercase tracking-[0.5em]">
-          Guy Hoquet Stock Portal — 2026
+          Guy Hoquet — 2026
         </p>
       </footer>
     </div>

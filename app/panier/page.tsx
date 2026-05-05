@@ -62,7 +62,6 @@ export default function CartPage() {
           setPhone(agency.agence_telephone || "");
         }
 
-        // ✅ Colonnes alignées avec la table réelle
         const { data: collabs } = await supabase
           .from('collaborateurs')
           .select('id, full_name, first_name, last_name, email, phone, fonction, avatar_url')
@@ -144,12 +143,10 @@ export default function CartPage() {
 
       if (insertError) throw insertError;
 
-      // ✅ Collaborateur principal
       const collaborateurData = membres.find(
         m => (m.full_name || `${m.first_name} ${m.last_name}`) === selectedCollaborateur
       );
 
-      // ✅ Items enrichis avec colonne nominatif — colonnes corrigées (fonction, avatar_url)
       const itemsPayload = cart.map(item => {
         const collabNominatif = item.orderedBy
           ? membres.find(m => (m.full_name || `${m.first_name} ${m.last_name}`) === item.orderedBy)
@@ -157,7 +154,7 @@ export default function CartPage() {
 
         const nominatif = collabNominatif
           ? [
-              `👤 ${item.orderedBy}`,
+              item.orderedBy,
               collabNominatif.email      || null,
               collabNominatif.phone      || null,
               collabNominatif.fonction   || null,
@@ -174,32 +171,23 @@ export default function CartPage() {
         };
       });
 
-      // ✅ Webhook Make — payload complet
       const response = await fetch('https://hook.eu1.make.com/mb6ok4o2jv41vrhd37r101wi98b1lfz4', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          order_number: nextOrderId,
-
-          // Agence
-          agency_name:  agencyData?.name || "",
-          adresse:      deliveryAddress,
-          code_postal:  deliveryZip,
-          ville:        deliveryCity,
-          tel:          deliveryPhone,
-          siret:        siret,
-
-          // Collaborateur principal
+          order_number:        nextOrderId,
+          agency_name:         agencyData?.name || "",
+          adresse:             deliveryAddress,
+          code_postal:         deliveryZip,
+          ville:               deliveryCity,
+          tel:                 deliveryPhone,
+          siret:               siret,
           collaborateur_nom:   selectedCollaborateur,
           collaborateur_email: collaborateurData?.email || agencyData?.agence_email || "",
           collaborateur_phone: collaborateurData?.phone || deliveryPhone,
-
-          // Produits avec nominatif
-          items: itemsPayload,
-
-          // Totaux & date
-          total_ht: totalHT,
-          date:     new Date().toLocaleString('fr-FR'),
+          items:               itemsPayload,
+          total_ht:            totalHT,
+          date:                new Date().toLocaleString('fr-FR'),
         }),
       });
 
@@ -464,14 +452,17 @@ export default function CartPage() {
             />
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-              className="relative bg-white text-[#0f092e] w-full max-w-2xl rounded-[60px] p-14 space-y-8 shadow-2xl overflow-hidden text-center"
+              className="relative bg-white text-[#0f092e] w-full max-w-2xl rounded-[60px] p-14 space-y-8 shadow-2xl overflow-y-auto max-h-[90vh] text-center"
             >
-              <div className="absolute top-0 left-0 w-full h-2 bg-blue-600" />
+              <div className="absolute top-0 left-0 w-full h-2 bg-blue-600 rounded-t-[60px]" />
               <h3 className="text-3xl font-black uppercase italic text-blue-600 tracking-tighter">Confirmation Finale</h3>
               <p className="text-[10px] font-black opacity-40 uppercase italic">
                 Toute commande validée part directement en production.
               </p>
+
               <div className="bg-gray-50 rounded-[35px] p-8 space-y-4 text-left">
+
+                {/* Agence & collaborateur */}
                 <div className="flex justify-between text-[10px] font-black uppercase italic">
                   <span className="opacity-40">Agence</span>
                   <span className="text-blue-600">{agencyData?.name}</span>
@@ -488,11 +479,35 @@ export default function CartPage() {
                     <span className="text-blue-500 text-right">{altAddress}, {altZipCode} {altCity}</span>
                   </div>
                 )}
+
+                {/* ✅ RÉCAP PRODUITS */}
+                <div className="border-t border-gray-200 pt-4 space-y-3">
+                  <span className="text-[8px] font-black uppercase opacity-30 tracking-widest block">Produits</span>
+                  {cart.map((item: any) => (
+                    <div key={item.id} className="flex justify-between items-start gap-4">
+                      <div>
+                        <p className="text-[10px] font-black uppercase italic leading-tight">{item.name}</p>
+                        <p className="text-[8px] font-bold opacity-30 mt-0.5">
+                          x{item.qty}
+                          {item.orderedBy && (
+                            <span className="text-blue-500 ml-2">— {item.orderedBy}</span>
+                          )}
+                        </p>
+                      </div>
+                      <span className="text-[10px] font-black shrink-0 tabular-nums">
+                        {(item.price * item.qty).toFixed(2)}€
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Total */}
                 <div className="flex justify-between text-[10px] font-black uppercase italic border-t border-gray-200 pt-4">
                   <span className="opacity-40">Total HT</span>
                   <span className="text-2xl text-blue-600">{totalHT.toFixed(2)}€</span>
                 </div>
               </div>
+
               <button
                 onClick={handleFinalSubmit}
                 disabled={isSubmitting}
