@@ -37,7 +37,6 @@ export default function GestionEquipe() {
 
       img.onload = () => {
         URL.revokeObjectURL(url);
-
         const MAX = 800;
         let width = img.width;
         let height = img.height;
@@ -84,6 +83,7 @@ export default function GestionEquipe() {
     return data.publicUrl;
   };
 
+  // ✅ UNIQUEMENT les collaborateurs — plus les profiles/admin
   const chargerEquipe = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -94,11 +94,14 @@ export default function GestionEquipe() {
 
     if (profilAdmin?.agency_id) {
       setMonAgencyId(profilAdmin.agency_id);
-      const { data: admins } = await supabase.from('profiles').select('*').eq('agency_id', profilAdmin.agency_id);
-      const { data: collabs } = await supabase.from('collaborateurs').select('*').eq('agency_id', profilAdmin.agency_id);
-      const adminsTagged = (admins || []).map(m => ({ ...m, _source: 'profiles' }));
+
+      const { data: collabs } = await supabase
+        .from('collaborateurs')
+        .select('*')
+        .eq('agency_id', profilAdmin.agency_id);
+
       const collabsTagged = (collabs || []).map(m => ({ ...m, _source: 'collaborateurs' }));
-      setMembres([...adminsTagged, ...collabsTagged]);
+      setMembres(collabsTagged);
     }
     setLoading(false);
   };
@@ -127,8 +130,14 @@ export default function GestionEquipe() {
     const avatarUrl = avatarFile ? await uploadAvatar(avatarFile) : '';
 
     const { error } = await supabase.from('collaborateurs').insert([{
-      first_name: prenom, last_name: nom, full_name: `${prenom} ${nom}`,
-      email, fonction, phone, avatar_url: avatarUrl, agency_id: monAgencyId,
+      first_name: prenom,
+      last_name: nom,
+      full_name: `${prenom} ${nom}`,
+      email,
+      fonction,
+      phone,
+      avatar_url: avatarUrl,
+      agency_id: monAgencyId,
     }]);
 
     if (!error) {
@@ -150,7 +159,6 @@ export default function GestionEquipe() {
       phone: m.phone || '',
       fonction: m.fonction || '',
       avatar_url: m.avatar_url || '',
-      _source: m._source,
     });
     setEditAvatarFile(null);
     setEditAvatarPreview(m.avatar_url || null);
@@ -163,9 +171,7 @@ export default function GestionEquipe() {
       if (newUrl) avatarUrl = newUrl;
     }
 
-    const table = editData._source === 'collaborateurs' ? 'collaborateurs' : 'profiles';
-
-    const { error } = await supabase.from(table).update({
+    const { error } = await supabase.from('collaborateurs').update({
       first_name: editData.first_name,
       last_name: editData.last_name,
       full_name: `${editData.first_name} ${editData.last_name}`,
@@ -183,11 +189,10 @@ export default function GestionEquipe() {
     }
   };
 
-  const supprimerMembre = async (id: string, source: string) => {
-    if (id === monId) return alert("Opération impossible sur votre compte.");
-    if (confirm("Supprimer ce membre définitivement ?")) {
-      const table = source === 'collaborateurs' ? 'collaborateurs' : 'profiles';
-      const { error } = await supabase.from(table).delete().eq('id', id);
+  // ✅ Simplifié — tout vient de collaborateurs
+  const supprimerMembre = async (id: string) => {
+    if (confirm("Supprimer ce collaborateur définitivement ?")) {
+      const { error } = await supabase.from('collaborateurs').delete().eq('id', id);
       if (!error) setMembres(membres.filter(m => m.id !== id));
       else alert("Erreur : " + error.message);
     }
@@ -224,22 +229,35 @@ export default function GestionEquipe() {
           <form onSubmit={ajouterCollaborateur} className="space-y-4">
             <div className="flex items-center gap-6 mb-2">
               <div onClick={() => fileInputRef.current?.click()} className="h-20 w-20 rounded-full border-2 border-dashed border-white/20 bg-white/5 flex items-center justify-center cursor-pointer hover:border-blue-500 transition-all overflow-hidden shrink-0">
-                {avatarPreview ? <img src={avatarPreview} className="h-full w-full object-cover" alt="preview" /> : <span className="text-2xl">📷</span>}
+                {avatarPreview
+                  ? <img src={avatarPreview} className="h-full w-full object-cover" alt="preview" />
+                  : <span className="text-2xl">📷</span>
+                }
               </div>
               <div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-white/50">Photo de profil</p>
-                <button type="button" onClick={() => fileInputRef.current?.click()} className="mt-2 text-[9px] font-black uppercase text-blue-400 hover:text-blue-300 transition-colors">Choisir une photo →</button>
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="mt-2 text-[9px] font-black uppercase text-blue-400 hover:text-blue-300 transition-colors">
+                  Choisir une photo →
+                </button>
               </div>
               <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
             </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input type="text" placeholder="Prénom" value={prenom} onChange={(e) => setPrenom(e.target.value)} className="bg-white/10 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 text-sm transition-all text-white" required />
-              <input type="text" placeholder="Nom" value={nom} onChange={(e) => setNom(e.target.value)} className="bg-white/10 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 text-sm transition-all text-white" required />
-              <input type="email" placeholder="Email professionnel" value={email} onChange={(e) => setEmail(e.target.value)} className="bg-white/10 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 text-sm transition-all text-white" required />
-              <input type="tel" placeholder="Téléphone" value={phone} onChange={(e) => setPhone(e.target.value)} className="bg-white/10 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 text-sm transition-all text-white" />
-              <input type="text" placeholder="Fonction (ex: Négociateur, Directeur...)" value={fonction} onChange={(e) => setFonction(e.target.value)} className="bg-white/10 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 text-sm transition-all text-white md:col-span-2" />
+              <input type="text" placeholder="Prénom" value={prenom} onChange={(e) => setPrenom(e.target.value)}
+                className="bg-white/10 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 text-sm transition-all text-white" required />
+              <input type="text" placeholder="Nom" value={nom} onChange={(e) => setNom(e.target.value)}
+                className="bg-white/10 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 text-sm transition-all text-white" required />
+              <input type="email" placeholder="Email professionnel" value={email} onChange={(e) => setEmail(e.target.value)}
+                className="bg-white/10 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 text-sm transition-all text-white" required />
+              <input type="tel" placeholder="Téléphone" value={phone} onChange={(e) => setPhone(e.target.value)}
+                className="bg-white/10 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 text-sm transition-all text-white" />
+              <input type="text" placeholder="Fonction (ex: Négociateur, Directeur...)" value={fonction} onChange={(e) => setFonction(e.target.value)}
+                className="bg-white/10 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 text-sm transition-all text-white md:col-span-2" />
             </div>
-            <button type="submit" disabled={submitting} className="w-full bg-blue-600 p-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/20 active:scale-95 disabled:opacity-50">
+
+            <button type="submit" disabled={submitting}
+              className="w-full bg-blue-600 p-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/20 active:scale-95 disabled:opacity-50">
               {submitting ? 'Compression & ajout en cours...' : 'Ajouter au répertoire'}
             </button>
           </form>
@@ -249,10 +267,18 @@ export default function GestionEquipe() {
         <div className="space-y-6">
           <div className="flex items-center justify-between px-4">
             <h2 className="text-sm font-black uppercase tracking-[0.2em] text-white/30 italic">Répertoire de l'agence</h2>
-            <span className="text-[10px] font-bold text-blue-400 bg-blue-400/10 px-3 py-1 rounded-full border border-blue-400/20">{membres.length} Membres</span>
+            <span className="text-[10px] font-bold text-blue-400 bg-blue-400/10 px-3 py-1 rounded-full border border-blue-400/20">
+              {membres.length} Membres
+            </span>
           </div>
 
           <div className="grid grid-cols-1 gap-4">
+            {membres.length === 0 && (
+              <div className="text-center py-16 text-white/20 font-black uppercase text-[10px] tracking-widest">
+                Aucun collaborateur — ajoutez-en un ci-dessus
+              </div>
+            )}
+
             {membres.map((m) => (
               <div key={m.id} className="bg-white/5 border border-white/5 rounded-[35px] overflow-hidden shadow-xl transition-all duration-300 hover:border-white/20">
 
@@ -260,20 +286,19 @@ export default function GestionEquipe() {
                 {editId !== m.id && (
                   <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="flex items-center gap-5">
-                      <div className="relative">
-                        <div className="h-14 w-14 rounded-full overflow-hidden border-2 border-white/10 bg-white/5 flex items-center justify-center shadow-2xl">
-                          {m.avatar_url
-                            ? <img src={m.avatar_url} alt={m.first_name} className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                            : <span className="text-xs font-black text-white/20 uppercase">{m.first_name?.[0]}{m.last_name?.[0]}</span>
-                          }
-                        </div>
-                        <div className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#0f092e] ${m._source === 'profiles' ? 'bg-blue-500' : 'bg-green-500'}`}></div>
+                      <div className="h-14 w-14 rounded-full overflow-hidden border-2 border-white/10 bg-white/5 flex items-center justify-center shadow-2xl">
+                        {m.avatar_url
+                          ? <img src={m.avatar_url} alt={m.first_name} className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                          : <span className="text-xs font-black text-white/20 uppercase">{m.first_name?.[0]}{m.last_name?.[0]}</span>
+                        }
                       </div>
                       <div className="space-y-1">
                         <div className="text-sm font-black uppercase tracking-tight">
                           {m.first_name} {m.last_name}
                         </div>
-                        <div className="text-[9px] font-bold text-white/40 uppercase tracking-widest">{m.fonction || m.role || '—'}</div>
+                        <div className="text-[9px] font-bold text-white/40 uppercase tracking-widest">
+                          {m.fonction || '—'}
+                        </div>
                       </div>
                     </div>
 
@@ -292,17 +317,16 @@ export default function GestionEquipe() {
                       </div>
                     </div>
 
-                    {/* ACTIONS — masquées pour le compte admin */}
-                    {m.id !== monId && (
-                      <div className="flex items-center gap-3 shrink-0">
-                        <button onClick={() => ouvrirEdition(m)} className="bg-white/5 hover:bg-blue-600 text-white/50 hover:text-white text-[8px] font-black uppercase px-5 py-3 rounded-xl transition-all border border-white/10 hover:border-blue-500">
-                          Modifier
-                        </button>
-                        <button onClick={() => supprimerMembre(m.id, m._source)} className="bg-red-500/10 hover:bg-red-600 text-red-500 hover:text-white text-[8px] font-black uppercase px-5 py-3 rounded-xl transition-all border border-red-500/20">
-                          Supprimer
-                        </button>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-3 shrink-0">
+                      <button onClick={() => ouvrirEdition(m)}
+                        className="bg-white/5 hover:bg-blue-600 text-white/50 hover:text-white text-[8px] font-black uppercase px-5 py-3 rounded-xl transition-all border border-white/10 hover:border-blue-500">
+                        Modifier
+                      </button>
+                      <button onClick={() => supprimerMembre(m.id)}
+                        className="bg-red-500/10 hover:bg-red-600 text-red-500 hover:text-white text-[8px] font-black uppercase px-5 py-3 rounded-xl transition-all border border-red-500/20">
+                        Supprimer
+                      </button>
+                    </div>
                   </div>
                 )}
 
@@ -311,29 +335,45 @@ export default function GestionEquipe() {
                   <div className="p-6 space-y-4 bg-white/[0.03]">
                     <p className="text-[9px] font-black uppercase tracking-widest text-blue-400">Modifier le collaborateur</p>
                     <div className="flex items-center gap-4">
-                      <div onClick={() => editFileInputRef.current?.click()} className="h-16 w-16 rounded-full border-2 border-dashed border-white/20 bg-white/5 flex items-center justify-center cursor-pointer hover:border-blue-500 transition-all overflow-hidden shrink-0">
+                      <div onClick={() => editFileInputRef.current?.click()}
+                        className="h-16 w-16 rounded-full border-2 border-dashed border-white/20 bg-white/5 flex items-center justify-center cursor-pointer hover:border-blue-500 transition-all overflow-hidden shrink-0">
                         {editAvatarPreview
                           ? <img src={editAvatarPreview} className="h-full w-full object-cover" alt="preview" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                           : <span className="text-xl">📷</span>
                         }
                       </div>
-                      <button type="button" onClick={() => editFileInputRef.current?.click()} className="text-[9px] font-black uppercase text-blue-400 hover:text-blue-300 transition-colors">
+                      <button type="button" onClick={() => editFileInputRef.current?.click()}
+                        className="text-[9px] font-black uppercase text-blue-400 hover:text-blue-300 transition-colors">
                         Changer la photo →
                       </button>
                       <input ref={editFileInputRef} type="file" accept="image/*" onChange={handleEditAvatarChange} className="hidden" />
                     </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <input type="text" placeholder="Prénom" value={editData.first_name} onChange={(e) => setEditData({ ...editData, first_name: e.target.value })} className="bg-white/10 border border-white/10 p-3 rounded-2xl outline-none focus:border-blue-500 text-sm text-white" />
-                      <input type="text" placeholder="Nom" value={editData.last_name} onChange={(e) => setEditData({ ...editData, last_name: e.target.value })} className="bg-white/10 border border-white/10 p-3 rounded-2xl outline-none focus:border-blue-500 text-sm text-white" />
-                      <input type="email" placeholder="Email" value={editData.email} onChange={(e) => setEditData({ ...editData, email: e.target.value })} className="bg-white/10 border border-white/10 p-3 rounded-2xl outline-none focus:border-blue-500 text-sm text-white" />
-                      <input type="tel" placeholder="Téléphone" value={editData.phone} onChange={(e) => setEditData({ ...editData, phone: e.target.value })} className="bg-white/10 border border-white/10 p-3 rounded-2xl outline-none focus:border-blue-500 text-sm text-white" />
-                      <input type="text" placeholder="Fonction" value={editData.fonction} onChange={(e) => setEditData({ ...editData, fonction: e.target.value })} className="bg-white/10 border border-white/10 p-3 rounded-2xl outline-none focus:border-blue-500 text-sm text-white md:col-span-2" />
+                      <input type="text" placeholder="Prénom" value={editData.first_name}
+                        onChange={(e) => setEditData({ ...editData, first_name: e.target.value })}
+                        className="bg-white/10 border border-white/10 p-3 rounded-2xl outline-none focus:border-blue-500 text-sm text-white" />
+                      <input type="text" placeholder="Nom" value={editData.last_name}
+                        onChange={(e) => setEditData({ ...editData, last_name: e.target.value })}
+                        className="bg-white/10 border border-white/10 p-3 rounded-2xl outline-none focus:border-blue-500 text-sm text-white" />
+                      <input type="email" placeholder="Email" value={editData.email}
+                        onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+                        className="bg-white/10 border border-white/10 p-3 rounded-2xl outline-none focus:border-blue-500 text-sm text-white" />
+                      <input type="tel" placeholder="Téléphone" value={editData.phone}
+                        onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
+                        className="bg-white/10 border border-white/10 p-3 rounded-2xl outline-none focus:border-blue-500 text-sm text-white" />
+                      <input type="text" placeholder="Fonction" value={editData.fonction}
+                        onChange={(e) => setEditData({ ...editData, fonction: e.target.value })}
+                        className="bg-white/10 border border-white/10 p-3 rounded-2xl outline-none focus:border-blue-500 text-sm text-white md:col-span-2" />
                     </div>
+
                     <div className="flex gap-3">
-                      <button onClick={() => sauvegarderEdition(m.id)} className="bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all">
+                      <button onClick={() => sauvegarderEdition(m.id)}
+                        className="bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all">
                         Sauvegarder
                       </button>
-                      <button onClick={() => setEditId(null)} className="bg-white/5 hover:bg-white/10 px-6 py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest text-white/50 transition-all">
+                      <button onClick={() => setEditId(null)}
+                        className="bg-white/5 hover:bg-white/10 px-6 py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest text-white/50 transition-all">
                         Annuler
                       </button>
                     </div>
@@ -344,6 +384,7 @@ export default function GestionEquipe() {
             ))}
           </div>
         </div>
+
       </div>
     </div>
   );
