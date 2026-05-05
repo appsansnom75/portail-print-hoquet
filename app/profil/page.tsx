@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
+
 export default function ProfilPage() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -17,7 +18,8 @@ export default function ProfilPage() {
     code_postal: '',
     ville: '',
     agence_telephone: '',
-    agence_email: ''
+    agence_email: '',
+    siret: ''
   });
 
   useEffect(() => {
@@ -46,7 +48,8 @@ export default function ProfilPage() {
             code_postal: agence.code_postal || '',
             ville: agence.ville || '',
             agence_telephone: agence.agence_telephone || '',
-            agence_email: agence.agence_email || ''
+            agence_email: agence.agence_email || '',
+            siret: agence.siret || ''
           });
         }
       }
@@ -112,6 +115,7 @@ export default function ProfilPage() {
       ville: agenceData.ville,
       agence_telephone: agenceData.agence_telephone,
       agence_email: agenceData.agence_email,
+      siret: agenceData.siret,
     }).eq('id', agenceId);
     if (error) alert("Erreur : " + error.message);
     else alert("Infos agence mises à jour !");
@@ -231,6 +235,19 @@ export default function ProfilPage() {
               value={agenceData.agence_email}
               onChange={(e) => setAgenceData({ ...agenceData, agence_email: e.target.value })}
               placeholder="Ex: contact@agence-paris.com"
+              className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-medium text-sm"
+            />
+          </div>
+
+          {/* ✅ SIRET */}
+          <div className="space-y-1">
+            <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">Numéro SIRET</label>
+            <input
+              type="text"
+              value={agenceData.siret}
+              onChange={(e) => setAgenceData({ ...agenceData, siret: e.target.value })}
+              placeholder="Ex: 123 456 789 00012"
+              maxLength={17}
               className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-medium text-sm"
             />
           </div>
