@@ -378,7 +378,7 @@ export default function CartPage() {
                   <div className="space-y-1">
                     <label className="text-[8px] font-black uppercase tracking-[0.2em] text-blue-400/50 ml-2">
                       Numéro SIRET
-                      <span className="ml-2 normal-case italic font-bold text-blue-400/40">— non sauvegardé</span>
+                      <span className="ml-2 normal-case italic font-bold text-blue-400/40"></span>
                     </label>
                     <input
                       placeholder="Ex: 123 456 789 00012"
