@@ -80,7 +80,6 @@ export default function CartPage() {
   }, []);
 
   // ─── 2. SYNC INFOS AGENCE ──────────────────────────────────────────
-  // Sauvegarde uniquement si adresse standard active
   const syncAgenceData = async () => {
     if (!agenceId || useAltAddress) return;
     await supabase.from('agencies').update({
@@ -198,7 +197,6 @@ export default function CartPage() {
     </div>
   );
 
-  // ─── RENDU PRINCIPAL ───────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-[#0f092e] text-white pb-20">
 
@@ -214,18 +212,13 @@ export default function CartPage() {
           {/* ── 01. IDENTIFICATION ─────────────────────────────────── */}
           <section className="bg-blue-600/5 border border-blue-500/20 rounded-[45px] p-10 space-y-8">
             <h2 className="text-[11px] font-black uppercase text-blue-400 italic">01. Identification</h2>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-              {/* Agence — lecture seule, toujours présente */}
               <div className="space-y-3">
                 <label className="text-[9px] font-black opacity-30 italic ml-2 uppercase">Agence</label>
                 <div className="bg-black/40 border border-white/10 rounded-2xl p-5 text-[11px] font-black text-blue-400">
                   {agencyData?.name || "Non détectée"}
                 </div>
               </div>
-
-              {/* Collaborateur */}
               <div className="space-y-3">
                 <label className="text-[9px] font-black opacity-30 italic ml-2 uppercase">Collaborateur</label>
                 <select
@@ -253,7 +246,6 @@ export default function CartPage() {
           {/* ── 02. RÉCAPITULATIF ──────────────────────────────────── */}
           <section className="bg-white/[0.02] border border-white/10 rounded-[45px] p-10">
             <h2 className="text-[11px] font-black uppercase text-white/60 italic mb-10">02. Récapitulatif</h2>
-
             <div className="space-y-6">
               {cart.length === 0 && (
                 <p className="text-[10px] font-black uppercase text-white/20 italic text-center py-8">Panier vide</p>
@@ -264,9 +256,7 @@ export default function CartPage() {
                     <span className="text-[13px] font-black uppercase tracking-tight italic">{item.name}</span>
                     <span className="text-[9px] text-white/30 font-black italic">Quantité : {item.qty}</span>
                     {item.orderedBy && (
-                      <span className="text-[9px] text-blue-400 font-black uppercase mt-1">
-                        👤 {item.orderedBy}
-                      </span>
+                      <span className="text-[9px] text-blue-400 font-black uppercase mt-1">👤 {item.orderedBy}</span>
                     )}
                   </div>
                   <div className="flex items-center gap-4 shrink-0">
@@ -276,9 +266,7 @@ export default function CartPage() {
                       onClick={() => removeFromCart(item.id)}
                       className="w-8 h-8 rounded-full bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white flex items-center justify-center transition-all text-sm font-black"
                       title="Supprimer"
-                    >
-                      ×
-                    </button>
+                    >×</button>
                   </div>
                 </div>
               ))}
@@ -297,8 +285,6 @@ export default function CartPage() {
                   </p>
                 )}
               </div>
-
-              {/* Toggle adresse différente */}
               <button
                 type="button"
                 onClick={() => setUseAltAddress(!useAltAddress)}
@@ -315,24 +301,7 @@ export default function CartPage() {
 
             <div className="space-y-6">
 
-              {/* SIRET — modifiable dans les 2 cas */}
-              <div className="space-y-1">
-                <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">
-                  Numéro SIRET
-                  {useAltAddress && (
-                    <span className="ml-2 normal-case text-blue-400/50 italic font-bold">— non sauvegardé</span>
-                  )}
-                </label>
-                <input
-                  placeholder="Ex: 123 456 789 00012"
-                  value={siret}
-                  onChange={(e) => setSiret(e.target.value)}
-                  maxLength={17}
-                  className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none hover:border-blue-500/50 focus:border-blue-500 transition-all"
-                />
-              </div>
-
-              {/* ADRESSE STANDARD */}
+              {/* ✅ ADRESSE STANDARD — siret inclus à la fin */}
               {!useAltAddress ? (
                 <>
                   <input
@@ -361,9 +330,20 @@ export default function CartPage() {
                     onChange={(e) => setPhone(e.target.value)}
                     className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none hover:border-blue-500/50 focus:border-blue-500 transition-all"
                   />
+                  {/* SIRET — dans la branche standard */}
+                  <div className="space-y-1">
+                    <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">Numéro SIRET</label>
+                    <input
+                      placeholder="Ex: 123 456 789 00012"
+                      value={siret}
+                      onChange={(e) => setSiret(e.target.value)}
+                      maxLength={17}
+                      className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none hover:border-blue-500/50 focus:border-blue-500 transition-all"
+                    />
+                  </div>
                 </>
               ) : (
-                /* ADRESSE ALTERNATIVE — unique à cette commande */
+                /* ✅ ADRESSE ALTERNATIVE — siret inclus à la fin du bloc bleu */
                 <div className="space-y-6 border border-blue-500/20 bg-blue-600/5 rounded-[30px] p-6">
                   <p className="text-[8px] font-black uppercase text-blue-400/60 tracking-widest">
                     Adresse unique pour cette commande — non sauvegardée dans vos infos agence
@@ -394,9 +374,24 @@ export default function CartPage() {
                     onChange={(e) => setAltPhone(e.target.value)}
                     className="w-full bg-black/40 border border-blue-500/20 rounded-2xl p-5 text-[10px] font-black outline-none hover:border-blue-500/50 focus:border-blue-500 transition-all"
                   />
+                  {/* SIRET — dans la branche alternative */}
+                  <div className="space-y-1">
+                    <label className="text-[8px] font-black uppercase tracking-[0.2em] text-blue-400/50 ml-2">
+                      Numéro SIRET
+                      <span className="ml-2 normal-case italic font-bold text-blue-400/40">— non sauvegardé</span>
+                    </label>
+                    <input
+                      placeholder="Ex: 123 456 789 00012"
+                      value={siret}
+                      onChange={(e) => setSiret(e.target.value)}
+                      maxLength={17}
+                      className="w-full bg-black/40 border border-blue-500/20 rounded-2xl p-5 text-[10px] font-black outline-none hover:border-blue-500/50 focus:border-blue-500 transition-all"
+                    />
+                  </div>
                 </div>
               )}
 
+              {/* Instructions — toujours à la fin, hors des blocs */}
               <textarea
                 placeholder="INSTRUCTIONS PARTICULIÈRES (Optionnel)"
                 value={instructions}
@@ -442,7 +437,6 @@ export default function CartPage() {
               <p className="text-[10px] font-black opacity-40 uppercase italic">
                 Toute commande validée part directement en production.
               </p>
-
               <div className="bg-gray-50 rounded-[35px] p-8 space-y-4 text-left">
                 <div className="flex justify-between text-[10px] font-black uppercase italic">
                   <span className="opacity-40">Agence</span>
@@ -465,7 +459,6 @@ export default function CartPage() {
                   <span className="text-2xl text-blue-600">{totalHT.toFixed(2)}€</span>
                 </div>
               </div>
-
               <button
                 onClick={handleFinalSubmit}
                 disabled={isSubmitting}
@@ -473,7 +466,6 @@ export default function CartPage() {
               >
                 {isSubmitting ? "Transmission en cours..." : "Confirmer la commande"}
               </button>
-
               <button
                 onClick={() => setShowConfirm(false)}
                 className="w-full text-[9px] font-black uppercase opacity-30 italic hover:opacity-100 transition-all"
