@@ -36,7 +36,7 @@ export default function CartPage() {
 
   const totalHT = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
 
-  // ─── 1. CHARGEMENT ────────────────────────────────────────────────
+  // ─── 1. CHARGEMENT ─────────────────────────────────────────────────
   useEffect(() => {
     const loadData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -66,7 +66,6 @@ export default function CartPage() {
           setPhone(agency.agence_telephone || "");
         }
 
-        // Collaborateurs uniquement
         const { data: collabs } = await supabase
           .from('collaborateurs')
           .select('id, full_name, first_name, last_name')
@@ -80,7 +79,8 @@ export default function CartPage() {
     loadData();
   }, []);
 
-  // ─── 2. SYNC INFOS AGENCE (uniquement si adresse standard) ────────
+  // ─── 2. SYNC INFOS AGENCE ──────────────────────────────────────────
+  // Sauvegarde uniquement si adresse standard active
   const syncAgenceData = async () => {
     if (!agenceId || useAltAddress) return;
     await supabase.from('agencies').update({
@@ -88,10 +88,11 @@ export default function CartPage() {
       code_postal: zipCode,
       ville: city,
       agence_telephone: phone,
+      siret: siret,
     }).eq('id', agenceId);
   };
 
-  // ─── 3. ENVOI COMMANDE ────────────────────────────────────────────
+  // ─── 3. ENVOI COMMANDE ─────────────────────────────────────────────
   const handleFinalSubmit = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
@@ -112,17 +113,16 @@ export default function CartPage() {
         .update({ last_value: nextOrderId })
         .eq('counter_name', 'order_id');
 
-      // Résolution adresse finale
       const deliveryAddress = useAltAddress ? altAddress : address;
       const deliveryZip     = useAltAddress ? altZipCode : zipCode;
       const deliveryCity    = useAltAddress ? altCity    : city;
       const deliveryPhone   = useAltAddress ? altPhone   : phone;
 
       const itemsFormattedJSON = cart.map(item => ({
-        name: item.name,
-        qty: item.qty,
+        name:       item.name,
+        qty:        item.qty,
         price_unit: item.price,
-        total_row: (item.price * item.qty).toFixed(2),
+        total_row:  (item.price * item.qty).toFixed(2),
         ordered_by: item.orderedBy || null,
       }));
 
@@ -152,14 +152,14 @@ export default function CartPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          order_number: nextOrderId,
-          agency_name:  agencyData?.name,
+          order_number:  nextOrderId,
+          agency_name:   agencyData?.name,
           collaborateur: selectedCollaborateur,
-          produits:     produitsListeTexte,
-          total_ht:     totalHT,
-          full_address: `${deliveryAddress}, ${deliveryZip} ${deliveryCity}`,
-          phone:        deliveryPhone,
-          date:         new Date().toLocaleString('fr-FR'),
+          produits:      produitsListeTexte,
+          total_ht:      totalHT,
+          full_address:  `${deliveryAddress}, ${deliveryZip} ${deliveryCity}`,
+          phone:         deliveryPhone,
+          date:          new Date().toLocaleString('fr-FR'),
         }),
       });
 
@@ -179,7 +179,7 @@ export default function CartPage() {
     }
   };
 
-  // ─── ÉTATS D'AFFICHAGE ─────────────────────────────────────────────
+  // ─── ÉTATS SPÉCIAUX ────────────────────────────────────────────────
   if (loading) return (
     <div className="min-h-screen bg-[#0f092e] flex items-center justify-center text-white uppercase text-[10px] animate-pulse italic font-black">
       Initialisation du bon de commande...
@@ -198,7 +198,7 @@ export default function CartPage() {
     </div>
   );
 
-  // ─── RENDU PRINCIPAL ──────────────────────────────────────────────
+  // ─── RENDU PRINCIPAL ───────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-[#0f092e] text-white pb-20">
 
@@ -211,7 +211,7 @@ export default function CartPage() {
       <main className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-3 gap-16">
         <div className="lg:col-span-2 space-y-12">
 
-          {/* ── 01. IDENTIFICATION ──────────────────────────────────── */}
+          {/* ── 01. IDENTIFICATION ─────────────────────────────────── */}
           <section className="bg-blue-600/5 border border-blue-500/20 rounded-[45px] p-10 space-y-8">
             <h2 className="text-[11px] font-black uppercase text-blue-400 italic">01. Identification</h2>
 
@@ -250,7 +250,7 @@ export default function CartPage() {
             </div>
           </section>
 
-          {/* ── 02. RÉCAPITULATIF ───────────────────────────────────── */}
+          {/* ── 02. RÉCAPITULATIF ──────────────────────────────────── */}
           <section className="bg-white/[0.02] border border-white/10 rounded-[45px] p-10">
             <h2 className="text-[11px] font-black uppercase text-white/60 italic mb-10">02. Récapitulatif</h2>
 
@@ -285,7 +285,7 @@ export default function CartPage() {
             </div>
           </section>
 
-          {/* ── 03. LIVRAISON & INFOS AGENCE ────────────────────────── */}
+          {/* ── 03. LIVRAISON & INFOS AGENCE ───────────────────────── */}
           <section className="bg-white/[0.02] border border-white/10 rounded-[45px] p-10 space-y-8">
 
             <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -315,12 +315,21 @@ export default function CartPage() {
 
             <div className="space-y-6">
 
-              {/* SIRET — toujours en lecture seule */}
+              {/* SIRET — modifiable dans les 2 cas */}
               <div className="space-y-1">
-                <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/20 ml-2">SIRET</label>
-                <div className="w-full bg-black/20 border border-white/5 rounded-2xl p-5 text-[10px] font-black text-white/30 cursor-not-allowed select-none">
-                  {siret || <span className="text-white/15 italic">Non renseigné — à compléter dans Infos Agence</span>}
-                </div>
+                <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">
+                  Numéro SIRET
+                  {useAltAddress && (
+                    <span className="ml-2 normal-case text-blue-400/50 italic font-bold">— non sauvegardé</span>
+                  )}
+                </label>
+                <input
+                  placeholder="Ex: 123 456 789 00012"
+                  value={siret}
+                  onChange={(e) => setSiret(e.target.value)}
+                  maxLength={17}
+                  className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none hover:border-blue-500/50 focus:border-blue-500 transition-all"
+                />
               </div>
 
               {/* ADRESSE STANDARD */}
@@ -399,7 +408,7 @@ export default function CartPage() {
 
         </div>
 
-        {/* ── COLONNE DROITE : TOTAL ───────────────────────────────── */}
+        {/* ── COLONNE DROITE : TOTAL ──────────────────────────────── */}
         <div className="lg:col-span-1">
           <div className="bg-white p-12 rounded-[50px] text-[#0f092e] sticky top-12 text-center shadow-2xl">
             <h2 className="text-[10px] font-black uppercase opacity-30 italic mb-4">Total HT à régler</h2>
@@ -415,7 +424,7 @@ export default function CartPage() {
         </div>
       </main>
 
-      {/* ── OVERLAY DE CONFIRMATION ──────────────────────────────────── */}
+      {/* ── OVERLAY DE CONFIRMATION ─────────────────────────────────── */}
       <AnimatePresence>
         {showConfirm && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
@@ -448,7 +457,7 @@ export default function CartPage() {
                 {useAltAddress && (
                   <div className="flex justify-between text-[10px] font-black uppercase italic">
                     <span className="opacity-40">Livraison</span>
-                    <span className="text-blue-500">{altAddress}, {altZipCode} {altCity}</span>
+                    <span className="text-blue-500 text-right">{altAddress}, {altZipCode} {altCity}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-[10px] font-black uppercase italic border-t border-gray-200 pt-4">
