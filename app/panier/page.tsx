@@ -62,10 +62,10 @@ export default function CartPage() {
           setPhone(agency.agence_telephone || "");
         }
 
-        // ✅ Récupération complète des collaborateurs (email, phone, photo_url, poste)
+        // ✅ Colonnes alignées avec la table réelle
         const { data: collabs } = await supabase
           .from('collaborateurs')
-          .select('id, full_name, first_name, last_name, email, phone, poste, photo_url')
+          .select('id, full_name, first_name, last_name, email, phone, fonction, avatar_url')
           .eq('agency_id', profile.agency_id)
           .order('first_name', { ascending: true });
 
@@ -149,7 +149,7 @@ export default function CartPage() {
         m => (m.full_name || `${m.first_name} ${m.last_name}`) === selectedCollaborateur
       );
 
-      // ✅ Items enrichis avec colonne nominatif
+      // ✅ Items enrichis avec colonne nominatif — colonnes corrigées (fonction, avatar_url)
       const itemsPayload = cart.map(item => {
         const collabNominatif = item.orderedBy
           ? membres.find(m => (m.full_name || `${m.first_name} ${m.last_name}`) === item.orderedBy)
@@ -158,10 +158,10 @@ export default function CartPage() {
         const nominatif = collabNominatif
           ? [
               `👤 ${item.orderedBy}`,
-              collabNominatif.email     ? `✉️ ${collabNominatif.email}`     : null,
-              collabNominatif.phone     ? `📞 ${collabNominatif.phone}`     : null,
-              collabNominatif.poste     ? `💼 ${collabNominatif.poste}`     : null,
-              collabNominatif.photo_url ? `🖼️ ${collabNominatif.photo_url}` : null,
+              collabNominatif.email      ? `✉️ ${collabNominatif.email}`      : null,
+              collabNominatif.phone      ? `📞 ${collabNominatif.phone}`      : null,
+              collabNominatif.fonction   ? `💼 ${collabNominatif.fonction}`   : null,
+              collabNominatif.avatar_url ? `🖼️ ${collabNominatif.avatar_url}` : null,
             ].filter(Boolean).join(' | ')
           : '';
 
