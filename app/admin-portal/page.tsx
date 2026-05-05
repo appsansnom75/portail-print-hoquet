@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import imageCompression from 'browser-image-compression';
 
@@ -49,25 +50,18 @@ function SortableItem({ p, startEdit, handleDelete }: any) {
       style={style} 
       className="flex items-center gap-4 bg-white/[0.02] p-4 rounded-[24px] border border-white/5 hover:border-blue-500/30 transition-all group"
     >
-      {/* POIGNÉE DE DRAG */}
       <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-2 text-white/10 hover:text-blue-500 transition-colors">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M7 11h10M7 15h10M7 19h10M7 7h10"/></svg>
       </div>
-
-      {/* MINIATURE */}
       <div className="w-12 h-12 bg-black rounded-xl overflow-hidden border border-white/10 flex items-center justify-center shrink-0">
         <img src={p.image_recto || '/placeholder.png'} className="max-w-full max-h-full object-contain" alt="" />
       </div>
-
-      {/* INFOS ÉPURÉES */}
       <div className="flex-1 min-w-0">
         <p className="font-black uppercase text-[10px] tracking-widest truncate">{p.name}</p>
         <p className="text-[7px] text-white/20 font-bold uppercase">
           {p.has_variants ? `${p.config.variants?.length} modèles` : 'Modèle unique'}
         </p>
       </div>
-
-      {/* ACTIONS */}
       <div className="flex gap-2">
         <button onClick={() => startEdit(p)} className="p-2.5 bg-white/5 hover:bg-blue-500 rounded-xl transition-all">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
@@ -82,10 +76,11 @@ function SortableItem({ p, startEdit, handleDelete }: any) {
 
 // --- COMPOSANT PRINCIPAL ---
 export default function AdminPortal() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [password, setPassword] = useState('');
+  // ✅ NOUVEAU : états d'auth Supabase
+  const [authStatus, setAuthStatus] = useState<'loading' | 'authorized' | 'unauthorized'>('loading');
+  const router = useRouter();
+
   const [isUploading, setIsUploading] = useState(false); 
-  
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [category, setCategory] = useState('Perso');
@@ -99,7 +94,33 @@ export default function AdminPortal() {
 
   const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
 
-  useEffect(() => { fetchProducts(); }, []);
+  // ✅ NOUVEAU : vérification session + rôle super_admin au montage
+  useEffect(() => {
+    const checkAccess = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        router.replace('/login');
+        return;
+      }
+
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
+
+      if (error || profile?.role !== 'super_admin') {
+        setAuthStatus('unauthorized');
+        return;
+      }
+
+      setAuthStatus('authorized');
+      fetchProducts();
+    };
+
+    checkAccess();
+  }, []);
 
   const fetchProducts = async () => {
     const { data, error } = await supabase.from('products').select('*').order('sort_order', { ascending: true });
@@ -110,13 +131,10 @@ export default function AdminPortal() {
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-
     const oldIndex = existingProducts.findIndex((p) => p.id === active.id);
     const newIndex = existingProducts.findIndex((p) => p.id === over.id);
     const newArray = arrayMove(existingProducts, oldIndex, newIndex);
-    
     setExistingProducts(newArray);
-
     const updates = newArray.map((p, idx) => ({ id: p.id, sort_order: idx + 1 }));
     await Promise.all(updates.map(u => supabase.from('products').update({ sort_order: u.sort_order }).eq('id', u.id)));
   };
@@ -138,7 +156,6 @@ export default function AdminPortal() {
       const existingP = existingProducts.find(p => p.id === editingId);
       let mainUrl = existingP?.image_recto;
       let versoUrl = existingP?.image_verso;
-
       if (imageFile) mainUrl = await compressAndUpload(imageFile, 'recto');
       if (imageFileVerso) versoUrl = await compressAndUpload(imageFileVerso, 'verso');
 
@@ -152,7 +169,6 @@ export default function AdminPortal() {
           let vImgVerso = v.image_verso || versoUrl;
           if (v.fileRecto) vImgRecto = await compressAndUpload(v.fileRecto, `v-${v.id}-recto`);
           if (v.fileVerso) vImgVerso = await compressAndUpload(v.fileVerso, `v-${v.id}-verso`);
-          
           finalPrices[v.id] = v.prices.split(',').map(n => Number(n.trim()));
           finalVariants.push({ id: v.id, name: v.name, image_recto: vImgRecto, image_verso: vImgVerso });
         }
@@ -194,18 +210,31 @@ export default function AdminPortal() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDelete = async (id: string) => { if(confirm('Supprimer ?')) { await supabase.from('products').delete().eq('id', id); fetchProducts(); } };
+  const handleDelete = async (id: string) => {
+    if (confirm('Supprimer ?')) { await supabase.from('products').delete().eq('id', id); fetchProducts(); }
+  };
 
-  if (!isAuthenticated) return (
+  // ✅ NOUVEAU : écrans de chargement / accès refusé
+  if (authStatus === 'loading') return (
+    <div className="min-h-screen bg-[#0f092e] flex items-center justify-center">
+      <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+  );
+
+  if (authStatus === 'unauthorized') return (
     <div className="min-h-screen bg-[#0f092e] flex items-center justify-center p-6 text-white text-center">
-      <div className="bg-white/5 p-10 rounded-[40px] border border-white/10 w-full max-w-md shadow-2xl">
-        <h2 className="font-black text-blue-500 uppercase tracking-[0.3em] mb-8 italic text-xl">Gestion Portal</h2>
-        <input type="password" placeholder="Passcode" className="w-full bg-black/40 border border-white/10 p-5 rounded-2xl mb-4 text-center outline-none focus:border-blue-500 transition-all font-bold" onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && password === "123" && setIsAuthenticated(true)} />
-        <button onClick={() => password === "123" ? setIsAuthenticated(true) : alert("Refusé")} className="w-full bg-blue-600 py-5 rounded-2xl font-black uppercase tracking-widest hover:bg-blue-500 active:scale-95 transition-all">Connecter</button>
+      <div className="bg-white/5 p-10 rounded-[40px] border border-white/10 w-full max-w-md shadow-2xl space-y-4">
+        <div className="text-5xl">🚫</div>
+        <h2 className="font-black text-red-500 uppercase tracking-[0.3em] italic text-xl">Accès refusé</h2>
+        <p className="text-white/40 text-sm">Vous n'avez pas les droits pour accéder à cette page.</p>
+        <button onClick={() => router.replace('/')} className="w-full bg-white/5 hover:bg-white/10 py-4 rounded-2xl font-black uppercase tracking-widest text-sm transition-all">
+          Retour à l'accueil
+        </button>
       </div>
     </div>
   );
 
+  // ✅ CONTENU NORMAL (inchangé)
   return (
     <div className="min-h-screen bg-[#0f092e] text-white p-10 font-sans relative">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-16">
@@ -274,8 +303,8 @@ export default function AdminPortal() {
                     <p className="text-[10px] font-black text-blue-500 uppercase italic tracking-tighter">{v.name}</p>
                     <input value={v.prices} onChange={(e) => { const c = [...variantsList]; c[idx].prices = e.target.value; setVariantsList(c); }} className="w-full bg-black/40 border border-white/5 p-3 rounded-xl text-[10px] font-mono outline-none" placeholder="Prix..." />
                     <div className="grid grid-cols-2 gap-2">
-                        <input type="file" onChange={(e) => { const c = [...variantsList]; c[idx].fileRecto = e.target.files?.[0] || null; setVariantsList(c); }} className="text-[7px]" />
-                        <input type="file" onChange={(e) => { const c = [...variantsList]; c[idx].fileVerso = e.target.files?.[0] || null; setVariantsList(c); }} className="text-[7px]" />
+                      <input type="file" onChange={(e) => { const c = [...variantsList]; c[idx].fileRecto = e.target.files?.[0] || null; setVariantsList(c); }} className="text-[7px]" />
+                      <input type="file" onChange={(e) => { const c = [...variantsList]; c[idx].fileVerso = e.target.files?.[0] || null; setVariantsList(c); }} className="text-[7px]" />
                     </div>
                   </div>
                 ))}
@@ -302,7 +331,6 @@ export default function AdminPortal() {
                 <h2 className={`text-xs font-black uppercase tracking-[0.3em] italic ${section.color}`}>{section.label}</h2>
                 <div className="h-[1px] flex-1 bg-white/5"></div>
               </div>
-              
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                 <SortableContext items={existingProducts.filter(p => p.category === section.id)} strategy={verticalListSortingStrategy}>
                   <div className="grid gap-2">
