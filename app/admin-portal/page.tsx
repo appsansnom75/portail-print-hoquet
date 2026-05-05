@@ -3,53 +3,27 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import imageCompression from 'browser-image-compression';
-
-// Imports Drag & Drop
 import {
-  DndContext, 
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent
+  DndContext, closestCenter, KeyboardSensor, PointerSensor,
+  useSensor, useSensors, DragEndEvent
 } from '@dnd-kit/core';
 import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-  useSortable
+  arrayMove, SortableContext, sortableKeyboardCoordinates,
+  verticalListSortingStrategy, useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
 interface VariantItem {
-  id: string;
-  name: string;
-  prices: string;
-  fileRecto?: File | null;
-  fileVerso?: File | null;
-  image_recto?: string;
-  image_verso?: string;
+  id: string; name: string; prices: string;
+  fileRecto?: File | null; fileVerso?: File | null;
+  image_recto?: string; image_verso?: string;
 }
 
-// --- COMPOSANT ITEM LISTING (DRAGGABLE) ---
 function SortableItem({ p, startEdit, handleDelete }: any) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: p.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 100 : 1,
-    opacity: isDragging ? 0.6 : 1,
-  };
-
+  const style = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 100 : 1, opacity: isDragging ? 0.6 : 1 };
   return (
-    <div 
-      ref={setNodeRef} 
-      style={style} 
-      className="flex items-center gap-4 bg-white/[0.02] p-4 rounded-[24px] border border-white/5 hover:border-blue-500/30 transition-all group"
-    >
+    <div ref={setNodeRef} style={style} className="flex items-center gap-4 bg-white/[0.02] p-4 rounded-[24px] border border-white/5 hover:border-blue-500/30 transition-all group">
       <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-2 text-white/10 hover:text-blue-500 transition-colors">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M7 11h10M7 15h10M7 19h10M7 7h10"/></svg>
       </div>
@@ -61,6 +35,10 @@ function SortableItem({ p, startEdit, handleDelete }: any) {
         <p className="text-[7px] text-white/20 font-bold uppercase">
           {p.has_variants ? `${p.config.variants?.length} modèles` : 'Modèle unique'}
         </p>
+        {/* ✅ BADGE si "Qui commande ?" est activé */}
+        {p.config?.show_ordered_by && (
+          <p className="text-[7px] text-blue-500/60 font-black uppercase tracking-widest mt-0.5">✓ Qui commande ?</p>
+        )}
       </div>
       <div className="flex gap-2">
         <button onClick={() => startEdit(p)} className="p-2.5 bg-white/5 hover:bg-blue-500 rounded-xl transition-all">
@@ -74,13 +52,10 @@ function SortableItem({ p, startEdit, handleDelete }: any) {
   );
 }
 
-// --- COMPOSANT PRINCIPAL ---
 export default function AdminPortal() {
-  // ✅ NOUVEAU : états d'auth Supabase
   const [authStatus, setAuthStatus] = useState<'loading' | 'authorized' | 'unauthorized'>('loading');
   const router = useRouter();
-
-  const [isUploading, setIsUploading] = useState(false); 
+  const [isUploading, setIsUploading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [category, setCategory] = useState('Perso');
@@ -91,34 +66,19 @@ export default function AdminPortal() {
   const [hasVariants, setHasVariants] = useState(false);
   const [variantsList, setVariantsList] = useState<VariantItem[]>([]);
   const [existingProducts, setExistingProducts] = useState<any[]>([]);
+  const [showOrderedBy, setShowOrderedBy] = useState(false); // ✅ NOUVEAU
 
   const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
 
-  // ✅ NOUVEAU : vérification session + rôle super_admin au montage
   useEffect(() => {
     const checkAccess = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        router.replace('/login');
-        return;
-      }
-
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', session.user.id)
-        .single();
-
-      if (error || profile?.role !== 'super_admin') {
-        setAuthStatus('unauthorized');
-        return;
-      }
-
+      if (!session) { router.replace('/login'); return; }
+      const { data: profile, error } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
+      if (error || profile?.role !== 'super_admin') { setAuthStatus('unauthorized'); return; }
       setAuthStatus('authorized');
       fetchProducts();
     };
-
     checkAccess();
   }, []);
 
@@ -179,28 +139,33 @@ export default function AdminPortal() {
       const payload = {
         name, category, image_recto: mainUrl, image_verso: versoUrl || null,
         has_variants: hasVariants,
-        config: { quantities: qtyArray, prices: finalPrices, variants: finalVariants }
+        config: { 
+          quantities: qtyArray, 
+          prices: finalPrices, 
+          variants: finalVariants,
+          show_ordered_by: showOrderedBy  // ✅ NOUVEAU
+        }
       };
 
       if (!editingId) (payload as any).sort_order = existingProducts.length + 1;
-
-      const { error } = editingId 
+      const { error } = editingId
         ? await supabase.from('products').update(payload).eq('id', editingId)
         : await supabase.from('products').insert([payload]);
-
       if (!error) { resetForm(); fetchProducts(); }
     } catch (err: any) { alert(err.message); } finally { setIsUploading(false); }
   };
 
   const resetForm = () => {
     setEditingId(null); setName(''); setCategory('Perso'); setImageFile(null); setImageFileVerso(null);
-    setQuantities('500, 1000, 5000'); setBasePrices('100, 180, 500'); setHasVariants(false); setVariantsList([]);
+    setQuantities('500, 1000, 5000'); setBasePrices('100, 180, 500'); setHasVariants(false);
+    setVariantsList([]); setShowOrderedBy(false); // ✅ NOUVEAU
   };
 
   const startEdit = (p: any) => {
     setEditingId(p.id); setName(p.name); setCategory(p.category);
     setQuantities(p.config.quantities.join(', '));
     setHasVariants(p.has_variants);
+    setShowOrderedBy(p.config?.show_ordered_by || false); // ✅ NOUVEAU
     if (p.has_variants) {
       setVariantsList(p.config.variants.map((v: any) => ({
         id: v.id, name: v.name, image_recto: v.image_recto, image_verso: v.image_verso,
@@ -214,7 +179,6 @@ export default function AdminPortal() {
     if (confirm('Supprimer ?')) { await supabase.from('products').delete().eq('id', id); fetchProducts(); }
   };
 
-  // ✅ NOUVEAU : écrans de chargement / accès refusé
   if (authStatus === 'loading') return (
     <div className="min-h-screen bg-[#0f092e] flex items-center justify-center">
       <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
@@ -234,12 +198,11 @@ export default function AdminPortal() {
     </div>
   );
 
-  // ✅ CONTENU NORMAL (inchangé)
   return (
     <div className="min-h-screen bg-[#0f092e] text-white p-10 font-sans relative">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-16">
-        
-        {/* --- FORMULAIRE (GAUCHE) --- */}
+
+        {/* FORMULAIRE GAUCHE */}
         <div className="lg:col-span-5 space-y-8">
           <div className="flex justify-between items-center sticky top-0 z-40 bg-[#0f092e]/90 py-4 backdrop-blur-md">
             <h1 className="text-3xl font-black uppercase text-blue-500 italic tracking-tighter">{editingId ? 'Édition' : 'Nouveau'}</h1>
@@ -312,13 +275,27 @@ export default function AdminPortal() {
               </div>
             )}
 
+            {/* ✅ TOGGLE "QUI COMMANDE ?" */}
+            <div 
+              onClick={() => setShowOrderedBy(!showOrderedBy)}
+              className={`flex items-center gap-4 p-4 rounded-2xl border cursor-pointer transition-all ${showOrderedBy ? 'border-blue-500/40 bg-blue-500/5' : 'border-white/5 bg-white/[0.02] hover:border-white/10'}`}
+            >
+              <div className={`w-12 h-6 rounded-full transition-all relative shrink-0 ${showOrderedBy ? 'bg-blue-500' : 'bg-white/10'}`}>
+                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${showOrderedBy ? 'left-7' : 'left-1'}`}></div>
+              </div>
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-widest text-white/70">Afficher "Qui commande ?"</p>
+                <p className="text-[8px] text-white/20 mt-0.5">Affiche la liste de l'équipe sur ce produit (admin agence uniquement)</p>
+              </div>
+            </div>
+
             <button onClick={handleSaveProduct} disabled={isUploading} className="w-full py-5 rounded-2xl font-black uppercase bg-blue-600 hover:bg-blue-500 shadow-xl shadow-blue-500/20 active:scale-95 transition-all tracking-[0.2em]">
               {editingId ? 'Sauvegarder' : 'Publier'}
             </button>
           </div>
         </div>
 
-        {/* --- LISTING DRAG & DROP (DROITE) --- */}
+        {/* LISTING DRAG & DROP DROITE */}
         <div className="lg:col-span-7 space-y-12 pb-20">
           {[
             { id: 'Perso', label: 'Produits personnalisables', color: 'text-blue-500' },
