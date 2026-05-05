@@ -8,6 +8,7 @@ export interface CartItem {
   qty: number;
   category: string;
   color?: string;
+  orderedBy?: string | null; // ✅ AJOUTÉ
 }
 
 interface CartContextType {
