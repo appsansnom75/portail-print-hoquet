@@ -158,10 +158,10 @@ export default function CartPage() {
         const nominatif = collabNominatif
           ? [
               `👤 ${item.orderedBy}`,
-              collabNominatif.email      ? `✉️ ${collabNominatif.email}`      : null,
-              collabNominatif.phone      ? `📞 ${collabNominatif.phone}`      : null,
-              collabNominatif.fonction   ? `💼 ${collabNominatif.fonction}`   : null,
-              collabNominatif.avatar_url ? `🖼️ ${collabNominatif.avatar_url}` : null,
+              collabNominatif.email      || null,
+              collabNominatif.phone      || null,
+              collabNominatif.fonction   || null,
+              collabNominatif.avatar_url || null,
             ].filter(Boolean).join(' | ')
           : '';
 
