@@ -118,7 +118,7 @@ export default function HomePage() {
                       href="/profil"
                       className="bg-white/5 border border-white/10 hover:border-blue-500/50 text-white/70 hover:text-white text-[9px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all active:scale-95"
                     >
-                      Mes Infos
+                      Infos Agence
                     </Link>
                   )}
 
