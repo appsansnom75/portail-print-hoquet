@@ -16,10 +16,7 @@ export default function CartPage() {
   const [membres, setMembres] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Identification
   const [selectedCollaborateur, setSelectedCollaborateur] = useState("");
-
-  // Infos agence (sauvegardées)
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [zipCode, setZipCode] = useState("");
@@ -27,7 +24,6 @@ export default function CartPage() {
   const [siret, setSiret] = useState("");
   const [instructions, setInstructions] = useState("");
 
-  // Adresse alternative (non sauvegardée)
   const [useAltAddress, setUseAltAddress] = useState(false);
   const [altAddress, setAltAddress] = useState("");
   const [altZipCode, setAltZipCode] = useState("");
@@ -66,9 +62,10 @@ export default function CartPage() {
           setPhone(agency.agence_telephone || "");
         }
 
+        // ✅ Récupération complète des collaborateurs (email, phone, photo_url, poste)
         const { data: collabs } = await supabase
           .from('collaborateurs')
-          .select('id, full_name, first_name, last_name')
+          .select('id, full_name, first_name, last_name, email, phone, poste, photo_url')
           .eq('agency_id', profile.agency_id)
           .order('first_name', { ascending: true });
 
@@ -83,11 +80,11 @@ export default function CartPage() {
   const syncAgenceData = async () => {
     if (!agenceId || useAltAddress) return;
     await supabase.from('agencies').update({
-      adresse: address,
-      code_postal: zipCode,
-      ville: city,
+      adresse:          address,
+      code_postal:      zipCode,
+      ville:            city,
       agence_telephone: phone,
-      siret: siret,
+      siret:            siret,
     }).eq('id', agenceId);
   };
 
@@ -147,18 +144,62 @@ export default function CartPage() {
 
       if (insertError) throw insertError;
 
+      // ✅ Collaborateur principal
+      const collaborateurData = membres.find(
+        m => (m.full_name || `${m.first_name} ${m.last_name}`) === selectedCollaborateur
+      );
+
+      // ✅ Items enrichis avec colonne nominatif
+      const itemsPayload = cart.map(item => {
+        const collabNominatif = item.orderedBy
+          ? membres.find(m => (m.full_name || `${m.first_name} ${m.last_name}`) === item.orderedBy)
+          : null;
+
+        const nominatif = collabNominatif
+          ? [
+              `👤 ${item.orderedBy}`,
+              collabNominatif.email     ? `✉️ ${collabNominatif.email}`     : null,
+              collabNominatif.phone     ? `📞 ${collabNominatif.phone}`     : null,
+              collabNominatif.poste     ? `💼 ${collabNominatif.poste}`     : null,
+              collabNominatif.photo_url ? `🖼️ ${collabNominatif.photo_url}` : null,
+            ].filter(Boolean).join(' | ')
+          : '';
+
+        return {
+          produit:     item.name,
+          quantite:    item.qty,
+          nominatif,
+          membre:      item.orderedBy || selectedCollaborateur,
+          total_ligne: (item.price * item.qty).toFixed(2),
+        };
+      });
+
+      // ✅ Webhook Make — payload complet
       const response = await fetch('https://hook.eu1.make.com/mb6ok4o2jv41vrhd37r101wi98b1lfz4', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          order_number:  nextOrderId,
-          agency_name:   agencyData?.name,
-          collaborateur: selectedCollaborateur,
-          produits:      produitsListeTexte,
-          total_ht:      totalHT,
-          full_address:  `${deliveryAddress}, ${deliveryZip} ${deliveryCity}`,
-          phone:         deliveryPhone,
-          date:          new Date().toLocaleString('fr-FR'),
+          order_number: nextOrderId,
+
+          // Agence
+          agency_name:  agencyData?.name || "",
+          adresse:      deliveryAddress,
+          code_postal:  deliveryZip,
+          ville:        deliveryCity,
+          tel:          deliveryPhone,
+          siret:        siret,
+
+          // Collaborateur principal
+          collaborateur_nom:   selectedCollaborateur,
+          collaborateur_email: collaborateurData?.email || agencyData?.agence_email || "",
+          collaborateur_phone: collaborateurData?.phone || deliveryPhone,
+
+          // Produits avec nominatif
+          items: itemsPayload,
+
+          // Totaux & date
+          total_ht: totalHT,
+          date:     new Date().toLocaleString('fr-FR'),
         }),
       });
 
@@ -275,7 +316,6 @@ export default function CartPage() {
 
           {/* ── 03. LIVRAISON & INFOS AGENCE ───────────────────────── */}
           <section className="bg-white/[0.02] border border-white/10 rounded-[45px] p-10 space-y-8">
-
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <div>
                 <h2 className="text-[11px] font-black uppercase text-white/60 italic">03. Livraison & Infos Agence</h2>
@@ -300,8 +340,6 @@ export default function CartPage() {
             </div>
 
             <div className="space-y-6">
-
-              {/* ✅ ADRESSE STANDARD — siret inclus à la fin */}
               {!useAltAddress ? (
                 <>
                   <input
@@ -330,7 +368,6 @@ export default function CartPage() {
                     onChange={(e) => setPhone(e.target.value)}
                     className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none hover:border-blue-500/50 focus:border-blue-500 transition-all"
                   />
-                  {/* SIRET — dans la branche standard */}
                   <div className="space-y-1">
                     <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">Numéro SIRET</label>
                     <input
@@ -343,7 +380,6 @@ export default function CartPage() {
                   </div>
                 </>
               ) : (
-                /* ✅ ADRESSE ALTERNATIVE — siret inclus à la fin du bloc bleu */
                 <div className="space-y-6 border border-blue-500/20 bg-blue-600/5 rounded-[30px] p-6">
                   <p className="text-[8px] font-black uppercase text-blue-400/60 tracking-widest">
                     Adresse unique pour cette commande — non sauvegardée dans vos infos agence
@@ -374,11 +410,10 @@ export default function CartPage() {
                     onChange={(e) => setAltPhone(e.target.value)}
                     className="w-full bg-black/40 border border-blue-500/20 rounded-2xl p-5 text-[10px] font-black outline-none hover:border-blue-500/50 focus:border-blue-500 transition-all"
                   />
-                  {/* SIRET — dans la branche alternative */}
                   <div className="space-y-1">
                     <label className="text-[8px] font-black uppercase tracking-[0.2em] text-blue-400/50 ml-2">
                       Numéro SIRET
-                      <span className="ml-2 normal-case italic font-bold text-blue-400/40"></span>
+                      <span className="ml-2 normal-case italic font-bold text-blue-400/40">— non sauvegardé</span>
                     </label>
                     <input
                       placeholder="Ex: 123 456 789 00012"
@@ -391,7 +426,6 @@ export default function CartPage() {
                 </div>
               )}
 
-              {/* Instructions — toujours à la fin, hors des blocs */}
               <textarea
                 placeholder="INSTRUCTIONS PARTICULIÈRES (Optionnel)"
                 value={instructions}
