@@ -5,18 +5,19 @@ import { useCart } from '@/context/CartContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 
+
 export default function CartPage() {
   const { cart, removeFromCart, clearCart } = useCart();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [orderSent, setOrderSent] = useState(false);
-  
+
   const [agencyData, setAgencyData] = useState<any>(null);
+  const [agenceId, setAgenceId] = useState<string | null>(null);
   const [membres, setMembres] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [selectedUser, setSelectedUser] = useState("");
-  const [email, setEmail] = useState("");
+  const [selectedCollaborateur, setSelectedCollaborateur] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [zipCode, setZipCode] = useState("");
@@ -26,52 +27,69 @@ export default function CartPage() {
 
   const totalHT = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
 
-  // 1. CHARGEMENT DES DONNÉES UTILISATEUR ET AGENCE
+  // 1. CHARGEMENT DES DONNÉES
   useEffect(() => {
     const loadData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setLoading(false); return; }
-      
+
       const { data: profile } = await supabase.from('profiles')
         .select('agency_id, first_name, last_name, email')
         .eq('id', user.id)
         .single();
 
       if (profile?.agency_id) {
-        const { data: agency } = await supabase.from('agencies')
-            .select('*')
-            .eq('id', profile.agency_id)
-            .single();
+        setAgenceId(profile.agency_id);
 
-        if (agency) { 
-          setAgencyData(agency); 
-          setAddress(agency.address || "");
-          setZipCode(agency.zip_code || "");
-          setCity(agency.city || "");
+        // Infos agence
+        const { data: agency } = await supabase.from('agencies')
+          .select('*')
+          .eq('id', profile.agency_id)
+          .single();
+
+        if (agency) {
+          setAgencyData(agency);
+          setAddress(agency.adresse || "");
+          setZipCode(agency.code_postal || "");
+          setCity(agency.ville || "");
           setSiret(agency.siret || "");
+          setPhone(agency.agence_telephone || "");
         }
 
-        const { data: team } = await supabase.from('profiles')
-            .select('full_name, first_name, last_name, email, phone')
-            .eq('agency_id', profile.agency_id)
-            .order('first_name', { ascending: true });
+        // ✅ Uniquement les collaborateurs (pas les profiles/admin)
+        const { data: collabs } = await supabase.from('collaborateurs')
+          .select('id, full_name, first_name, last_name')
+          .eq('agency_id', profile.agency_id)
+          .order('first_name', { ascending: true });
 
-        setMembres(team || []);
-        setSelectedUser(`${profile.first_name} ${profile.last_name}`);
-        setEmail(profile.email || "");
+        setMembres(collabs || []);
       }
       setLoading(false);
     };
     loadData();
   }, []);
 
-  // 2. LOGIQUE D'ENVOI DE LA COMMANDE
+  // ✅ Mise à jour des infos agence si modifiées dans le panier
+  const syncAgenceData = async () => {
+    if (!agenceId) return;
+    await supabase.from('agencies').update({
+      adresse: address,
+      code_postal: zipCode,
+      ville: city,
+      siret: siret,
+      agence_telephone: phone,
+    }).eq('id', agenceId);
+  };
+
+  // 2. ENVOI DE LA COMMANDE
   const handleFinalSubmit = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
 
     try {
-      // A. RÉCUPÉRATION DU COMPTEUR (Table 'config')
+      // Sync infos agence au moment de valider
+      await syncAgenceData();
+
       const { data: counterData } = await supabase
         .from('config')
         .select('last_value')
@@ -80,48 +98,47 @@ export default function CartPage() {
 
       const nextOrderId = (counterData?.last_value || 0) + 1;
 
-      // B. MISE À JOUR DU COMPTEUR
       await supabase.from('config')
         .update({ last_value: nextOrderId })
         .eq('counter_name', 'order_id');
 
-      // C. PRÉPARATION DES DONNÉES POUR LES COLONNES RÉELLES
       const itemsFormattedJSON = cart.map(item => ({
         name: item.name,
         qty: item.qty,
         price_unit: item.price,
-        total_row: (item.price * item.qty).toFixed(2)
+        total_row: (item.price * item.qty).toFixed(2),
+        ordered_by: item.orderedBy || null
       }));
 
-      const produitsListeTexte = cart.map(item => `${item.name} (x${item.qty})`).join(', ');
+      const produitsListeTexte = cart.map(item =>
+        `${item.name} (x${item.qty})${item.orderedBy ? ` — ${item.orderedBy}` : ''}`
+      ).join(', ');
 
-      // D. INSERTION DANS 'ORDERS' (Avec les noms de colonnes de tes captures)
       const { error: insertError } = await supabase.from('orders').insert([{
         order_number: nextOrderId,
         agency_name: agencyData?.name || "Agence",
-        client_email: selectedUser, // Correspond à ta colonne client_email vue sur Supabase
+        client_email: selectedCollaborateur,
         client_phone: phone,
         delivery_address: address,
         zip_code: zipCode,
         city: city,
         siret: siret,
-        produits_liste: produitsListeTexte, // Colonne texte vue sur capture
+        produits_liste: produitsListeTexte,
         total_ht: totalHT,
-        items: itemsFormattedJSON, // Colonne JSONB vue sur capture
-        instructions: `Signataire : ${selectedUser} | Note : ${instructions}`,
+        items: itemsFormattedJSON,
+        instructions: `Collaborateur : ${selectedCollaborateur} | Note : ${instructions}`,
         status: 'En attente'
       }]);
 
       if (insertError) throw insertError;
 
-      // E. ENVOI VERS MAKE (Webhook)
       const response = await fetch('https://hook.eu1.make.com/mb6ok4o2jv41vrhd37r101wi98b1lfz4', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          order_number: nextOrderId, // Très important pour le format GH-XXXXX dans Make
+          order_number: nextOrderId,
           agency_name: agencyData?.name,
-          client_name: selectedUser,
+          collaborateur: selectedCollaborateur,
           produits: produitsListeTexte,
           total_ht: totalHT,
           full_address: `${address}, ${zipCode} ${city}`,
@@ -146,8 +163,11 @@ export default function CartPage() {
     }
   };
 
-  // 3. AFFICHAGES (Loading / Success / Formulaire)
-  if (loading) return <div className="min-h-screen bg-[#0f092e] flex items-center justify-center text-white uppercase text-[10px] animate-pulse italic font-black">Initialisation du bon de commande...</div>;
+  if (loading) return (
+    <div className="min-h-screen bg-[#0f092e] flex items-center justify-center text-white uppercase text-[10px] animate-pulse italic font-black">
+      Initialisation du bon de commande...
+    </div>
+  );
 
   if (orderSent) return (
     <div className="min-h-screen bg-[#0f092e] flex flex-col items-center justify-center text-center p-6 text-white font-black italic uppercase">
@@ -162,74 +182,149 @@ export default function CartPage() {
   return (
     <div className="min-h-screen bg-[#0f092e] text-white pb-20">
       <header className="py-10 px-6 max-w-6xl mx-auto flex justify-between items-center border-b border-white/10 mb-12">
-          <Link href="/" className="text-[10px] font-black uppercase opacity-40 hover:opacity-100 italic transition-all">← Boutique</Link>
-          <h1 className="text-[11px] font-black uppercase tracking-[0.4em] italic text-blue-500">Validation Commande</h1>
-          <div className="w-24"></div>
+        <Link href="/" className="text-[10px] font-black uppercase opacity-40 hover:opacity-100 italic transition-all">← Boutique</Link>
+        <h1 className="text-[11px] font-black uppercase tracking-[0.4em] italic text-blue-500">Validation Commande</h1>
+        <div className="w-24"></div>
       </header>
 
       <main className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-3 gap-16">
         <div className="lg:col-span-2 space-y-12">
-          {/* SECTION 01 : AGENCE */}
+
+          {/* ✅ SECTION 01 : IDENTIFICATION */}
           <section className="bg-blue-600/5 border border-blue-500/20 rounded-[45px] p-10 space-y-8">
-             <h2 className="text-[11px] font-black uppercase text-blue-400 italic">01. Identification</h2>
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-3">
-                    <label className="text-[9px] font-black opacity-30 italic ml-2 uppercase">Agence</label>
-                    <div className="bg-black/40 border border-white/10 rounded-2xl p-5 text-[11px] font-black text-blue-400">{agencyData?.name || "Non détectée"}</div>
+            <h2 className="text-[11px] font-black uppercase text-blue-400 italic">01. Identification</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+              {/* Agence — toujours affichée, non modifiable */}
+              <div className="space-y-3">
+                <label className="text-[9px] font-black opacity-30 italic ml-2 uppercase">Agence</label>
+                <div className="bg-black/40 border border-white/10 rounded-2xl p-5 text-[11px] font-black text-blue-400">
+                  {agencyData?.name || "Non détectée"}
                 </div>
-                <div className="space-y-3">
-                    <label className="text-[9px] font-black opacity-30 italic ml-2 uppercase">Signataire</label>
-                    <select value={selectedUser} onChange={(e) => setSelectedUser(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none uppercase appearance-none cursor-pointer">
-                        {membres.map((m, idx) => (
-                          <option key={idx} value={m.full_name || `${m.first_name} ${m.last_name}`}>{m.full_name || `${m.first_name} ${m.last_name}`}</option>
-                        ))}
-                    </select>
-                </div>
-             </div>
+              </div>
+
+              {/* ✅ Collaborateur — liste depuis collaborateurs uniquement */}
+              <div className="space-y-3">
+                <label className="text-[9px] font-black opacity-30 italic ml-2 uppercase">Collaborateur</label>
+                <select
+                  value={selectedCollaborateur}
+                  onChange={(e) => setSelectedCollaborateur(e.target.value)}
+                  className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none uppercase appearance-none cursor-pointer hover:border-blue-500 transition-all"
+                >
+                  <option value="">— Sélectionner —</option>
+                  {membres.map((m) => (
+                    <option key={m.id} value={m.full_name || `${m.first_name} ${m.last_name}`}>
+                      {m.full_name || `${m.first_name} ${m.last_name}`}
+                    </option>
+                  ))}
+                </select>
+                {membres.length === 0 && (
+                  <p className="text-[8px] text-white/30 font-black uppercase ml-2">
+                    Aucun collaborateur —{' '}
+                    <Link href="/dashboard/equipe" className="text-blue-400 hover:underline">Ajouter dans Équipe</Link>
+                  </p>
+                )}
+              </div>
+            </div>
           </section>
 
-          {/* SECTION 02 : PANIER */}
+          {/* ✅ SECTION 02 : RÉCAPITULATIF */}
           <section className="bg-white/[0.02] border border-white/10 rounded-[45px] p-10">
-             <h2 className="text-[11px] font-black uppercase text-white/60 italic mb-10">02. Récapitulatif</h2>
-             <div className="space-y-6">
-                {cart.map((item: any) => (
-                    <div key={item.id} className="flex justify-between items-center border-b border-white/5 pb-6">
-                      <div className="flex flex-col">
-                        <span className="text-[13px] font-black uppercase tracking-tight italic">{item.name}</span>
-                        <span className="text-[9px] text-white/30 font-black italic">Quantité : {item.qty}</span>
-                      </div>
-                      <span className="text-[14px] font-black italic">{(item.price * item.qty).toFixed(2)}€</span>
-                    </div>
-                ))}
-             </div>
+            <h2 className="text-[11px] font-black uppercase text-white/60 italic mb-10">02. Récapitulatif</h2>
+            <div className="space-y-6">
+              {cart.length === 0 && (
+                <p className="text-[10px] font-black uppercase text-white/20 italic text-center py-8">Panier vide</p>
+              )}
+              {cart.map((item: any) => (
+                <div key={item.id} className="flex justify-between items-start border-b border-white/5 pb-6 gap-4">
+                  <div className="flex flex-col gap-1 flex-grow">
+                    <span className="text-[13px] font-black uppercase tracking-tight italic">{item.name}</span>
+                    <span className="text-[9px] text-white/30 font-black italic">Quantité : {item.qty}</span>
+                    {/* ✅ Affiche le membre choisi si présent */}
+                    {item.orderedBy && (
+                      <span className="text-[9px] text-blue-400 font-black uppercase mt-1">
+                        👤 {item.orderedBy}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-4 shrink-0">
+                    <span className="text-[14px] font-black italic">{(item.price * item.qty).toFixed(2)}€</span>
+                    {/* ✅ Bouton supprimer */}
+                    <button
+                      onClick={() => removeFromCart(item.id)}
+                      className="w-8 h-8 rounded-full bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white flex items-center justify-center transition-all text-xs font-black"
+                      title="Supprimer"
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </section>
 
-          {/* SECTION 03 : LIVRAISON */}
+          {/* ✅ SECTION 03 : LIVRAISON — pré-remplie depuis infos agence */}
           <section className="bg-white/[0.02] border border-white/10 rounded-[45px] p-10 space-y-8">
-            <h2 className="text-[11px] font-black uppercase text-white/60 italic">03. Livraison & SIRET</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-[11px] font-black uppercase text-white/60 italic">03. Livraison & Infos Agence</h2>
+              <span className="text-[8px] font-black text-white/20 uppercase italic">
+                Les modifications seront sauvegardées dans vos infos agence
+              </span>
+            </div>
             <div className="space-y-6">
-                <input placeholder="ADRESSE DE LIVRAISON" value={address} onChange={(e) => setAddress(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none uppercase" />
-                <div className="grid grid-cols-2 gap-6">
-                  <input placeholder="CP" value={zipCode} onChange={(e) => setZipCode(e.target.value)} className="bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none" />
-                  <input placeholder="VILLE" value={city} onChange={(e) => setCity(e.target.value)} className="bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none uppercase" />
-                </div>
-                <div className="grid grid-cols-2 gap-6">
-                  <input placeholder="NUMÉRO SIRET" value={siret} onChange={(e) => setSiret(e.target.value)} className="bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none" />
-                  <input placeholder="TÉLÉPHONE CONTACT" value={phone} onChange={(e) => setPhone(e.target.value)} className="bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none" />
-                </div>
-                <textarea placeholder="INSTRUCTIONS PARTICULIÈRES (Optionnel)" value={instructions} onChange={(e) => setInstructions(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none uppercase min-h-[100px]" />
+              <input
+                placeholder="ADRESSE DE LIVRAISON"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none uppercase hover:border-blue-500/50 focus:border-blue-500 transition-all"
+              />
+              <div className="grid grid-cols-2 gap-6">
+                <input
+                  placeholder="CODE POSTAL"
+                  value={zipCode}
+                  onChange={(e) => setZipCode(e.target.value)}
+                  className="bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none hover:border-blue-500/50 focus:border-blue-500 transition-all"
+                />
+                <input
+                  placeholder="VILLE"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  className="bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none uppercase hover:border-blue-500/50 focus:border-blue-500 transition-all"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-6">
+                <input
+                  placeholder="NUMÉRO SIRET"
+                  value={siret}
+                  onChange={(e) => setSiret(e.target.value)}
+                  maxLength={17}
+                  className="bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none hover:border-blue-500/50 focus:border-blue-500 transition-all"
+                />
+                <input
+                  placeholder="TÉLÉPHONE CONTACT"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none hover:border-blue-500/50 focus:border-blue-500 transition-all"
+                />
+              </div>
+              <textarea
+                placeholder="INSTRUCTIONS PARTICULIÈRES (Optionnel)"
+                value={instructions}
+                onChange={(e) => setInstructions(e.target.value)}
+                className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none uppercase min-h-[100px] hover:border-blue-500/50 focus:border-blue-500 transition-all"
+              />
             </div>
           </section>
         </div>
 
-        {/* COLONNE DE DROITE : TOTAL & BOUTON */}
+        {/* COLONNE DROITE : TOTAL */}
         <div className="lg:col-span-1">
           <div className="bg-white p-12 rounded-[50px] text-[#0f092e] sticky top-12 text-center shadow-2xl">
             <h2 className="text-[10px] font-black uppercase opacity-30 italic mb-4">Total HT à régler</h2>
             <span className="text-6xl font-black italic tracking-tighter">{totalHT.toFixed(2)}€</span>
-            <button 
-              onClick={() => setShowConfirm(true)} 
-              disabled={cart.length === 0} 
+            <button
+              onClick={() => setShowConfirm(true)}
+              disabled={cart.length === 0}
               className="w-full mt-12 py-7 bg-blue-600 text-white rounded-3xl font-black uppercase text-[10px] hover:bg-[#0f092e] transition-all shadow-xl disabled:opacity-20"
             >
               Vérifier la commande
@@ -242,28 +337,47 @@ export default function CartPage() {
       <AnimatePresence>
         {showConfirm && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-[#0f092e]/95 backdrop-blur-2xl" onClick={() => setShowConfirm(false)} />
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative bg-white text-[#0f092e] w-full max-w-2xl rounded-[60px] p-14 space-y-8 shadow-2xl overflow-hidden text-center">
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-[#0f092e]/95 backdrop-blur-2xl"
+              onClick={() => setShowConfirm(false)}
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              className="relative bg-white text-[#0f092e] w-full max-w-2xl rounded-[60px] p-14 space-y-8 shadow-2xl overflow-hidden text-center"
+            >
               <div className="absolute top-0 left-0 w-full h-2 bg-blue-600"></div>
               <h3 className="text-3xl font-black uppercase italic text-blue-600 tracking-tighter">Confirmation Finale</h3>
               <p className="text-[10px] font-black opacity-40 uppercase italic">Toute commande validée part directement en production.</p>
-              
-              <div className="bg-gray-50 rounded-[35px] p-8 space-y-4">
+
+              <div className="bg-gray-50 rounded-[35px] p-8 space-y-4 text-left">
                 <div className="flex justify-between text-[10px] font-black uppercase italic">
-                    <span className="opacity-40">Total HT</span>
-                    <span className="text-2xl text-blue-600">{totalHT.toFixed(2)}€</span>
+                  <span className="opacity-40">Agence</span>
+                  <span className="text-blue-600">{agencyData?.name}</span>
+                </div>
+                {selectedCollaborateur && (
+                  <div className="flex justify-between text-[10px] font-black uppercase italic">
+                    <span className="opacity-40">Collaborateur</span>
+                    <span>{selectedCollaborateur}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-[10px] font-black uppercase italic border-t border-gray-200 pt-4">
+                  <span className="opacity-40">Total HT</span>
+                  <span className="text-2xl text-blue-600">{totalHT.toFixed(2)}€</span>
                 </div>
               </div>
 
-              <button 
-                onClick={handleFinalSubmit} 
-                disabled={isSubmitting} 
+              <button
+                onClick={handleFinalSubmit}
+                disabled={isSubmitting}
                 className="w-full py-7 bg-[#0f092e] text-white rounded-[25px] font-black uppercase text-[11px] shadow-xl hover:bg-blue-600 transition-all"
               >
                 {isSubmitting ? "Transmission en cours..." : "Confirmer la commande"}
               </button>
-              
-              <button onClick={() => setShowConfirm(false)} className="w-full text-[9px] font-black uppercase opacity-30 italic hover:opacity-100 transition-all">Retour aux modifications</button>
+
+              <button onClick={() => setShowConfirm(false)} className="w-full text-[9px] font-black uppercase opacity-30 italic hover:opacity-100 transition-all">
+                Retour aux modifications
+              </button>
             </motion.div>
           </div>
         )}
