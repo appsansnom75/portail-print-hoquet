@@ -4,27 +4,33 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { supabase } from '@/lib/supabase';
+import CartDrawer from '@/components/CartDrawer';
+
 
 export default function HomePage() {
   const [agencyName, setAgencyName] = useState("");
   const [userName, setUserName] = useState("");
   const [role, setRole] = useState(""); 
   const [loading, setLoading] = useState(true);
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const { cart } = useCart();
   const router = useRouter();
   
   const hasItems = cart.length > 0;
+
 
   useEffect(() => {
     const fetchUserAndAgency = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push('/login'); return; }
 
+
       const { data } = await supabase
         .from('profiles')
         .select(`full_name, role, agencies ( name )`)
         .eq('id', user.id)
         .single();
+
 
       if (data) {
         setUserName(data.full_name);
@@ -37,14 +43,18 @@ export default function HomePage() {
     fetchUserAndAgency();
   }, [router]);
 
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/login');
   };
 
+
   return (
     <div className="min-h-screen bg-[#0f092e] text-white font-sans flex flex-col selection:bg-blue-500/30">
       
+      <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+
       {/* HEADER LOGOS */}
       <header className="py-10 px-4">
         <div className="max-w-6xl mx-auto flex items-center justify-center gap-8 md:gap-16">
@@ -53,6 +63,7 @@ export default function HomePage() {
           <img src="/logo-hoquet.png" alt="Guy Hoquet" className="h-8 md:h-10 object-contain" />
         </div>
       </header>
+
 
       {/* BANNER DYNAMIQUE */}
       <section className="w-full relative overflow-hidden">
@@ -67,6 +78,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
 
       {/* BARRE DE NAVIGATION & STATUT (STICKY) */}
       <div className="sticky top-0 z-50 border-y border-white/5 bg-[#0f092e]/80 backdrop-blur-xl">
@@ -88,11 +100,11 @@ export default function HomePage() {
               </div>
             </div>
 
+
             {/* BOUTONS D'ACTION */}
             <div className="flex flex-wrap justify-center items-center gap-3">
               {!loading && (
                 <>
-                  {/* SUPER ADMIN UNIQUEMENT : Dashboard Produits */}
                   {role === 'super_admin' && (
                     <Link
                       href="/admin-portal"
@@ -102,7 +114,6 @@ export default function HomePage() {
                     </Link>
                   )}
 
-                  {/* SUPER ADMIN UNIQUEMENT : Mon Profil Admin */}
                   {role === 'super_admin' && (
                     <Link
                       href="/profil"
@@ -112,7 +123,6 @@ export default function HomePage() {
                     </Link>
                   )}
 
-                  {/* ADMIN AGENCE UNIQUEMENT : Mes Infos */}
                   {role === 'admin_agence' && (
                     <Link
                       href="/profil"
@@ -122,7 +132,6 @@ export default function HomePage() {
                     </Link>
                   )}
 
-                  {/* TOUS SAUF SUPER ADMIN : Équipe */}
                   {role !== 'super_admin' && (
                     <Link
                       href="/dashboard/equipe"
@@ -134,13 +143,11 @@ export default function HomePage() {
                 </>
               )}
 
-              {/* PANIER - VISIBLE PAR TOUS */}
               <Link href="/panier" className="relative bg-white/5 border border-white/10 hover:bg-white/10 text-white text-[9px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all">
                 Panier ({cart.length})
                 {hasItems && <span className="absolute -top-1.5 -right-1.5 h-3 w-3 bg-green-500 rounded-full border-2 border-[#0f092e] animate-bounce"></span>}
               </Link>
 
-              {/* QUITTER - VISIBLE PAR TOUS */}
               <button onClick={handleLogout} className="text-[9px] font-black uppercase tracking-widest text-red-500/40 hover:text-red-500 px-2 py-3 transition-colors">
                 Quitter
               </button>
@@ -150,7 +157,8 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* GRILLE DES PRODUITS - CONFIGURATION 2x2 */}
+
+      {/* GRILLE DES PRODUITS */}
       <main className="flex-grow container mx-auto max-w-5xl px-6 py-20">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           
@@ -189,6 +197,7 @@ export default function HomePage() {
         </div>
       </main>
 
+
       {/* FOOTER */}
       <footer className="py-12 border-t border-white/5 bg-black/20 mt-auto">
         <div className="flex flex-col items-center gap-4">
@@ -197,6 +206,26 @@ export default function HomePage() {
           </p>
         </div>
       </footer>
+
+      {/* BOUTON PANIER FLOTTANT */}
+      <button
+        onClick={() => setIsCartOpen(true)}
+        className="fixed bottom-8 right-8 w-16 h-16 bg-white rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-center z-[100] transition-all hover:scale-110 active:scale-90 group"
+      >
+        <div className="relative">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0f092e" strokeWidth="2.5" className="group-hover:stroke-blue-500 transition-colors">
+            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
+            <path d="M3 6h18"/>
+            <path d="M16 10a4 4 0 0 1-8 0"/>
+          </svg>
+          {cart.length > 0 && (
+            <span className="absolute -top-3 -right-3 bg-blue-500 text-white text-[9px] font-black w-6 h-6 rounded-full flex items-center justify-center border-4 border-[#0f092e]">
+              {cart.length}
+            </span>
+          )}
+        </div>
+      </button>
+
     </div>
   );
 }
