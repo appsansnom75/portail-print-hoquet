@@ -79,7 +79,7 @@ export default function HomePage() {
               <div className="flex items-center gap-3">
                 <span className="text-[9px] font-black uppercase tracking-widest text-white/30 italic">Session :</span>
                 {loading ? (
-                   <span className="text-[10px] font-black uppercase text-white/20 animate-pulse italic">Initialisation...</span>
+                  <span className="text-[10px] font-black uppercase text-white/20 animate-pulse italic">Initialisation...</span>
                 ) : (
                   <span className="text-[10px] font-black uppercase text-white/90 tracking-tight">
                     {userName} <span className="text-blue-500/50 mx-1">@</span> <span className="text-blue-400">{agencyName}</span>
@@ -92,38 +92,58 @@ export default function HomePage() {
             <div className="flex flex-wrap justify-center items-center gap-3">
               {!loading && (
                 <>
-                  {role === 'admin_agence' && (
-                    <a 
-                      href="https://portail-print-hoquet.vercel.app/admin-portal" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
+                  {/* SUPER ADMIN UNIQUEMENT : Dashboard Produits */}
+                  {role === 'super_admin' && (
+                    <Link
+                      href="/admin-portal"
                       className="bg-white text-[#0f092e] hover:bg-blue-500 hover:text-white text-[9px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all shadow-xl active:scale-95 border border-white"
                     >
                       Dashboard Produits
-                    </a>
-                  )}
-
-                  <Link href="/profil" className="bg-white/5 border border-white/10 hover:border-blue-500/50 text-white/70 hover:text-white text-[9px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all active:scale-95">
-                    {role === 'admin_agence' ? "Mon Profil Admin" : "Mes Infos"}
-                  </Link>
-
-                  {role === 'admin_agence' && (
-                    <Link href="/dashboard/equipe" className="bg-blue-600/10 border border-blue-500/20 hover:bg-blue-600/20 text-blue-400 text-[9px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all">
-                      Équipe
                     </Link>
                   )}
+
+                  {/* SUPER ADMIN UNIQUEMENT : Mon Profil Admin */}
+                  {role === 'super_admin' && (
+                    <Link
+                      href="/profil"
+                      className="bg-white/5 border border-white/10 hover:border-blue-500/50 text-white/70 hover:text-white text-[9px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all active:scale-95"
+                    >
+                      Mon Profil Admin
+                    </Link>
+                  )}
+
+                  {/* ADMIN AGENCE UNIQUEMENT : Mes Infos */}
+                  {role === 'admin_agence' && (
+                    <Link
+                      href="/profil"
+                      className="bg-white/5 border border-white/10 hover:border-blue-500/50 text-white/70 hover:text-white text-[9px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all active:scale-95"
+                    >
+                      Mes Infos
+                    </Link>
+                  )}
+
+                  {/* TOUS LES RÔLES : Équipe */}
+                  <Link
+                    href="/dashboard/equipe"
+                    className="bg-blue-600/10 border border-blue-500/20 hover:bg-blue-600/20 text-blue-400 text-[9px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all"
+                  >
+                    Équipe
+                  </Link>
                 </>
               )}
-              
+
+              {/* PANIER - VISIBLE PAR TOUS */}
               <Link href="/panier" className="relative bg-white/5 border border-white/10 hover:bg-white/10 text-white text-[9px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all">
                 Panier ({cart.length})
                 {hasItems && <span className="absolute -top-1.5 -right-1.5 h-3 w-3 bg-green-500 rounded-full border-2 border-[#0f092e] animate-bounce"></span>}
               </Link>
 
+              {/* QUITTER - VISIBLE PAR TOUS */}
               <button onClick={handleLogout} className="text-[9px] font-black uppercase tracking-widest text-red-500/40 hover:text-red-500 px-2 py-3 transition-colors">
                 Quitter
               </button>
             </div>
+
           </div>
         </div>
       </div>
@@ -156,7 +176,6 @@ export default function HomePage() {
             </div>
           </Link>
 
-          {/* NOUVELLE CATÉGORIE : OPÉRATIONS DU MOMENT */}
           <Link href="/operations" className="group relative">
             <div className="h-44 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-purple-600/15 group-hover:border-purple-500/50 group-hover:-translate-y-1 shadow-2xl shadow-purple-500/5">
               <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-purple-400 transition-colors">Opérations du moment</span>
