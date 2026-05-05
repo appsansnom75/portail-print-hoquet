@@ -122,13 +122,15 @@ export default function HomePage() {
                     </Link>
                   )}
 
-                  {/* TOUS LES RÔLES : Équipe */}
-                  <Link
-                    href="/dashboard/equipe"
-                    className="bg-blue-600/10 border border-blue-500/20 hover:bg-blue-600/20 text-blue-400 text-[9px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all"
-                  >
-                    Équipe
-                  </Link>
+                  {/* TOUS SAUF SUPER ADMIN : Équipe */}
+                  {role !== 'super_admin' && (
+                    <Link
+                      href="/dashboard/equipe"
+                      className="bg-blue-600/10 border border-blue-500/20 hover:bg-blue-600/20 text-blue-400 text-[9px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all"
+                    >
+                      Équipe
+                    </Link>
+                  )}
                 </>
               )}
 
