@@ -19,7 +19,6 @@ export default function ProfilPage() {
     agence_telephone: '',
     agence_email: '',
     siret: '',
-    // ✅ Mentions légales
     mentions_nom_societe: '',
     mentions_statut: '',
     mentions_capital: '',
@@ -30,6 +29,7 @@ export default function ProfilPage() {
     mentions_caisse_garantie: '',
     mentions_caisse_garantie_adresse: '',
     mentions_tva: '',
+    mentions_mail_rgpd: '',
   });
 
   useEffect(() => {
@@ -53,23 +53,24 @@ export default function ProfilPage() {
 
         if (agence) {
           setAgenceData({
-            logo_url:                      agence.logo_url || '',
-            adresse:                       agence.adresse || '',
-            code_postal:                   agence.code_postal || '',
-            ville:                         agence.ville || '',
-            agence_telephone:              agence.agence_telephone || '',
-            agence_email:                  agence.agence_email || '',
-            siret:                         agence.siret || '',
-            mentions_nom_societe:          agence.mentions_nom_societe || '',
-            mentions_statut:               agence.mentions_statut || '',
-            mentions_capital:              agence.mentions_capital || '',
-            mentions_rcs:                  agence.mentions_rcs || '',
-            mentions_ape:                  agence.mentions_ape || '',
-            mentions_carte_pro:            agence.mentions_carte_pro || '',
-            mentions_carte_pro_delivree:   agence.mentions_carte_pro_delivree || '',
-            mentions_caisse_garantie:      agence.mentions_caisse_garantie || '',
+            logo_url:                         agence.logo_url || '',
+            adresse:                          agence.adresse || '',
+            code_postal:                      agence.code_postal || '',
+            ville:                            agence.ville || '',
+            agence_telephone:                 agence.agence_telephone || '',
+            agence_email:                     agence.agence_email || '',
+            siret:                            agence.siret || '',
+            mentions_nom_societe:             agence.mentions_nom_societe || '',
+            mentions_statut:                  agence.mentions_statut || '',
+            mentions_capital:                 agence.mentions_capital || '',
+            mentions_rcs:                     agence.mentions_rcs || '',
+            mentions_ape:                     agence.mentions_ape || '',
+            mentions_carte_pro:               agence.mentions_carte_pro || '',
+            mentions_carte_pro_delivree:      agence.mentions_carte_pro_delivree || '',
+            mentions_caisse_garantie:         agence.mentions_caisse_garantie || '',
             mentions_caisse_garantie_adresse: agence.mentions_caisse_garantie_adresse || '',
-            mentions_tva:                  agence.mentions_tva || '',
+            mentions_tva:                     agence.mentions_tva || '',
+            mentions_mail_rgpd:               agence.mentions_mail_rgpd || '',
           });
         }
       }
@@ -145,6 +146,7 @@ export default function ProfilPage() {
       mentions_caisse_garantie:         agenceData.mentions_caisse_garantie,
       mentions_caisse_garantie_adresse: agenceData.mentions_caisse_garantie_adresse,
       mentions_tva:                     agenceData.mentions_tva,
+      mentions_mail_rgpd:               agenceData.mentions_mail_rgpd,
     }).eq('id', agenceId);
     if (error) alert("Erreur : " + error.message);
     else alert("Infos agence mises à jour !");
@@ -239,7 +241,6 @@ export default function ProfilPage() {
             </div>
             {field('Téléphone Agence', 'agence_telephone', 'Ex: 01 23 45 67 89', 'tel')}
             {field('Email Agence', 'agence_email', 'Ex: contact@agence.com', 'email')}
-
             <div className="space-y-1">
               <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">Numéro SIRET</label>
               <input
@@ -267,15 +268,14 @@ export default function ProfilPage() {
             {field('Capital Social (€)', 'mentions_capital', 'Ex: 10 000')}
             {field('RCS', 'mentions_rcs', 'Ex: Paris 123 456 789')}
             {field('Code APE', 'mentions_ape', 'Ex: 6831Z')}
-
             <div className="grid grid-cols-2 gap-4">
               {field('N° Carte Professionnelle', 'mentions_carte_pro', 'Ex: CPI 7501 2016 000 012 345')}
               {field('Délivrée par la CCI de', 'mentions_carte_pro_delivree', 'Ex: Paris Île-de-France')}
             </div>
-
             {field('Caisse de Garantie', 'mentions_caisse_garantie', 'Ex: GALIAN Assurances')}
             {field('Adresse Caisse de Garantie', 'mentions_caisse_garantie_adresse', 'Ex: 89 rue de la Boétie, 75008 Paris')}
             {field('N° TVA Intracommunautaire', 'mentions_tva', 'Ex: FR 12 123456789')}
+            {field('Mail Informatique & Libertés', 'mentions_mail_rgpd', 'Ex: informatique-et-libertes-0000@guy-hoquet.com', 'email')}
 
             {/* APERÇU MENTIONS */}
             {agenceData.mentions_nom_societe && (
@@ -294,6 +294,7 @@ export default function ProfilPage() {
                   {agenceData.mentions_caisse_garantie && ` — Caisse de garantie ${agenceData.mentions_caisse_garantie}`}
                   {agenceData.mentions_caisse_garantie_adresse && ` — ${agenceData.mentions_caisse_garantie_adresse}`}
                   {agenceData.mentions_tva && ` — TVA intracommunautaire n° ${agenceData.mentions_tva}`}
+                  {agenceData.mentions_mail_rgpd && ` — Informatique & Libertés : ${agenceData.mentions_mail_rgpd}`}
                 </p>
               </div>
             )}
