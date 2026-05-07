@@ -344,8 +344,8 @@ export default function CartPage() {
               {cart.length === 0 && (
                 <p className="text-[10px] font-black uppercase text-white/20 italic text-center py-8">Panier vide</p>
               )}
-              {cart.map((item: any) => (
-                <div key={item.id} className="flex justify-between items-start border-b border-white/5 pb-6 gap-4">
+              {cart.map((item) => (
+                <div key={item.cartLineId} className="flex justify-between items-start border-b border-white/5 pb-6 gap-4">
                   <div className="flex flex-col gap-1 flex-grow">
                     <span className="text-[13px] font-black uppercase tracking-tight italic">{item.name}</span>
                     <span className="text-[9px] text-white/30 font-black italic">Quantité : {item.qty}</span>
@@ -357,7 +357,7 @@ export default function CartPage() {
                     <span className="text-[14px] font-black italic">{(item.price * item.qty).toFixed(2)}€</span>
                     <button
                       type="button"
-                      onClick={() => removeFromCart(item.id)}
+                      onClick={() => removeFromCart(item.cartLineId)}
                       className="w-8 h-8 rounded-full bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white flex items-center justify-center transition-all text-sm font-black"
                     >×</button>
                   </div>
@@ -578,8 +578,8 @@ export default function CartPage() {
 
                 <div className="border-t border-gray-200 pt-4 space-y-3">
                   <span className="text-[8px] font-black uppercase opacity-30 tracking-widest block">Produits</span>
-                  {cart.map((item: any) => (
-                    <div key={item.id} className="flex justify-between items-start gap-4">
+                  {cart.map((item) => (
+                    <div key={item.cartLineId} className="flex justify-between items-start gap-4">
                       <div>
                         <p className="text-[10px] font-black uppercase italic leading-tight">{item.name}</p>
                         <p className="text-[8px] font-bold opacity-30 mt-0.5">

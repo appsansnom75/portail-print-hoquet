@@ -24,8 +24,8 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean, onClo
           {cart.length === 0 ? (
             <p className="text-center opacity-20 py-10 uppercase font-black text-[10px] tracking-widest">Le panier est vide</p>
           ) : (
-            cart.map((item: any) => (
-              <div key={item.id} className="bg-white/5 rounded-[30px] p-6 border border-white/5 flex justify-between items-center">
+            cart.map((item) => (
+              <div key={item.cartLineId} className="bg-white/5 rounded-[30px] p-6 border border-white/5 flex justify-between items-center">
                 <div className="flex flex-col gap-1">
                   <p className={`text-[11px] font-black uppercase leading-tight ${item.color || 'text-white'}`}>
                     {item.name}
@@ -33,12 +33,20 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean, onClo
                   <p className="text-[9px] opacity-40 font-bold uppercase tracking-tight">
                     {item.qty} ex. — {(item.price).toFixed(2)}€/u
                   </p>
+                  {item.orderedBy && (
+                    <p className="text-[9px] text-blue-400 font-black uppercase mt-1">👤 {item.orderedBy}</p>
+                  )}
                 </div>
                 <div className="text-right flex flex-col items-end">
                   <p className="text-sm font-black text-white italic mb-1">
                     {(item.price * item.qty).toFixed(2)}€
                   </p>
-                  <button onClick={() => removeFromCart(item.id)} className="text-[8px] font-black text-red-500 uppercase tracking-tighter hover:underline">Supprimer</button>
+                  <button
+                    onClick={() => removeFromCart(item.cartLineId)}
+                    className="text-[8px] font-black text-red-500 uppercase tracking-tighter hover:underline"
+                  >
+                    Supprimer
+                  </button>
                 </div>
               </div>
             ))
@@ -50,7 +58,6 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean, onClo
             <span className="text-[10px] font-black uppercase opacity-40">Total HT</span>
             <span className="text-4xl font-black italic tracking-tighter text-white">{totalHT.toFixed(2)}€</span>
           </div>
-
           <button 
             onClick={() => { onClose(); router.push('/panier'); }}
             className="w-full py-6 bg-blue-600 text-white rounded-[22px] font-black uppercase text-[11px] tracking-[0.2em] shadow-xl shadow-blue-500/20 hover:bg-blue-500 transition-all active:scale-[0.98]"
