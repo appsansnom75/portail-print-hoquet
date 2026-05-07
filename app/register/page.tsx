@@ -7,24 +7,24 @@ import { motion, AnimatePresence } from 'framer-motion';
 type Step = 'form' | 'confirm' | 'success';
 
 export default function RegisterPage() {
-  const [step, setStep]           = useState<Step>('form');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError]         = useState('');
+  const [step, setStep]                     = useState<Step>('form');
+  const [isSubmitting, setIsSubmitting]     = useState(false);
+  const [error, setError]                   = useState('');
 
-  const [agencyName, setAgencyName]         = useState('');
-  const [email, setEmail]                   = useState('');
-  const [emailConfirm, setEmailConfirm]     = useState('');
-  const [password, setPassword]             = useState('');
-  const [passwordConfirm, setPasswordConfirm] = useState('');
-  const [showPass, setShowPass]             = useState(false);
-  const [showPassConfirm, setShowPassConfirm] = useState(false);
+  const [agencyName, setAgencyName]                 = useState('');
+  const [email, setEmail]                           = useState('');
+  const [emailConfirm, setEmailConfirm]             = useState('');
+  const [password, setPassword]                     = useState('');
+  const [passwordConfirm, setPasswordConfirm]       = useState('');
+  const [showPass, setShowPass]                     = useState(false);
+  const [showPassConfirm, setShowPassConfirm]       = useState(false);
 
-  // ── VALIDATION ────────────────────────────────────────────────
   const emailMatch    = email.length > 0 && emailConfirm.length > 0 && email === emailConfirm;
   const emailMismatch = emailConfirm.length > 0 && email !== emailConfirm;
   const passStrong    = password.length >= 8;
   const passMatch     = password.length > 0 && passwordConfirm.length > 0 && password === passwordConfirm;
   const passMismatch  = passwordConfirm.length > 0 && password !== passwordConfirm;
+  const passStrength  = password.length === 0 ? 0 : password.length < 8 ? 1 : password.length < 12 ? 2 : 3;
 
   const formValid =
     agencyName.trim().length >= 2 &&
@@ -32,16 +32,12 @@ export default function RegisterPage() {
     passStrong &&
     passMatch;
 
-  const passStrength = password.length === 0 ? 0 : password.length < 8 ? 1 : password.length < 12 ? 2 : 3;
-
-  // ── SOUMISSION ────────────────────────────────────────────────
   const handleSubmit = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
     setError('');
 
     try {
-      // 1. Créer l'utilisateur Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -53,19 +49,14 @@ export default function RegisterPage() {
 
       const userId = authData.user.id;
 
-      // 2. Créer l'agence
       const { data: agency, error: agencyError } = await supabase
         .from('agencies')
-        .insert([{
-          name:         agencyName,
-          agence_email: email,
-        }])
+        .insert([{ name: agencyName, agence_email: email }])
         .select('id')
         .single();
 
       if (agencyError) throw agencyError;
 
-      // 3. Créer le profil
       const { error: profileError } = await supabase
         .from('profiles')
         .upsert([{
@@ -92,11 +83,9 @@ export default function RegisterPage() {
     }
   };
 
-  // ── PAGE ──────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-[#0f092e] flex items-center justify-center p-6">
 
-      {/* Déco background */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-blue-600/5 blur-[120px]" />
         <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-blue-900/10 blur-[100px]" />
@@ -131,7 +120,6 @@ export default function RegisterPage() {
 
             <div className="bg-white/[0.03] border border-white/10 rounded-[45px] p-10 space-y-6">
 
-              {/* Nom de l'agence */}
               <div className="space-y-2">
                 <label className="text-[9px] font-black uppercase opacity-30 ml-3 tracking-widest block">
                   Nom de l'agence <span className="text-red-400">*</span>
@@ -149,7 +137,6 @@ export default function RegisterPage() {
                 />
               </div>
 
-              {/* Email */}
               <div className="space-y-2">
                 <label className="text-[9px] font-black uppercase opacity-30 ml-3 tracking-widest block">
                   Email de l'agence <span className="text-red-400">*</span>
@@ -167,7 +154,6 @@ export default function RegisterPage() {
                 />
               </div>
 
-              {/* Confirmation email */}
               <div className="space-y-2">
                 <label className="text-[9px] font-black uppercase opacity-30 ml-3 tracking-widest block">
                   Confirmer l'email <span className="text-red-400">*</span>
@@ -192,7 +178,6 @@ export default function RegisterPage() {
                 )}
               </div>
 
-              {/* Mot de passe */}
               <div className="space-y-2">
                 <label className="text-[9px] font-black uppercase opacity-30 ml-3 tracking-widest block">
                   Mot de passe <span className="text-red-400">*</span>
@@ -217,7 +202,6 @@ export default function RegisterPage() {
                     {showPass ? 'CACHER' : 'VOIR'}
                   </button>
                 </div>
-                {/* Barre de force */}
                 {password.length > 0 && (
                   <div className="flex items-center gap-1.5 mt-2 ml-1">
                     {[1, 2, 3].map((level) => (
@@ -239,7 +223,6 @@ export default function RegisterPage() {
                 )}
               </div>
 
-              {/* Confirmation mot de passe */}
               <div className="space-y-2">
                 <label className="text-[9px] font-black uppercase opacity-30 ml-3 tracking-widest block">
                   Confirmer le mot de passe <span className="text-red-400">*</span>
@@ -278,14 +261,12 @@ export default function RegisterPage() {
                 )}
               </div>
 
-              {/* Erreur API */}
               {error && (
                 <div className="bg-red-500/10 border border-red-500/20 rounded-2xl px-5 py-4">
                   <p className="text-[10px] font-black text-red-400 italic">{error}</p>
                 </div>
               )}
 
-              {/* Bouton */}
               <button
                 type="button"
                 onClick={() => formValid && setStep('confirm')}
@@ -387,13 +368,8 @@ export default function RegisterPage() {
             <h2 className="text-5xl font-black italic tracking-tighter text-white mb-4">
               Compte créé !
             </h2>
-            <p className="text-[10px] font-black uppercase opacity-40 tracking-[0.3em] mb-6">
+            <p className="text-[10px] font-black uppercase opacity-40 tracking-[0.3em] mb-10">
               {agencyName} est maintenant enregistrée
-            </p>
-            <p className="text-[11px] text-white/30 font-black italic mb-10 leading-relaxed">
-              Un email de confirmation a été envoyé à{' '}
-              <span className="text-blue-400">{email}</span>.{' '}
-              Vérifie ta boîte mail pour activer ton compte.
             </p>
 
             <Link
@@ -410,7 +386,6 @@ export default function RegisterPage() {
   );
 }
 
-// ── Composant ConfirmRow ──────────────────────────────────────────────────
 function ConfirmRow({
   label,
   value,
