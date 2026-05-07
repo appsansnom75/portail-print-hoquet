@@ -73,7 +73,7 @@ export default function RegisterPage() {
           agency_id: agency.id,
           email:     email,
           full_name: agencyName,
-          role:      'admin',
+          role:      'admin_agence',
         }]);
 
       if (profileError) throw profileError;
