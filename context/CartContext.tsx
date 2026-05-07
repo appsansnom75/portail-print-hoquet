@@ -3,19 +3,20 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export interface CartItem {
   id: string;
+  cartLineId: string;      // ← identifiant unique de la ligne panier
   name: string;
   price: number;
   qty: number;
   category: string;
   color?: string;
-  orderedBy?: string | null; // ✅ AJOUTÉ
+  orderedBy?: string | null;
 }
 
 interface CartContextType {
   cart: CartItem[];
-  addToCart: (item: CartItem) => void;
-  removeFromCart: (id: string) => void;
-  updateQty: (id: string, newQty: number) => void;
+  addToCart: (item: Omit<CartItem, 'cartLineId'>) => void;
+  removeFromCart: (cartLineId: string) => void;
+  updateQty: (cartLineId: string, newQty: number) => void;
   clearCart: () => void;
 }
 
@@ -43,32 +44,43 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [cart, isInitialized]);
 
-  const addToCart = (item: CartItem) => {
+  const addToCart = (item: Omit<CartItem, 'cartLineId'>) => {
     setCart((prevCart) => {
-      const existingItemIndex = prevCart.findIndex((i) => i.id === item.id);
-      if (existingItemIndex > -1) {
+      // Même produit ET même profil → on cumule la quantité sur la même ligne
+      const existingIndex = prevCart.findIndex(
+        (i) => i.id === item.id && i.orderedBy === item.orderedBy
+      );
+
+      if (existingIndex > -1) {
         const newCart = [...prevCart];
-        newCart[existingItemIndex] = {
-          ...newCart[existingItemIndex],
-          qty: newCart[existingItemIndex].qty + item.qty,
+        newCart[existingIndex] = {
+          ...newCart[existingIndex],
+          qty: newCart[existingIndex].qty + item.qty,
         };
         return newCart;
       }
-      return [...prevCart, item];
+
+      // Produit différent OU profil différent → nouvelle ligne indépendante
+      const cartLineId = `${item.id}_${item.orderedBy ?? 'none'}_${Date.now()}`;
+      return [...prevCart, { ...item, cartLineId }];
     });
   };
 
-  const removeFromCart = (id: string) => {
-    setCart((prevCart) => prevCart.filter((item) => item.id !== id));
+  // ✅ Supprime uniquement la ligne ciblée par son cartLineId
+  const removeFromCart = (cartLineId: string) => {
+    setCart((prevCart) => prevCart.filter((item) => item.cartLineId !== cartLineId));
   };
 
-  const updateQty = (id: string, newQty: number) => {
+  // ✅ Met à jour la quantité d'une ligne spécifique
+  const updateQty = (cartLineId: string, newQty: number) => {
     if (newQty <= 0) {
-      removeFromCart(id);
+      removeFromCart(cartLineId);
       return;
     }
     setCart((prevCart) =>
-      prevCart.map((item) => (item.id === id ? { ...item, qty: newQty } : item))
+      prevCart.map((item) =>
+        item.cartLineId === cartLineId ? { ...item, qty: newQty } : item
+      )
     );
   };
 
