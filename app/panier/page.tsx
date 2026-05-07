@@ -302,11 +302,11 @@ export default function CartPage() {
             </div>
           </section>
 
-          {/* ── 03. LIVRAISON & INFOS AGENCE ───────────────────────── */}
+          {/* ── 03. INFORMATIONS DE LIVRAISON ──────────────────────── */}
           <section className="bg-white/[0.02] border border-white/10 rounded-[45px] p-10 space-y-8">
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <div>
-                <h2 className="text-[11px] font-black uppercase text-white/60 italic">03. Livraison & Infos Agence</h2>
+                <h2 className="text-[11px] font-black uppercase text-white/60 italic">03. Informations de Livraison</h2>
                 {!useAltAddress && (
                   <p className="text-[8px] font-black text-white/20 uppercase tracking-widest mt-1">
                     Modifications sauvegardées dans vos infos agence
@@ -423,6 +423,48 @@ export default function CartPage() {
             </div>
           </section>
 
+          {/* ── 04. INFORMATIONS FACTURATION & LÉGALES ─────────────── */}
+          <section className="bg-white/[0.02] border border-white/10 rounded-[45px] p-10 space-y-8">
+            <div>
+              <h2 className="text-[11px] font-black uppercase text-white/60 italic">04. Informations Facturation & Légales</h2>
+              <p className="text-[8px] font-black text-white/20 uppercase tracking-widest mt-1">
+                Pré-remplies depuis vos infos agence — non modifiables ici
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {[
+                { label: 'Nom Société',            value: agencyData?.mentions_nom_societe },
+                { label: 'Statut',                 value: agencyData?.mentions_statut },
+                { label: 'Capital Social',         value: agencyData?.mentions_capital ? `${agencyData.mentions_capital} €` : null },
+                { label: 'RCS',                    value: agencyData?.mentions_rcs },
+                { label: 'Code APE',               value: agencyData?.mentions_ape },
+                { label: 'Carte Professionnelle',  value: agencyData?.mentions_carte_pro },
+                { label: 'Délivrée par',           value: agencyData?.mentions_carte_pro_delivree },
+                { label: 'Caisse de Garantie',     value: agencyData?.mentions_caisse_garantie },
+                { label: 'Adresse Caisse',         value: agencyData?.mentions_caisse_garantie_adresse },
+                { label: 'TVA Intracommunautaire', value: agencyData?.mentions_tva },
+                { label: 'Mail RGPD',              value: agencyData?.mentions_mail_rgpd },
+              ].map(({ label, value }) =>
+                value ? (
+                  <div key={label} className="flex justify-between items-start gap-4 border-b border-white/5 pb-3">
+                    <span className="text-[8px] font-black uppercase tracking-widest text-white/20 shrink-0">{label}</span>
+                    <span className="text-[9px] font-black text-white/50 text-right">{value}</span>
+                  </div>
+                ) : null
+              )}
+
+              {!agencyData?.mentions_nom_societe && (
+                <div className="text-center py-6">
+                  <p className="text-[9px] font-black uppercase text-white/20 italic">Aucune mention légale configurée</p>
+                  <Link href="/dashboard/agence" className="text-[8px] font-black text-blue-400 hover:underline mt-2 block">
+                    → Compléter dans Infos Agence
+                  </Link>
+                </div>
+              )}
+            </div>
+          </section>
+
         </div>
 
         {/* ── COLONNE DROITE : TOTAL ──────────────────────────────── */}
@@ -462,7 +504,6 @@ export default function CartPage() {
 
               <div className="bg-gray-50 rounded-[35px] p-8 space-y-4 text-left">
 
-                {/* Agence & collaborateur */}
                 <div className="flex justify-between text-[10px] font-black uppercase italic">
                   <span className="opacity-40">Agence</span>
                   <span className="text-blue-600">{agencyData?.name}</span>
@@ -480,7 +521,7 @@ export default function CartPage() {
                   </div>
                 )}
 
-                {/* ✅ RÉCAP PRODUITS */}
+                {/* RÉCAP PRODUITS */}
                 <div className="border-t border-gray-200 pt-4 space-y-3">
                   <span className="text-[8px] font-black uppercase opacity-30 tracking-widest block">Produits</span>
                   {cart.map((item: any) => (
@@ -501,7 +542,6 @@ export default function CartPage() {
                   ))}
                 </div>
 
-                {/* Total */}
                 <div className="flex justify-between text-[10px] font-black uppercase italic border-t border-gray-200 pt-4">
                   <span className="opacity-40">Total HT</span>
                   <span className="text-2xl text-blue-600">{totalHT.toFixed(2)}€</span>
