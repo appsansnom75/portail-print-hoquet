@@ -23,7 +23,6 @@ export default function CartPage() {
   const [zipCode, setZipCode] = useState("");
   const [city, setCity] = useState("");
   const [siret, setSiret] = useState("");
-  const [instructions, setInstructions] = useState("");
 
   const [useAltAddress, setUseAltAddress] = useState(false);
   const [altAddress, setAltAddress] = useState("");
@@ -110,7 +109,7 @@ export default function CartPage() {
         ville:            city,
         agence_telephone: phone,
       }),
-      siret:                            siret,
+      siret,
       mentions_nom_societe:             mentionsNomSociete,
       mentions_statut:                  mentionsStatut,
       mentions_capital:                 mentionsCapital,
@@ -125,7 +124,29 @@ export default function CartPage() {
     }).eq('id', agenceId);
   };
 
-  // ─── 3. ENVOI COMMANDE ─────────────────────────────────────────────
+  // ─── 3. VALIDATION FORMULAIRE ──────────────────────────────────────
+  const isFormValid = () => {
+    const livraisonOk = useAltAddress
+      ? altAddress.trim() && altZipCode.trim() && altCity.trim() && altPhone.trim()
+      : address.trim() && zipCode.trim() && city.trim() && phone.trim();
+
+    const mentionsOk =
+      mentionsNomSociete.trim() &&
+      mentionsStatut.trim() &&
+      mentionsCapital.trim() &&
+      mentionsRcs.trim() &&
+      mentionsApe.trim() &&
+      mentionsCartePro.trim() &&
+      mentionsCarteProDelivree.trim() &&
+      mentionsCaisseGarantie.trim() &&
+      mentionsCaisseGarantieAdresse.trim() &&
+      mentionsTva.trim() &&
+      mentionsMailRgpd.trim();
+
+    return !!(selectedCollaborateur.trim() && siret.trim() && livraisonOk && mentionsOk);
+  };
+
+  // ─── 4. ENVOI COMMANDE ─────────────────────────────────────────────
   const handleFinalSubmit = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
@@ -171,11 +192,11 @@ export default function CartPage() {
         delivery_address: deliveryAddress,
         zip_code:         deliveryZip,
         city:             deliveryCity,
-        siret:            siret,
+        siret,
         produits_liste:   produitsListeTexte,
         total_ht:         totalHT,
         items:            itemsFormattedJSON,
-        instructions:     `Collaborateur : ${selectedCollaborateur}${useAltAddress ? ' | Adresse différente' : ''} | Note : ${instructions}`,
+        instructions:     `Collaborateur : ${selectedCollaborateur}${useAltAddress ? ' | Adresse différente' : ''}`,
         status:           'En attente',
       }]);
 
@@ -219,7 +240,7 @@ export default function CartPage() {
           code_postal:         deliveryZip,
           ville:               deliveryCity,
           tel:                 deliveryPhone,
-          siret:               siret,
+          siret,
           collaborateur_nom:   selectedCollaborateur,
           collaborateur_email: collaborateurData?.email || agencyData?.agence_email || "",
           collaborateur_phone: collaborateurData?.phone || deliveryPhone,
@@ -264,6 +285,8 @@ export default function CartPage() {
     </div>
   );
 
+  const formValid = isFormValid();
+
   return (
     <div className="min-h-screen bg-[#0f092e] text-white pb-20">
 
@@ -287,11 +310,15 @@ export default function CartPage() {
                 </div>
               </div>
               <div className="space-y-3">
-                <label className="text-[9px] font-black opacity-30 italic ml-2 uppercase">Collaborateur</label>
+                <label className="text-[9px] font-black opacity-30 italic ml-2 uppercase">
+                  Collaborateur <span className="text-red-400">*</span>
+                </label>
                 <select
                   value={selectedCollaborateur}
                   onChange={(e) => setSelectedCollaborateur(e.target.value)}
-                  className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none uppercase appearance-none cursor-pointer hover:border-blue-500 transition-all"
+                  className={`w-full bg-black/40 border rounded-2xl p-5 text-[10px] font-black outline-none uppercase appearance-none cursor-pointer transition-all ${
+                    !selectedCollaborateur ? 'border-red-500/30 hover:border-red-500/60' : 'border-white/10 hover:border-blue-500'
+                  }`}
                 >
                   <option value="">— Sélectionner —</option>
                   {membres.map((m) => (
@@ -332,7 +359,6 @@ export default function CartPage() {
                       type="button"
                       onClick={() => removeFromCart(item.id)}
                       className="w-8 h-8 rounded-full bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white flex items-center justify-center transition-all text-sm font-black"
-                      title="Supprimer"
                     >×</button>
                   </div>
                 </div>
@@ -369,39 +395,39 @@ export default function CartPage() {
               {!useAltAddress ? (
                 <>
                   <input
-                    placeholder="ADRESSE DE LIVRAISON"
+                    placeholder="ADRESSE DE LIVRAISON *"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none uppercase hover:border-blue-500/50 focus:border-blue-500 transition-all"
+                    className={`w-full bg-black/40 border rounded-2xl p-5 text-[10px] font-black outline-none uppercase transition-all ${!address.trim() ? 'border-red-500/30 hover:border-red-500/50 focus:border-red-500' : 'border-white/10 hover:border-blue-500/50 focus:border-blue-500'}`}
                   />
                   <div className="grid grid-cols-2 gap-6">
                     <input
-                      placeholder="CODE POSTAL"
+                      placeholder="CODE POSTAL *"
                       value={zipCode}
                       onChange={(e) => setZipCode(e.target.value)}
-                      className="bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none hover:border-blue-500/50 focus:border-blue-500 transition-all"
+                      className={`bg-black/40 border rounded-2xl p-5 text-[10px] font-black outline-none transition-all ${!zipCode.trim() ? 'border-red-500/30 hover:border-red-500/50 focus:border-red-500' : 'border-white/10 hover:border-blue-500/50 focus:border-blue-500'}`}
                     />
                     <input
-                      placeholder="VILLE"
+                      placeholder="VILLE *"
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
-                      className="bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none uppercase hover:border-blue-500/50 focus:border-blue-500 transition-all"
+                      className={`bg-black/40 border rounded-2xl p-5 text-[10px] font-black outline-none uppercase transition-all ${!city.trim() ? 'border-red-500/30 hover:border-red-500/50 focus:border-red-500' : 'border-white/10 hover:border-blue-500/50 focus:border-blue-500'}`}
                     />
                   </div>
                   <input
-                    placeholder="TÉLÉPHONE CONTACT"
+                    placeholder="TÉLÉPHONE CONTACT *"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none hover:border-blue-500/50 focus:border-blue-500 transition-all"
+                    className={`w-full bg-black/40 border rounded-2xl p-5 text-[10px] font-black outline-none transition-all ${!phone.trim() ? 'border-red-500/30 hover:border-red-500/50 focus:border-red-500' : 'border-white/10 hover:border-blue-500/50 focus:border-blue-500'}`}
                   />
                   <div className="space-y-1">
-                    <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">Numéro SIRET</label>
+                    <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">Numéro SIRET *</label>
                     <input
                       placeholder="Ex: 123 456 789 00012"
                       value={siret}
                       onChange={(e) => setSiret(e.target.value)}
                       maxLength={17}
-                      className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none hover:border-blue-500/50 focus:border-blue-500 transition-all"
+                      className={`w-full bg-black/40 border rounded-2xl p-5 text-[10px] font-black outline-none transition-all ${!siret.trim() ? 'border-red-500/30 hover:border-red-500/50 focus:border-red-500' : 'border-white/10 hover:border-blue-500/50 focus:border-blue-500'}`}
                     />
                   </div>
                 </>
@@ -411,34 +437,34 @@ export default function CartPage() {
                     Adresse unique pour cette commande — non sauvegardée dans vos infos agence
                   </p>
                   <input
-                    placeholder="ADRESSE DE LIVRAISON"
+                    placeholder="ADRESSE DE LIVRAISON *"
                     value={altAddress}
                     onChange={(e) => setAltAddress(e.target.value)}
-                    className="w-full bg-black/40 border border-blue-500/20 rounded-2xl p-5 text-[10px] font-black outline-none uppercase hover:border-blue-500/50 focus:border-blue-500 transition-all"
+                    className={`w-full bg-black/40 border rounded-2xl p-5 text-[10px] font-black outline-none uppercase transition-all ${!altAddress.trim() ? 'border-red-500/30 focus:border-red-500' : 'border-blue-500/20 focus:border-blue-500'}`}
                   />
                   <div className="grid grid-cols-2 gap-6">
                     <input
-                      placeholder="CODE POSTAL"
+                      placeholder="CODE POSTAL *"
                       value={altZipCode}
                       onChange={(e) => setAltZipCode(e.target.value)}
-                      className="bg-black/40 border border-blue-500/20 rounded-2xl p-5 text-[10px] font-black outline-none hover:border-blue-500/50 focus:border-blue-500 transition-all"
+                      className={`bg-black/40 border rounded-2xl p-5 text-[10px] font-black outline-none transition-all ${!altZipCode.trim() ? 'border-red-500/30 focus:border-red-500' : 'border-blue-500/20 focus:border-blue-500'}`}
                     />
                     <input
-                      placeholder="VILLE"
+                      placeholder="VILLE *"
                       value={altCity}
                       onChange={(e) => setAltCity(e.target.value)}
-                      className="bg-black/40 border border-blue-500/20 rounded-2xl p-5 text-[10px] font-black outline-none uppercase hover:border-blue-500/50 focus:border-blue-500 transition-all"
+                      className={`bg-black/40 border rounded-2xl p-5 text-[10px] font-black outline-none uppercase transition-all ${!altCity.trim() ? 'border-red-500/30 focus:border-red-500' : 'border-blue-500/20 focus:border-blue-500'}`}
                     />
                   </div>
                   <input
-                    placeholder="TÉLÉPHONE CONTACT"
+                    placeholder="TÉLÉPHONE CONTACT *"
                     value={altPhone}
                     onChange={(e) => setAltPhone(e.target.value)}
-                    className="w-full bg-black/40 border border-blue-500/20 rounded-2xl p-5 text-[10px] font-black outline-none hover:border-blue-500/50 focus:border-blue-500 transition-all"
+                    className={`w-full bg-black/40 border rounded-2xl p-5 text-[10px] font-black outline-none transition-all ${!altPhone.trim() ? 'border-red-500/30 focus:border-red-500' : 'border-blue-500/20 focus:border-blue-500'}`}
                   />
                   <div className="space-y-1">
                     <label className="text-[8px] font-black uppercase tracking-[0.2em] text-blue-400/50 ml-2">
-                      Numéro SIRET
+                      Numéro SIRET *
                       <span className="ml-2 normal-case italic font-bold text-blue-400/40">— non sauvegardé</span>
                     </label>
                     <input
@@ -446,18 +472,11 @@ export default function CartPage() {
                       value={siret}
                       onChange={(e) => setSiret(e.target.value)}
                       maxLength={17}
-                      className="w-full bg-black/40 border border-blue-500/20 rounded-2xl p-5 text-[10px] font-black outline-none hover:border-blue-500/50 focus:border-blue-500 transition-all"
+                      className={`w-full bg-black/40 border rounded-2xl p-5 text-[10px] font-black outline-none transition-all ${!siret.trim() ? 'border-red-500/30 focus:border-red-500' : 'border-blue-500/20 focus:border-blue-500'}`}
                     />
                   </div>
                 </div>
               )}
-
-              <textarea
-                placeholder="INSTRUCTIONS PARTICULIÈRES (Optionnel)"
-                value={instructions}
-                onChange={(e) => setInstructions(e.target.value)}
-                className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none uppercase min-h-[100px] hover:border-blue-500/50 focus:border-blue-500 transition-all"
-              />
             </div>
           </section>
 
@@ -485,12 +504,14 @@ export default function CartPage() {
                 { label: 'Mail RGPD',                val: mentionsMailRgpd,              set: setMentionsMailRgpd,              ph: 'Ex: informatique-et-libertes-0000@guy-hoquet.com' },
               ] as { label: string; val: string; set: (v: string) => void; ph: string }[]).map(({ label, val, set, ph }) => (
                 <div key={label} className="space-y-1">
-                  <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">{label}</label>
+                  <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">
+                    {label} <span className="text-red-400">*</span>
+                  </label>
                   <input
                     value={val}
                     onChange={(e) => set(e.target.value)}
                     placeholder={ph}
-                    className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none hover:border-blue-500/50 focus:border-blue-500 transition-all"
+                    className={`w-full bg-black/40 border rounded-2xl p-5 text-[10px] font-black outline-none transition-all ${!val.trim() ? 'border-red-500/30 hover:border-red-500/50 focus:border-red-500' : 'border-white/10 hover:border-blue-500/50 focus:border-blue-500'}`}
                   />
                 </div>
               ))}
@@ -504,12 +525,17 @@ export default function CartPage() {
           <div className="bg-white p-12 rounded-[50px] text-[#0f092e] sticky top-12 text-center shadow-2xl">
             <h2 className="text-[10px] font-black uppercase opacity-30 italic mb-4">Total HT à régler</h2>
             <span className="text-6xl font-black italic tracking-tighter">{totalHT.toFixed(2)}€</span>
+            {!formValid && cart.length > 0 && (
+              <p className="text-[8px] font-black uppercase text-red-400 mt-6 italic">
+                Tous les champs sont obligatoires
+              </p>
+            )}
             <button
               onClick={() => setShowConfirm(true)}
-              disabled={cart.length === 0}
-              className="w-full mt-12 py-7 bg-blue-600 text-white rounded-3xl font-black uppercase text-[10px] hover:bg-[#0f092e] transition-all shadow-xl disabled:opacity-20"
+              disabled={cart.length === 0 || !formValid}
+              className="w-full mt-6 py-7 bg-blue-600 text-white rounded-3xl font-black uppercase text-[10px] hover:bg-[#0f092e] transition-all shadow-xl disabled:opacity-20 disabled:cursor-not-allowed"
             >
-              Vérifier la commande
+              {!formValid && cart.length > 0 ? 'Formulaire incomplet' : 'Vérifier la commande'}
             </button>
           </div>
         </div>
@@ -539,12 +565,10 @@ export default function CartPage() {
                   <span className="opacity-40">Agence</span>
                   <span className="text-blue-600">{agencyData?.name}</span>
                 </div>
-                {selectedCollaborateur && (
-                  <div className="flex justify-between text-[10px] font-black uppercase italic">
-                    <span className="opacity-40">Collaborateur</span>
-                    <span>{selectedCollaborateur}</span>
-                  </div>
-                )}
+                <div className="flex justify-between text-[10px] font-black uppercase italic">
+                  <span className="opacity-40">Collaborateur</span>
+                  <span>{selectedCollaborateur}</span>
+                </div>
                 {useAltAddress && (
                   <div className="flex justify-between text-[10px] font-black uppercase italic">
                     <span className="opacity-40">Livraison</span>
