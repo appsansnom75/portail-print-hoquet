@@ -16,6 +16,7 @@ export default function CartPage() {
   const [membres, setMembres] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Livraison
   const [selectedCollaborateur, setSelectedCollaborateur] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -29,6 +30,19 @@ export default function CartPage() {
   const [altZipCode, setAltZipCode] = useState("");
   const [altCity, setAltCity] = useState("");
   const [altPhone, setAltPhone] = useState("");
+
+  // Mentions légales
+  const [mentionsNomSociete, setMentionsNomSociete] = useState("");
+  const [mentionsStatut, setMentionsStatut] = useState("");
+  const [mentionsCapital, setMentionsCapital] = useState("");
+  const [mentionsRcs, setMentionsRcs] = useState("");
+  const [mentionsApe, setMentionsApe] = useState("");
+  const [mentionsCartePro, setMentionsCartePro] = useState("");
+  const [mentionsCarteProDelivree, setMentionsCarteProDelivree] = useState("");
+  const [mentionsCaisseGarantie, setMentionsCaisseGarantie] = useState("");
+  const [mentionsCaisseGarantieAdresse, setMentionsCaisseGarantieAdresse] = useState("");
+  const [mentionsTva, setMentionsTva] = useState("");
+  const [mentionsMailRgpd, setMentionsMailRgpd] = useState("");
 
   const totalHT = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
 
@@ -60,6 +74,17 @@ export default function CartPage() {
           setCity(agency.ville || "");
           setSiret(agency.siret || "");
           setPhone(agency.agence_telephone || "");
+          setMentionsNomSociete(agency.mentions_nom_societe || "");
+          setMentionsStatut(agency.mentions_statut || "");
+          setMentionsCapital(agency.mentions_capital || "");
+          setMentionsRcs(agency.mentions_rcs || "");
+          setMentionsApe(agency.mentions_ape || "");
+          setMentionsCartePro(agency.mentions_carte_pro || "");
+          setMentionsCarteProDelivree(agency.mentions_carte_pro_delivree || "");
+          setMentionsCaisseGarantie(agency.mentions_caisse_garantie || "");
+          setMentionsCaisseGarantieAdresse(agency.mentions_caisse_garantie_adresse || "");
+          setMentionsTva(agency.mentions_tva || "");
+          setMentionsMailRgpd(agency.mentions_mail_rgpd || "");
         }
 
         const { data: collabs } = await supabase
@@ -77,13 +102,26 @@ export default function CartPage() {
 
   // ─── 2. SYNC INFOS AGENCE ──────────────────────────────────────────
   const syncAgenceData = async () => {
-    if (!agenceId || useAltAddress) return;
+    if (!agenceId) return;
     await supabase.from('agencies').update({
-      adresse:          address,
-      code_postal:      zipCode,
-      ville:            city,
-      agence_telephone: phone,
-      siret:            siret,
+      ...(useAltAddress ? {} : {
+        adresse:          address,
+        code_postal:      zipCode,
+        ville:            city,
+        agence_telephone: phone,
+      }),
+      siret:                            siret,
+      mentions_nom_societe:             mentionsNomSociete,
+      mentions_statut:                  mentionsStatut,
+      mentions_capital:                 mentionsCapital,
+      mentions_rcs:                     mentionsRcs,
+      mentions_ape:                     mentionsApe,
+      mentions_carte_pro:               mentionsCartePro,
+      mentions_carte_pro_delivree:      mentionsCarteProDelivree,
+      mentions_caisse_garantie:         mentionsCaisseGarantie,
+      mentions_caisse_garantie_adresse: mentionsCaisseGarantieAdresse,
+      mentions_tva:                     mentionsTva,
+      mentions_mail_rgpd:               mentionsMailRgpd,
     }).eq('id', agenceId);
   };
 
@@ -428,40 +466,34 @@ export default function CartPage() {
             <div>
               <h2 className="text-[11px] font-black uppercase text-white/60 italic">04. Informations Facturation & Légales</h2>
               <p className="text-[8px] font-black text-white/20 uppercase tracking-widest mt-1">
-                Pré-remplies depuis vos infos agence — non modifiables ici
+                Modifications sauvegardées dans vos infos agence
               </p>
             </div>
 
-            <div className="space-y-3">
-              {[
-                { label: 'Nom Société',            value: agencyData?.mentions_nom_societe },
-                { label: 'Statut',                 value: agencyData?.mentions_statut },
-                { label: 'Capital Social',         value: agencyData?.mentions_capital ? `${agencyData.mentions_capital} €` : null },
-                { label: 'RCS',                    value: agencyData?.mentions_rcs },
-                { label: 'Code APE',               value: agencyData?.mentions_ape },
-                { label: 'Carte Professionnelle',  value: agencyData?.mentions_carte_pro },
-                { label: 'Délivrée par',           value: agencyData?.mentions_carte_pro_delivree },
-                { label: 'Caisse de Garantie',     value: agencyData?.mentions_caisse_garantie },
-                { label: 'Adresse Caisse',         value: agencyData?.mentions_caisse_garantie_adresse },
-                { label: 'TVA Intracommunautaire', value: agencyData?.mentions_tva },
-                { label: 'Mail RGPD',              value: agencyData?.mentions_mail_rgpd },
-              ].map(({ label, value }) =>
-                value ? (
-                  <div key={label} className="flex justify-between items-start gap-4 border-b border-white/5 pb-3">
-                    <span className="text-[8px] font-black uppercase tracking-widest text-white/20 shrink-0">{label}</span>
-                    <span className="text-[9px] font-black text-white/50 text-right">{value}</span>
-                  </div>
-                ) : null
-              )}
-
-              {!agencyData?.mentions_nom_societe && (
-                <div className="text-center py-6">
-                  <p className="text-[9px] font-black uppercase text-white/20 italic">Aucune mention légale configurée</p>
-                  <Link href="/dashboard/agence" className="text-[8px] font-black text-blue-400 hover:underline mt-2 block">
-                    → Compléter dans Infos Agence
-                  </Link>
+            <div className="space-y-5">
+              {([
+                { label: 'Nom Société',              val: mentionsNomSociete,            set: setMentionsNomSociete,            ph: 'Ex: GUY HOQUET PARIS 1' },
+                { label: 'Statut Juridique',         val: mentionsStatut,                set: setMentionsStatut,                ph: 'Ex: SARL, SAS, EI...' },
+                { label: 'Capital Social (€)',       val: mentionsCapital,               set: setMentionsCapital,               ph: 'Ex: 10 000' },
+                { label: 'RCS',                      val: mentionsRcs,                   set: setMentionsRcs,                   ph: 'Ex: Paris 123 456 789' },
+                { label: 'Code APE',                 val: mentionsApe,                   set: setMentionsApe,                   ph: 'Ex: 6831Z' },
+                { label: 'N° Carte Professionnelle', val: mentionsCartePro,              set: setMentionsCartePro,              ph: 'Ex: CPI 7501 2016 000 012 345' },
+                { label: 'Délivrée par la CCI de',   val: mentionsCarteProDelivree,      set: setMentionsCarteProDelivree,      ph: 'Ex: Paris Île-de-France' },
+                { label: 'Caisse de Garantie',       val: mentionsCaisseGarantie,        set: setMentionsCaisseGarantie,        ph: 'Ex: GALIAN Assurances' },
+                { label: 'Adresse Caisse',           val: mentionsCaisseGarantieAdresse, set: setMentionsCaisseGarantieAdresse, ph: 'Ex: 89 rue de la Boétie, 75008 Paris' },
+                { label: 'TVA Intracommunautaire',   val: mentionsTva,                   set: setMentionsTva,                   ph: 'Ex: FR 12 123456789' },
+                { label: 'Mail RGPD',                val: mentionsMailRgpd,              set: setMentionsMailRgpd,              ph: 'Ex: informatique-et-libertes-0000@guy-hoquet.com' },
+              ] as { label: string; val: string; set: (v: string) => void; ph: string }[]).map(({ label, val, set, ph }) => (
+                <div key={label} className="space-y-1">
+                  <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">{label}</label>
+                  <input
+                    value={val}
+                    onChange={(e) => set(e.target.value)}
+                    placeholder={ph}
+                    className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-[10px] font-black outline-none hover:border-blue-500/50 focus:border-blue-500 transition-all"
+                  />
                 </div>
-              )}
+              ))}
             </div>
           </section>
 
@@ -503,7 +535,6 @@ export default function CartPage() {
               </p>
 
               <div className="bg-gray-50 rounded-[35px] p-8 space-y-4 text-left">
-
                 <div className="flex justify-between text-[10px] font-black uppercase italic">
                   <span className="opacity-40">Agence</span>
                   <span className="text-blue-600">{agencyData?.name}</span>
@@ -521,7 +552,6 @@ export default function CartPage() {
                   </div>
                 )}
 
-                {/* RÉCAP PRODUITS */}
                 <div className="border-t border-gray-200 pt-4 space-y-3">
                   <span className="text-[8px] font-black uppercase opacity-30 tracking-widest block">Produits</span>
                   {cart.map((item: any) => (
@@ -530,9 +560,7 @@ export default function CartPage() {
                         <p className="text-[10px] font-black uppercase italic leading-tight">{item.name}</p>
                         <p className="text-[8px] font-bold opacity-30 mt-0.5">
                           x{item.qty}
-                          {item.orderedBy && (
-                            <span className="text-blue-500 ml-2">— {item.orderedBy}</span>
-                          )}
+                          {item.orderedBy && <span className="text-blue-500 ml-2">— {item.orderedBy}</span>}
                         </p>
                       </div>
                       <span className="text-[10px] font-black shrink-0 tabular-nums">
