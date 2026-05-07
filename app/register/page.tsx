@@ -60,7 +60,7 @@ export default function RegisterPage() {
         .insert([{
           name:         agencyName,
           agence_email: email,
-          owner_id:     userId,
+      
         }])
         .select('id')
         .single();
@@ -121,10 +121,10 @@ export default function RegisterPage() {
                 ← Retour connexion
               </Link>
               <h1 className="text-4xl font-black italic tracking-tighter text-white">
-                Créer une agence
+                Créer un compte agence
               </h1>
               <p className="text-[10px] font-black uppercase opacity-30 mt-3 tracking-[0.3em]">
-                Ouverture d'un nouveau compte
+                Ouverture d'un nouveau compte 
               </p>
             </div>
 
