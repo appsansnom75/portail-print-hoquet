@@ -206,27 +206,23 @@ export default function CartPage() {
         m => (m.full_name || `${m.first_name} ${m.last_name}`) === selectedCollaborateur
       );
 
+      // ✅ Nominatif séparé en champs distincts
       const itemsPayload = cart.map(item => {
         const collabNominatif = item.orderedBy
           ? membres.find(m => (m.full_name || `${m.first_name} ${m.last_name}`) === item.orderedBy)
           : null;
 
-        const nominatif = collabNominatif
-          ? [
-              item.orderedBy,
-              collabNominatif.email      || null,
-              collabNominatif.phone      || null,
-              collabNominatif.fonction   || null,
-              collabNominatif.avatar_url || null,
-            ].filter(Boolean).join(' | ')
-          : '';
-
         return {
-          produit:     item.name,
-          quantite:    item.qty,
-          nominatif,
-          membre:      item.orderedBy || selectedCollaborateur,
-          total_ligne: (item.price * item.qty).toFixed(2),
+          produit:            item.name,
+          quantite:           item.qty,
+          total_ligne:        (item.price * item.qty).toFixed(2),
+          membre:             item.orderedBy || selectedCollaborateur,
+          nominatif_prenom:   collabNominatif?.first_name  || "",
+          nominatif_nom:      collabNominatif?.last_name   || "",
+          nominatif_mail:     collabNominatif?.email       || "",
+          nominatif_tel:      collabNominatif?.phone       || "",
+          nominatif_fonction: collabNominatif?.fonction    || "",
+          nominatif_photo:    collabNominatif?.avatar_url  || "",
         };
       });
 
@@ -247,6 +243,18 @@ export default function CartPage() {
           items:               itemsPayload,
           total_ht:            totalHT,
           date:                new Date().toLocaleString('fr-FR'),
+          // ✅ Mentions légales
+          mentions_nom_societe:             mentionsNomSociete,
+          mentions_statut:                  mentionsStatut,
+          mentions_capital:                 mentionsCapital,
+          mentions_rcs:                     mentionsRcs,
+          mentions_ape:                     mentionsApe,
+          mentions_carte_pro:               mentionsCartePro,
+          mentions_carte_pro_delivree:      mentionsCarteProDelivree,
+          mentions_caisse_garantie:         mentionsCaisseGarantie,
+          mentions_caisse_garantie_adresse: mentionsCaisseGarantieAdresse,
+          mentions_tva:                     mentionsTva,
+          mentions_mail_rgpd:               mentionsMailRgpd,
         }),
       });
 
