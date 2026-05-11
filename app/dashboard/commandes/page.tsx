@@ -20,6 +20,7 @@ export default function HistoriqueCommandes() {
   const [reorderPhone, setReorderPhone]     = useState("");
   const [reorderCollab, setReorderCollab]   = useState("");
 
+  // ─── Fetch commandes ─────────────────────────────────────────────
   const fetchOrders = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -59,6 +60,7 @@ export default function HistoriqueCommandes() {
 
   useEffect(() => { fetchOrders(); }, []);
 
+  // ─── Ouvrir overlay recommande ───────────────────────────────────
   const openReorder = (order: any) => {
     setReorderAddress(order.delivery_address || "");
     setReorderZip(order.zip_code || "");
@@ -69,6 +71,40 @@ export default function HistoriqueCommandes() {
     setOrderToReorder(order);
   };
 
+  // ─── Vérifie si un item est nominatif ────────────────────────────
+  // Cherche dans TOUTES les variantes possibles de nommage
+  const isNominatif = (item: any): boolean => {
+    const prenom =
+      item.nominatif_prenom    ||
+      item?.nominatif?.prenom  ||
+      item.prenom              ||
+      "";
+    const nom =
+      item.nominatif_nom       ||
+      item?.nominatif?.nom     ||
+      item.nom_famille         ||
+      "";
+    const mail =
+      item.nominatif_mail      ||
+      item.nominatif_email     ||
+      item?.nominatif?.mail    ||
+      "";
+    const photo =
+      item.nominatif_photo     ||
+      item?.nominatif?.photo   ||
+      item.photo_url           ||
+      "";
+    return !!(prenom || nom || mail || photo);
+  };
+
+  // ─── Extraire un champ nominatif quelle que soit la structure ────
+  const getNom = (item: any, field: string): string =>
+    item[`nominatif_${field}`]  ||
+    item?.nominatif?.[field]    ||
+    item[field]                 ||
+    "";
+
+  // ─── Export CSV global ───────────────────────────────────────────
   const exportAllToCSV = () => {
     if (orders.length === 0) return;
     const headers = ["Date", "Acheteur", "Articles", "Adresse", "Total HT", "Total TTC"];
@@ -88,6 +124,7 @@ export default function HistoriqueCommandes() {
     link.click();
   };
 
+  // ─── Export CSV unitaire ─────────────────────────────────────────
   const exportSingleCSV = (order: any) => {
     const headers = ["Date", "Acheteur", "Articles", "Adresse", "Total HT", "Total TTC"];
     const row = [
@@ -106,21 +143,14 @@ export default function HistoriqueCommandes() {
     link.click();
   };
 
-  // ─── Vérifie si un item était nominatif à la commande originale ──
-  const isNominatif = (item: any): boolean => {
-    return !!(
-      item.nominatif_prenom ||
-      item.nominatif_nom    ||
-      item.nominatif_mail   ||
-      item.nominatif_tel    ||
-      item.nominatif_photo
-    );
-  };
-
-  // ─── RECOMMANDER + WEBHOOK MAKE ──────────────────────────────────
+  // ─── Recommander + webhook Make ──────────────────────────────────
   const confirmReorder = async () => {
     if (!orderToReorder) return;
     setIsReordering(true);
+
+    // Log pour debug — retire en prod si tu veux
+    console.log("🔍 ITEMS BRUTS :", JSON.stringify(orderToReorder.items, null, 2));
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
@@ -136,10 +166,10 @@ export default function HistoriqueCommandes() {
         .update({ last_value: nextOrderId })
         .eq('counter_name', 'order_id');
 
-      // 2. Charger les collabs UNIQUEMENT si au moins un item est nominatif
-      const hasNominatifItems = (orderToReorder.items || []).some(isNominatif);
+      // 2. Charger les collabs SEULEMENT si au moins un item est nominatif
+      const hasNominatif = (orderToReorder.items || []).some(isNominatif);
       let collabs: any[] = [];
-      if (hasNominatifItems) {
+      if (hasNominatif) {
         const { data } = await supabase
           .from('collaborateurs')
           .select('id, full_name, first_name, last_name, email, phone, fonction, avatar_url')
@@ -149,7 +179,7 @@ export default function HistoriqueCommandes() {
 
       const findCollab = (nom: string) =>
         collabs.find(
-          (c) => (c.full_name || `${c.first_name} ${c.last_name}`) === nom
+          (c) => (c.full_name || `${c.first_name} ${c.last_name}`.trim()) === nom
         );
 
       // 3. Insérer dans Supabase
@@ -175,15 +205,14 @@ export default function HistoriqueCommandes() {
       const totalTTC = (orderToReorder.total_ht * 1.20).toFixed(2);
 
       // 4. Reconstruire itemsPayload
-      //    → infos nominatives SEULEMENT si le produit original l'était
       const itemsPayload = (orderToReorder.items || []).map((item: any) => {
-        const nomMembre   = item.ordered_by || item.membre || reorderCollab;
-        const produitNom  = item.name    || item.produit  || "";
-        const qte         = item.qty     || item.quantite || "";
-        const prixLigne   = item.total_row || item.prix_ligne
+        const nomMembre  = item.ordered_by || item.membre || reorderCollab;
+        const produitNom = item.name       || item.produit  || "";
+        const qte        = item.qty        || item.quantite || "";
+        const prixLigne  = item.total_row  || item.prix_ligne
           || ((item.price_unit || 0) * (item.qty || item.quantite || 0)).toFixed(2);
 
-        // Produit non nominatif → on envoie les champs vides
+        // Produit NON nominatif → champs vides, pas de fuite de données
         if (!isNominatif(item)) {
           return {
             produit:            produitNom,
@@ -199,19 +228,19 @@ export default function HistoriqueCommandes() {
           };
         }
 
-        // Produit nominatif → on re-fetche depuis Supabase en priorité
+        // Produit NOMINATIF → Supabase en priorité, fallback item stocké
         const collab = findCollab(nomMembre);
         return {
           produit:            produitNom,
           quantite:           qte,
           prix_ligne:         prixLigne,
           membre:             nomMembre,
-          nominatif_prenom:   collab?.first_name  || item.nominatif_prenom   || "",
-          nominatif_nom:      collab?.last_name   || item.nominatif_nom      || "",
-          nominatif_mail:     collab?.email       || item.nominatif_mail     || "",
-          nominatif_tel:      collab?.phone       || item.nominatif_tel      || "",
-          nominatif_fonction: collab?.fonction    || item.nominatif_fonction || "",
-          nominatif_photo:    collab?.avatar_url  || item.nominatif_photo    || "",
+          nominatif_prenom:   collab?.first_name || getNom(item, 'prenom'),
+          nominatif_nom:      collab?.last_name  || getNom(item, 'nom'),
+          nominatif_mail:     collab?.email      || getNom(item, 'mail') || getNom(item, 'email'),
+          nominatif_tel:      collab?.phone      || getNom(item, 'tel')  || getNom(item, 'phone'),
+          nominatif_fonction: collab?.fonction   || getNom(item, 'fonction'),
+          nominatif_photo:    collab?.avatar_url || getNom(item, 'photo'),
         };
       });
 
@@ -260,6 +289,7 @@ export default function HistoriqueCommandes() {
     }
   };
 
+  // ─── Supprimer ───────────────────────────────────────────────────
   const deleteOrder = async (orderId: string) => {
     if (!confirm("Supprimer cette commande de l'historique ?")) return;
     const { error } = await supabase.from('orders').delete().eq('id', orderId);
@@ -277,7 +307,7 @@ export default function HistoriqueCommandes() {
     <div className="min-h-screen bg-[#0f092e] text-white p-6 md:p-12">
       <div className="max-w-6xl mx-auto space-y-10">
 
-        {/* ── HEADER ─────────────────────────────────────────────── */}
+        {/* ── HEADER ───────────────────────────────────────────────── */}
         <div className="flex flex-col md:flex-row justify-between items-center md:items-end border-b border-white/10 pb-8 gap-6">
           <div>
             <h1 className="text-5xl font-black uppercase italic tracking-tighter text-blue-500">Historique</h1>
@@ -301,7 +331,7 @@ export default function HistoriqueCommandes() {
           </div>
         </div>
 
-        {/* ── LISTE DES COMMANDES ─────────────────────────────────── */}
+        {/* ── LISTE DES COMMANDES ──────────────────────────────────── */}
         <div className="space-y-4">
           {orders.length === 0 && (
             <p className="text-center text-[10px] font-black uppercase text-white/20 italic py-20">
@@ -410,7 +440,7 @@ export default function HistoriqueCommandes() {
         </div>
       </div>
 
-      {/* ── OVERLAY RECOMMANDER ─────────────────────────────────────── */}
+      {/* ── OVERLAY RECOMMANDER ──────────────────────────────────────── */}
       <AnimatePresence>
         {orderToReorder && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#0f092e]/90 backdrop-blur-md">
@@ -431,12 +461,11 @@ export default function HistoriqueCommandes() {
                 </p>
               </div>
 
-              {/* Produits un par un avec HT + TTC */}
+              {/* Produits un par un */}
               <div className="bg-blue-50 rounded-[28px] p-6">
                 <span className="text-[8px] font-black uppercase text-blue-400 tracking-widest block mb-4">
                   Produits commandés
                 </span>
-
                 <div className="space-y-3">
                   {(orderToReorder.items && orderToReorder.items.length > 0)
                     ? orderToReorder.items.map((item: any, idx: number) => {
@@ -472,7 +501,6 @@ export default function HistoriqueCommandes() {
                     )
                   }
                 </div>
-
                 {/* Total */}
                 <div className="flex justify-between items-center mt-4 pt-4 border-t border-blue-200">
                   <span className="text-[8px] font-black uppercase opacity-40">Total</span>
@@ -492,7 +520,6 @@ export default function HistoriqueCommandes() {
                 <p className="text-[8px] font-black uppercase opacity-30 tracking-widest">
                   Livraison — modifiable
                 </p>
-
                 <div className="space-y-1">
                   <label className="text-[8px] font-black uppercase tracking-widest opacity-40 ml-2 block">Collaborateur</label>
                   <input
@@ -502,7 +529,6 @@ export default function HistoriqueCommandes() {
                     className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 text-[10px] font-black outline-none focus:border-blue-400 transition-all"
                   />
                 </div>
-
                 <div className="space-y-1">
                   <label className="text-[8px] font-black uppercase tracking-widest opacity-40 ml-2 block">Adresse</label>
                   <input
@@ -512,7 +538,6 @@ export default function HistoriqueCommandes() {
                     className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 text-[10px] font-black uppercase outline-none focus:border-blue-400 transition-all"
                   />
                 </div>
-
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-[8px] font-black uppercase tracking-widest opacity-40 ml-2 block">Code postal</label>
@@ -533,7 +558,6 @@ export default function HistoriqueCommandes() {
                     />
                   </div>
                 </div>
-
                 <div className="space-y-1">
                   <label className="text-[8px] font-black uppercase tracking-widest opacity-40 ml-2 block">Téléphone</label>
                   <input
@@ -545,7 +569,7 @@ export default function HistoriqueCommandes() {
                 </div>
               </div>
 
-              {/* ── ACCORDION FACTURATION ─────────────────────────── */}
+              {/* ── ACCORDION FACTURATION ──────────────────────────── */}
               <div className="border border-gray-100 rounded-[28px] overflow-hidden">
                 <button
                   type="button"
@@ -559,7 +583,6 @@ export default function HistoriqueCommandes() {
                     ▼
                   </span>
                 </button>
-
                 <AnimatePresence>
                   {showFacturation && (
                     <motion.div
