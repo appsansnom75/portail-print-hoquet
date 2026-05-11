@@ -71,38 +71,49 @@ export default function HistoriqueCommandes() {
     setOrderToReorder(order);
   };
 
-  // ─── Vérifie si un item est nominatif ────────────────────────────
-  // Cherche dans TOUTES les variantes possibles de nommage
-  const isNominatif = (item: any): boolean => {
-    const prenom =
-      item.nominatif_prenom    ||
-      item?.nominatif?.prenom  ||
-      item.prenom              ||
-      "";
-    const nom =
-      item.nominatif_nom       ||
-      item?.nominatif?.nom     ||
-      item.nom_famille         ||
-      "";
-    const mail =
-      item.nominatif_mail      ||
-      item.nominatif_email     ||
-      item?.nominatif?.mail    ||
-      "";
-    const photo =
-      item.nominatif_photo     ||
-      item?.nominatif?.photo   ||
-      item.photo_url           ||
-      "";
-    return !!(prenom || nom || mail || photo);
+  // ─── Cherche une valeur dans toutes les clés d'un objet ──────────
+  const deepFind = (obj: any, keywords: string[]): string => {
+    if (!obj || typeof obj !== 'object') return "";
+    // Cherche dans les clés directes
+    for (const key of Object.keys(obj)) {
+      const lowerKey = key.toLowerCase();
+      if (keywords.some(k => lowerKey.includes(k))) {
+        const val = obj[key];
+        if (val && typeof val === 'string' && val.trim()) return val.trim();
+      }
+    }
+    // Cherche dans les sous-objets (ex: item.nominatif.prenom)
+    for (const key of Object.keys(obj)) {
+      if (typeof obj[key] === 'object' && obj[key] !== null) {
+        const found = deepFind(obj[key], keywords);
+        if (found) return found;
+      }
+    }
+    return "";
   };
 
-  // ─── Extraire un champ nominatif quelle que soit la structure ────
-  const getNom = (item: any, field: string): string =>
-    item[`nominatif_${field}`]  ||
-    item?.nominatif?.[field]    ||
-    item[field]                 ||
-    "";
+  // ─── Vérifie si un item est nominatif ────────────────────────────
+  const isNominatif = (item: any): boolean => {
+    return !!(
+      deepFind(item, ['prenom', 'firstname', 'first_name'])          ||
+      deepFind(item, ['nominatif_nom', 'lastname', 'last_name', 'nom_famille']) ||
+      deepFind(item, ['nominatif_mail', 'nominatif_email'])           ||
+      deepFind(item, ['nominatif_photo', 'photo_url', 'avatar'])
+    );
+  };
+
+  // ─── Extrait un champ nominatif quelle que soit la structure ─────
+  const getNom = (item: any, field: string): string => {
+    const keywords: Record<string, string[]> = {
+      prenom:   ['prenom', 'firstname', 'first_name'],
+      nom:      ['nominatif_nom', 'lastname', 'last_name', 'nom_famille'],
+      mail:     ['nominatif_mail', 'nominatif_email', 'mail', 'email'],
+      tel:      ['nominatif_tel', 'nominatif_phone', 'tel', 'phone'],
+      fonction: ['fonction', 'function', 'poste', 'role'],
+      photo:    ['nominatif_photo', 'photo_url', 'avatar', 'photo'],
+    };
+    return deepFind(item, keywords[field] || [field]);
+  };
 
   // ─── Export CSV global ───────────────────────────────────────────
   const exportAllToCSV = () => {
@@ -148,8 +159,7 @@ export default function HistoriqueCommandes() {
     if (!orderToReorder) return;
     setIsReordering(true);
 
-    // Log pour debug — retire en prod si tu veux
-    console.log("🔍 ITEMS BRUTS :", JSON.stringify(orderToReorder.items, null, 2));
+    console.log("🔍 ITEMS BRUTS Supabase :", JSON.stringify(orderToReorder.items, null, 2));
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -166,7 +176,7 @@ export default function HistoriqueCommandes() {
         .update({ last_value: nextOrderId })
         .eq('counter_name', 'order_id');
 
-      // 2. Charger les collabs SEULEMENT si au moins un item est nominatif
+      // 2. Charger les collabs si au moins un item est nominatif
       const hasNominatif = (orderToReorder.items || []).some(isNominatif);
       let collabs: any[] = [];
       if (hasNominatif) {
@@ -212,7 +222,7 @@ export default function HistoriqueCommandes() {
         const prixLigne  = item.total_row  || item.prix_ligne
           || ((item.price_unit || 0) * (item.qty || item.quantite || 0)).toFixed(2);
 
-        // Produit NON nominatif → champs vides, pas de fuite de données
+        // Produit NON nominatif → champs vides
         if (!isNominatif(item)) {
           return {
             produit:            produitNom,
@@ -228,7 +238,7 @@ export default function HistoriqueCommandes() {
           };
         }
 
-        // Produit NOMINATIF → Supabase en priorité, fallback item stocké
+        // Produit NOMINATIF → Supabase en priorité, fallback deepFind
         const collab = findCollab(nomMembre);
         return {
           produit:            produitNom,
@@ -237,8 +247,8 @@ export default function HistoriqueCommandes() {
           membre:             nomMembre,
           nominatif_prenom:   collab?.first_name || getNom(item, 'prenom'),
           nominatif_nom:      collab?.last_name  || getNom(item, 'nom'),
-          nominatif_mail:     collab?.email      || getNom(item, 'mail') || getNom(item, 'email'),
-          nominatif_tel:      collab?.phone      || getNom(item, 'tel')  || getNom(item, 'phone'),
+          nominatif_mail:     collab?.email      || getNom(item, 'mail'),
+          nominatif_tel:      collab?.phone      || getNom(item, 'tel'),
           nominatif_fonction: collab?.fonction   || getNom(item, 'fonction'),
           nominatif_photo:    collab?.avatar_url || getNom(item, 'photo'),
         };
@@ -461,7 +471,7 @@ export default function HistoriqueCommandes() {
                 </p>
               </div>
 
-              {/* Produits un par un */}
+              {/* Produits */}
               <div className="bg-blue-50 rounded-[28px] p-6">
                 <span className="text-[8px] font-black uppercase text-blue-400 tracking-widest block mb-4">
                   Produits commandés
