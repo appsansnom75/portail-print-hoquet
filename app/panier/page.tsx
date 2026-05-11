@@ -16,7 +16,6 @@ export default function CartPage() {
   const [membres, setMembres] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Livraison
   const [selectedCollaborateur, setSelectedCollaborateur] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -30,7 +29,6 @@ export default function CartPage() {
   const [altCity, setAltCity] = useState("");
   const [altPhone, setAltPhone] = useState("");
 
-  // Mentions légales
   const [mentionsNomSociete, setMentionsNomSociete] = useState("");
   const [mentionsStatut, setMentionsStatut] = useState("");
   const [mentionsCapital, setMentionsCapital] = useState("");
@@ -207,6 +205,7 @@ export default function CartPage() {
         m => (m.full_name || `${m.first_name} ${m.last_name}`) === selectedCollaborateur
       );
 
+      // ── ITEMS PAYLOAD AVEC PRIX LIGNE ────────────────────────────
       const itemsPayload = cart.map(item => {
         const collabNominatif = item.orderedBy
           ? membres.find(m => (m.full_name || `${m.first_name} ${m.last_name}`) === item.orderedBy)
@@ -215,7 +214,7 @@ export default function CartPage() {
         return {
           produit:            item.name,
           quantite:           item.qty,
-          total_ligne:        (item.price * item.qty).toFixed(2),
+          prix_ligne:         (item.price * item.qty).toFixed(2),  // ← total de la ligne
           membre:             item.orderedBy || selectedCollaborateur,
           nominatif_prenom:   collabNominatif?.first_name  || "",
           nominatif_nom:      collabNominatif?.last_name   || "",
@@ -375,7 +374,6 @@ export default function CartPage() {
                 </div>
               ))}
 
-              {/* Sous-total HT + TTC dans le récap */}
               {cart.length > 0 && (
                 <div className="pt-4 space-y-2">
                   <div className="flex justify-between text-[10px] font-black uppercase italic opacity-50">
@@ -553,17 +551,12 @@ export default function CartPage() {
         <div className="lg:col-span-1">
           <div className="bg-white p-12 rounded-[50px] text-[#0f092e] sticky top-12 text-center shadow-2xl">
             <h2 className="text-[10px] font-black uppercase opacity-30 italic mb-4">Total à régler</h2>
-
-            {/* HT */}
             <span className="text-6xl font-black italic tracking-tighter">{totalHT.toFixed(2)}€</span>
             <p className="text-[8px] font-black uppercase opacity-30 mt-1 tracking-widest">Hors Taxes (HT)</p>
-
-            {/* TTC */}
             <div className="mt-4 bg-black/5 rounded-2xl px-6 py-4">
               <span className="text-2xl font-black italic tracking-tighter opacity-60">{totalTTC.toFixed(2)}€</span>
               <p className="text-[8px] font-black uppercase opacity-30 mt-0.5 tracking-widest">TTC (TVA 20%)</p>
             </div>
-
             {!formValid && cart.length > 0 && (
               <p className="text-[8px] font-black uppercase text-red-400 mt-6 italic">
                 Tous les champs sont obligatoires
