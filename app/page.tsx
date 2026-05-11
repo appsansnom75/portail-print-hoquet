@@ -77,7 +77,6 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
 
-            {/* STATUT SESSION */}
             <div className="flex items-center gap-4 bg-white/[0.03] px-5 py-2.5 rounded-full border border-white/5">
               <span className={`h-2 w-2 rounded-full ${loading ? 'bg-white/20' : 'bg-green-500 shadow-[0_0_10px_#22c55e]'}`}></span>
               <div className="flex items-center gap-3">
@@ -92,39 +91,26 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* BOUTONS D'ACTION */}
             <div className="flex flex-wrap justify-center items-center gap-3">
               {!loading && (
                 <>
                   {role === 'super_admin' && (
-                    <Link
-                      href="/admin-portal"
-                      className="bg-white text-[#0f092e] hover:bg-blue-500 hover:text-white text-[9px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all shadow-xl active:scale-95 border border-white"
-                    >
+                    <Link href="/admin-portal" className="bg-white text-[#0f092e] hover:bg-blue-500 hover:text-white text-[9px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all shadow-xl active:scale-95 border border-white">
                       Dashboard Produits
                     </Link>
                   )}
                   {role === 'super_admin' && (
-                    <Link
-                      href="/profil"
-                      className="bg-white/5 border border-white/10 hover:border-blue-500/50 text-white/70 hover:text-white text-[9px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all active:scale-95"
-                    >
+                    <Link href="/profil" className="bg-white/5 border border-white/10 hover:border-blue-500/50 text-white/70 hover:text-white text-[9px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all active:scale-95">
                       Mon Profil Admin
                     </Link>
                   )}
                   {role === 'admin_agence' && (
-                    <Link
-                      href="/profil"
-                      className="bg-white/5 border border-white/10 hover:border-blue-500/50 text-white/70 hover:text-white text-[9px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all active:scale-95"
-                    >
+                    <Link href="/profil" className="bg-white/5 border border-white/10 hover:border-blue-500/50 text-white/70 hover:text-white text-[9px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all active:scale-95">
                       Infos Agence
                     </Link>
                   )}
                   {role !== 'super_admin' && (
-                    <Link
-                      href="/dashboard/equipe"
-                      className="bg-blue-600/10 border border-blue-500/20 hover:bg-blue-600/20 text-blue-400 text-[9px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all"
-                    >
+                    <Link href="/dashboard/equipe" className="bg-blue-600/10 border border-blue-500/20 hover:bg-blue-600/20 text-blue-400 text-[9px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all">
                       Équipe
                     </Link>
                   )}
@@ -185,29 +171,33 @@ export default function HomePage() {
 
           {/* Opérations du moment */}
           <Link href="/operations" className="group relative">
-            <div className="h-44 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-purple-600/15 group-hover:border-purple-500/50 group-hover:-translate-y-1 shadow-2xl shadow-purple-500/5">
+            <div className="h-44 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-purple-600/15 group-hover:border-purple-500/50 group-hover:-translate-y-1 shadow-2xl">
               <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-purple-400 transition-colors">Opérations du moment</span>
               <div className="h-[2px] w-6 bg-purple-500 my-4 group-hover:w-20 transition-all duration-700"></div>
               <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.3em] group-hover:text-purple-500/50">Offres Ephémères</span>
             </div>
           </Link>
 
-          {/* CASE CONTACT — non cliquable */}
-          <div className="relative h-44 bg-gradient-to-br from-rose-500/[0.07] to-transparent border border-rose-500/20 rounded-3xl flex flex-col justify-center p-8 shadow-2xl overflow-hidden">
-            {/* Halo décoratif */}
-            <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full bg-rose-500/10 blur-2xl pointer-events-none"></div>
+          {/* CASE CONTACT */}
+          <div className="relative h-44 bg-gradient-to-br from-rose-500/[0.08] to-transparent border border-rose-500/25 rounded-3xl flex flex-col justify-between p-8 shadow-2xl overflow-hidden">
+            <div className="absolute -top-6 -right-6 w-32 h-32 rounded-full bg-rose-500/10 blur-2xl pointer-events-none"></div>
 
-            <p className="font-black text-[9px] uppercase tracking-[0.3em] text-rose-400 mb-3">
+            {/* BESOIN D'AIDE — grand et blanc */}
+            <p className="font-black text-lg uppercase tracking-widest text-white leading-none">
               Besoin d'aide ?
             </p>
 
-            <p className="text-[8px] text-white/30 font-bold leading-relaxed mb-4 max-w-[22ch]">
-              Question sur le catalogue, suivi de commande, facturation ou devis ?
+            {/* TEXTE DESCRIPTIF */}
+            <p className="text-[10px] text-white/40 font-bold leading-relaxed">
+              Suivi de commande, facturation,<br />devis ou autre question ?
             </p>
 
-            <div className="flex flex-col gap-0.5">
-              <span className="text-[7px] font-black uppercase tracking-widest text-white/20">Votre contact privilégié</span>
-              <span className="text-lg font-black text-white tracking-tight">
+            {/* NUMÉRO */}
+            <div>
+              <span className="text-[8px] font-black uppercase tracking-widest text-white/25 block mb-1">
+                Un seul contact privilégié
+              </span>
+              <span className="text-2xl font-black text-white tracking-tight">
                 02 41 87 00 78
               </span>
             </div>
