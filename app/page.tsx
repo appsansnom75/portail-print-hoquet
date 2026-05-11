@@ -6,31 +6,27 @@ import { useCart } from '@/context/CartContext';
 import { supabase } from '@/lib/supabase';
 import CartDrawer from '@/components/CartDrawer';
 
-
 export default function HomePage() {
   const [agencyName, setAgencyName] = useState("");
-  const [userName, setUserName] = useState("");
-  const [role, setRole] = useState(""); 
-  const [loading, setLoading] = useState(true);
+  const [userName, setUserName]     = useState("");
+  const [role, setRole]             = useState("");
+  const [loading, setLoading]       = useState(true);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { cart } = useCart();
   const router = useRouter();
-  
-  const hasItems = cart.length > 0;
 
+  const hasItems = cart.length > 0;
 
   useEffect(() => {
     const fetchUserAndAgency = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push('/login'); return; }
 
-
       const { data } = await supabase
         .from('profiles')
         .select(`full_name, role, agencies ( name )`)
         .eq('id', user.id)
         .single();
-
 
       if (data) {
         setUserName(data.full_name);
@@ -43,16 +39,14 @@ export default function HomePage() {
     fetchUserAndAgency();
   }, [router]);
 
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/login');
   };
 
-
   return (
     <div className="min-h-screen bg-[#0f092e] text-white font-sans flex flex-col selection:bg-blue-500/30">
-      
+
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
 
       {/* HEADER LOGOS */}
@@ -63,7 +57,6 @@ export default function HomePage() {
           <img src="/logo-hoquet.png" alt="Guy Hoquet" className="h-8 md:h-10 object-contain" />
         </div>
       </header>
-
 
       {/* BANNER DYNAMIQUE */}
       <section className="w-full relative overflow-hidden">
@@ -79,12 +72,11 @@ export default function HomePage() {
         </div>
       </section>
 
-
       {/* BARRE DE NAVIGATION & STATUT (STICKY) */}
       <div className="sticky top-0 z-50 border-y border-white/5 bg-[#0f092e]/80 backdrop-blur-xl">
         <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
-            
+
             {/* STATUT SESSION */}
             <div className="flex items-center gap-4 bg-white/[0.03] px-5 py-2.5 rounded-full border border-white/5">
               <span className={`h-2 w-2 rounded-full ${loading ? 'bg-white/20' : 'bg-green-500 shadow-[0_0_10px_#22c55e]'}`}></span>
@@ -100,7 +92,6 @@ export default function HomePage() {
               </div>
             </div>
 
-
             {/* BOUTONS D'ACTION */}
             <div className="flex flex-wrap justify-center items-center gap-3">
               {!loading && (
@@ -113,7 +104,6 @@ export default function HomePage() {
                       Dashboard Produits
                     </Link>
                   )}
-
                   {role === 'super_admin' && (
                     <Link
                       href="/profil"
@@ -122,7 +112,6 @@ export default function HomePage() {
                       Mon Profil Admin
                     </Link>
                   )}
-
                   {role === 'admin_agence' && (
                     <Link
                       href="/profil"
@@ -131,7 +120,6 @@ export default function HomePage() {
                       Infos Agence
                     </Link>
                   )}
-
                   {role !== 'super_admin' && (
                     <Link
                       href="/dashboard/equipe"
@@ -142,12 +130,10 @@ export default function HomePage() {
                   )}
                 </>
               )}
-
               <Link href="/panier" className="relative bg-white/5 border border-white/10 hover:bg-white/10 text-white text-[9px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all">
                 Panier ({cart.length})
                 {hasItems && <span className="absolute -top-1.5 -right-1.5 h-3 w-3 bg-green-500 rounded-full border-2 border-[#0f092e] animate-bounce"></span>}
               </Link>
-
               <button onClick={handleLogout} className="text-[9px] font-black uppercase tracking-widest text-red-500/40 hover:text-red-500 px-2 py-3 transition-colors">
                 Quitter
               </button>
@@ -157,11 +143,11 @@ export default function HomePage() {
         </div>
       </div>
 
-
-      {/* GRILLE DES PRODUITS */}
+      {/* GRILLE DES SECTIONS */}
       <main className="flex-grow container mx-auto max-w-5xl px-6 py-20">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+
+          {/* Produits personnalisables */}
           <Link href="/perso" className="group relative">
             <div className="h-44 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-blue-600/10 group-hover:border-blue-500/40 group-hover:-translate-y-1 shadow-2xl">
               <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-blue-400 transition-colors">Produits personnalisables</span>
@@ -170,6 +156,7 @@ export default function HomePage() {
             </div>
           </Link>
 
+          {/* Produits non personnalisés */}
           <Link href="/stock" className="group relative">
             <div className="h-44 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-green-600/10 group-hover:border-green-500/40 group-hover:-translate-y-1 shadow-2xl">
               <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-green-400 transition-colors">Produits non personnalisés</span>
@@ -178,6 +165,7 @@ export default function HomePage() {
             </div>
           </Link>
 
+          {/* Gamme Business */}
           <Link href="/hoquet" className="group relative">
             <div className="h-44 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-orange-600/10 group-hover:border-orange-500/40 group-hover:-translate-y-1 shadow-2xl">
               <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-orange-400 transition-colors">Gamme Business</span>
@@ -186,6 +174,16 @@ export default function HomePage() {
             </div>
           </Link>
 
+          {/* Signalétique ← NOUVEAU */}
+          <Link href="/signaletique" className="group relative">
+            <div className="h-44 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-cyan-600/10 group-hover:border-cyan-400/40 group-hover:-translate-y-1 shadow-2xl">
+              <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-cyan-400 transition-colors">Signalétique</span>
+              <div className="h-[2px] w-6 bg-cyan-400 my-4 group-hover:w-20 transition-all duration-700"></div>
+              <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.3em] group-hover:text-cyan-400/50">Supports & Affichage</span>
+            </div>
+          </Link>
+
+          {/* Opérations du moment */}
           <Link href="/operations" className="group relative">
             <div className="h-44 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-purple-600/15 group-hover:border-purple-500/50 group-hover:-translate-y-1 shadow-2xl shadow-purple-500/5">
               <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-purple-400 transition-colors">Opérations du moment</span>
@@ -196,7 +194,6 @@ export default function HomePage() {
 
         </div>
       </main>
-
 
       {/* FOOTER */}
       <footer className="py-12 border-t border-white/5 bg-black/20 mt-auto">
