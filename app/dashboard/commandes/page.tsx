@@ -5,12 +5,12 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function HistoriqueCommandes() {
-  const [orders, setOrders]               = useState<any[]>([]);
-  const [loading, setLoading]             = useState(true);
-  const [agencyName, setAgencyName]       = useState("");
-  const [agencyData, setAgencyData]       = useState<any>(null);
-  const [isReordering, setIsReordering]   = useState(false);
-  const [orderToReorder, setOrderToReorder] = useState<any | null>(null);
+  const [orders, setOrders]                   = useState<any[]>([]);
+  const [loading, setLoading]                 = useState(true);
+  const [agencyName, setAgencyName]           = useState("");
+  const [agencyData, setAgencyData]           = useState<any>(null);
+  const [isReordering, setIsReordering]       = useState(false);
+  const [orderToReorder, setOrderToReorder]   = useState<any | null>(null);
   const [showFacturation, setShowFacturation] = useState(false);
 
   // Champs éditables livraison
@@ -35,7 +35,6 @@ export default function HistoriqueCommandes() {
         const name = (profile.agencies as any).name;
         setAgencyName(name);
 
-        // Charger les infos complètes de l'agence (mentions légales)
         const { data: agency } = await supabase
           .from('agencies')
           .select('*')
@@ -84,7 +83,8 @@ export default function HistoriqueCommandes() {
       `${order.total_ht?.toFixed(2)}€`,
       `${(order.total_ht * tva).toFixed(2)}€`,
     ]);
-    const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].map(e => e.join(",")).join("\n");
+    const csvContent = "data:text/csv;charset=utf-8,"
+      + [headers, ...rows].map(e => e.join(",")).join("\n");
     const link = document.createElement("a");
     link.setAttribute("href", encodeURI(csvContent));
     link.setAttribute("download", `Full_Historique_${agencyName.replace(/\s/g, '_')}.csv`);
@@ -103,7 +103,8 @@ export default function HistoriqueCommandes() {
       `${order.total_ht?.toFixed(2)}€`,
       `${(order.total_ht * tva).toFixed(2)}€`,
     ];
-    const csvContent = "data:text/csv;charset=utf-8," + [headers, row].map(e => e.join(",")).join("\n");
+    const csvContent = "data:text/csv;charset=utf-8,"
+      + [headers, row].map(e => e.join(",")).join("\n");
     const link = document.createElement("a");
     link.setAttribute("href", encodeURI(csvContent));
     link.setAttribute("download", `Commande_${order.id.slice(0, 5)}.csv`);
@@ -117,7 +118,7 @@ export default function HistoriqueCommandes() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
-      // 1. Récupérer le prochain order_number
+      // 1. Prochain order_number
       const { data: counterData } = await supabase
         .from('config')
         .select('last_value')
@@ -129,7 +130,18 @@ export default function HistoriqueCommandes() {
         .update({ last_value: nextOrderId })
         .eq('counter_name', 'order_id');
 
-      // 2. Insérer dans Supabase
+      // 2. Charger les collabs à jour pour les infos nominatives
+      const { data: collabs } = await supabase
+        .from('collaborateurs')
+        .select('id, full_name, first_name, last_name, email, phone, fonction, avatar_url')
+        .eq('agency_id', agencyData?.id);
+
+      const findCollab = (nom: string) =>
+        (collabs || []).find(
+          (c) => (c.full_name || `${c.first_name} ${c.last_name}`) === nom
+        );
+
+      // 3. Insérer dans Supabase
       const { error } = await supabase.from('orders').insert([{
         order_number:     nextOrderId,
         agency_name:      orderToReorder.agency_name,
@@ -151,21 +163,28 @@ export default function HistoriqueCommandes() {
 
       const totalTTC = (orderToReorder.total_ht * 1.20).toFixed(2);
 
-      // 3. Reconstruire itemsPayload depuis items sauvegardés
-      const itemsPayload = (orderToReorder.items || []).map((item: any) => ({
-        produit:            item.name       || item.produit    || "",
-        quantite:           item.qty        || item.quantite   || "",
-        prix_ligne:         item.total_row  || item.prix_ligne || (item.price_unit * item.qty)?.toFixed(2) || "",
-        membre:             item.ordered_by || item.membre     || reorderCollab,
-        nominatif_prenom:   item.nominatif_prenom   || "",
-        nominatif_nom:      item.nominatif_nom      || "",
-        nominatif_mail:     item.nominatif_mail     || "",
-        nominatif_tel:      item.nominatif_tel      || "",
-        nominatif_fonction: item.nominatif_fonction || "",
-        nominatif_photo:    item.nominatif_photo    || "",
-      }));
+      // 4. Reconstruire itemsPayload en croisant les collabs Supabase
+      const itemsPayload = (orderToReorder.items || []).map((item: any) => {
+        const nomMembre = item.ordered_by || item.membre || reorderCollab;
+        const collab    = findCollab(nomMembre);
 
-      // 4. Envoyer au webhook Make
+        return {
+          produit:   item.name    || item.produit  || "",
+          quantite:  item.qty     || item.quantite || "",
+          prix_ligne: item.total_row || item.prix_ligne
+            || ((item.price_unit || 0) * (item.qty || item.quantite || 0)).toFixed(2),
+          membre: nomMembre,
+          // Infos fraîches Supabase en priorité, fallback sur ce qui était stocké
+          nominatif_prenom:   collab?.first_name  || item.nominatif_prenom   || "",
+          nominatif_nom:      collab?.last_name   || item.nominatif_nom      || "",
+          nominatif_mail:     collab?.email       || item.nominatif_mail     || "",
+          nominatif_tel:      collab?.phone       || item.nominatif_tel      || "",
+          nominatif_fonction: collab?.fonction    || item.nominatif_fonction || "",
+          nominatif_photo:    collab?.avatar_url  || item.nominatif_photo    || "",
+        };
+      });
+
+      // 5. Envoyer au webhook Make
       await fetch('https://hook.eu1.make.com/mb6ok4o2jv41vrhd37r101wi98b1lfz4', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -184,7 +203,6 @@ export default function HistoriqueCommandes() {
           total_ht:            orderToReorder.total_ht,
           total_ttc:           totalTTC,
           date:                new Date().toLocaleString('fr-FR'),
-          // Mentions légales depuis l'agence courante
           mentions_nom_societe:             agencyData?.mentions_nom_societe             || "",
           mentions_statut:                  agencyData?.mentions_statut                  || "",
           mentions_capital:                 agencyData?.mentions_capital                 || "",
@@ -231,7 +249,9 @@ export default function HistoriqueCommandes() {
         <div className="flex flex-col md:flex-row justify-between items-center md:items-end border-b border-white/10 pb-8 gap-6">
           <div>
             <h1 className="text-5xl font-black uppercase italic tracking-tighter text-blue-500">Historique</h1>
-            <p className="text-[10px] font-bold opacity-30 uppercase tracking-[0.3em] mt-2 italic">Agence : {agencyName}</p>
+            <p className="text-[10px] font-bold opacity-30 uppercase tracking-[0.3em] mt-2 italic">
+              Agence : {agencyName}
+            </p>
           </div>
           <div className="flex gap-3">
             <button
@@ -266,20 +286,29 @@ export default function HistoriqueCommandes() {
               >
                 <div className="flex flex-col lg:flex-row gap-8 items-center">
 
+                  {/* Passée par */}
                   <div className="w-full lg:w-1/4 border-r border-white/5">
                     <span className="text-[8px] font-black uppercase text-blue-500/60 block mb-1">Passée par</span>
-                    <h2 className="text-xl font-black uppercase truncate">{order.profiles?.full_name || 'Système'}</h2>
-                    <p className="text-[10px] font-bold opacity-30 mt-2">{new Date(order.created_at).toLocaleDateString('fr-FR')}</p>
+                    <h2 className="text-xl font-black uppercase truncate">
+                      {order.profiles?.full_name || 'Système'}
+                    </h2>
+                    <p className="text-[10px] font-bold opacity-30 mt-2">
+                      {new Date(order.created_at).toLocaleDateString('fr-FR')}
+                    </p>
                   </div>
 
+                  {/* Produits & adresse */}
                   <div className="flex-1 w-full bg-white/5 rounded-2xl p-5 border border-white/5 group-hover:bg-white/10 transition-colors">
-                    <span className="text-[8px] font-black uppercase text-white/20 tracking-widest mb-2 block italic">Cliquez pour CSV ↓</span>
+                    <span className="text-[8px] font-black uppercase text-white/20 tracking-widest mb-2 block italic">
+                      Cliquez pour CSV ↓
+                    </span>
                     <p className="text-sm font-bold text-white leading-relaxed">
                       {order.produits_liste.split(',').join(' • ')}
                     </p>
                     <p className="mt-3 text-[10px] text-white/40 truncate">📍 {order.delivery_address}</p>
                   </div>
 
+                  {/* Prix + boutons */}
                   <div className="flex items-center gap-6 w-full lg:w-auto justify-between lg:justify-end">
                     <div className="text-right border-r border-white/5 pr-6">
                       <div className="flex items-center justify-end gap-2 opacity-30">
@@ -288,7 +317,9 @@ export default function HistoriqueCommandes() {
                       </div>
                       <div className="flex items-center justify-end gap-2">
                         <span className="text-[9px] font-black text-blue-500 uppercase italic">TTC</span>
-                        <span className="text-3xl font-black italic tabular-nums leading-none">{totalTTC.toFixed(2)}€</span>
+                        <span className="text-3xl font-black italic tabular-nums leading-none">
+                          {totalTTC.toFixed(2)}€
+                        </span>
                       </div>
                     </div>
 
@@ -360,7 +391,9 @@ export default function HistoriqueCommandes() {
                 </p>
 
                 <div className="space-y-1">
-                  <label className="text-[8px] font-black uppercase tracking-widest opacity-40 ml-2 block">Collaborateur</label>
+                  <label className="text-[8px] font-black uppercase tracking-widest opacity-40 ml-2 block">
+                    Collaborateur
+                  </label>
                   <input
                     value={reorderCollab}
                     onChange={(e) => setReorderCollab(e.target.value)}
@@ -370,7 +403,9 @@ export default function HistoriqueCommandes() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[8px] font-black uppercase tracking-widest opacity-40 ml-2 block">Adresse</label>
+                  <label className="text-[8px] font-black uppercase tracking-widest opacity-40 ml-2 block">
+                    Adresse
+                  </label>
                   <input
                     value={reorderAddress}
                     onChange={(e) => setReorderAddress(e.target.value)}
@@ -381,7 +416,9 @@ export default function HistoriqueCommandes() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-[8px] font-black uppercase tracking-widest opacity-40 ml-2 block">Code postal</label>
+                    <label className="text-[8px] font-black uppercase tracking-widest opacity-40 ml-2 block">
+                      Code postal
+                    </label>
                     <input
                       value={reorderZip}
                       onChange={(e) => setReorderZip(e.target.value)}
@@ -390,7 +427,9 @@ export default function HistoriqueCommandes() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[8px] font-black uppercase tracking-widest opacity-40 ml-2 block">Ville</label>
+                    <label className="text-[8px] font-black uppercase tracking-widest opacity-40 ml-2 block">
+                      Ville
+                    </label>
                     <input
                       value={reorderCity}
                       onChange={(e) => setReorderCity(e.target.value)}
@@ -401,7 +440,9 @@ export default function HistoriqueCommandes() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[8px] font-black uppercase tracking-widest opacity-40 ml-2 block">Téléphone</label>
+                  <label className="text-[8px] font-black uppercase tracking-widest opacity-40 ml-2 block">
+                    Téléphone
+                  </label>
                   <input
                     value={reorderPhone}
                     onChange={(e) => setReorderPhone(e.target.value)}
@@ -437,18 +478,18 @@ export default function HistoriqueCommandes() {
                     >
                       <div className="px-6 pb-6 space-y-3 border-t border-gray-100 pt-4">
                         {[
-                          { label: 'Nom société',       val: agencyData?.mentions_nom_societe },
-                          { label: 'Statut',            val: agencyData?.mentions_statut },
-                          { label: 'Capital',           val: agencyData?.mentions_capital ? `${agencyData.mentions_capital}€` : null },
-                          { label: 'RCS',               val: agencyData?.mentions_rcs },
-                          { label: 'Code APE',          val: agencyData?.mentions_ape },
-                          { label: 'Carte pro',         val: agencyData?.mentions_carte_pro },
-                          { label: 'Délivrée par',      val: agencyData?.mentions_carte_pro_delivree },
-                          { label: 'Caisse garantie',   val: agencyData?.mentions_caisse_garantie },
-                          { label: 'Adresse caisse',    val: agencyData?.mentions_caisse_garantie_adresse },
-                          { label: 'TVA',               val: agencyData?.mentions_tva },
-                          { label: 'Mail RGPD',         val: agencyData?.mentions_mail_rgpd },
-                          { label: 'SIRET',             val: orderToReorder.siret },
+                          { label: 'Nom société',     val: agencyData?.mentions_nom_societe },
+                          { label: 'Statut',          val: agencyData?.mentions_statut },
+                          { label: 'Capital',         val: agencyData?.mentions_capital ? `${agencyData.mentions_capital}€` : null },
+                          { label: 'RCS',             val: agencyData?.mentions_rcs },
+                          { label: 'Code APE',        val: agencyData?.mentions_ape },
+                          { label: 'Carte pro',       val: agencyData?.mentions_carte_pro },
+                          { label: 'Délivrée par',    val: agencyData?.mentions_carte_pro_delivree },
+                          { label: 'Caisse garantie', val: agencyData?.mentions_caisse_garantie },
+                          { label: 'Adresse caisse',  val: agencyData?.mentions_caisse_garantie_adresse },
+                          { label: 'TVA',             val: agencyData?.mentions_tva },
+                          { label: 'Mail RGPD',       val: agencyData?.mentions_mail_rgpd },
+                          { label: 'SIRET',           val: orderToReorder.siret },
                         ].map(({ label, val }) => val ? (
                           <div key={label} className="flex justify-between items-start gap-4 text-[9px]">
                             <span className="font-black uppercase opacity-30 shrink-0">{label}</span>
