@@ -12,6 +12,7 @@ export default function HistoriqueCommandes() {
   const [isReordering, setIsReordering]       = useState(false);
   const [orderToReorder, setOrderToReorder]   = useState<any | null>(null);
   const [showFacturation, setShowFacturation] = useState(false);
+  const [reorderSuccess, setReorderSuccess]   = useState(false);
 
   const [reorderAddress, setReorderAddress] = useState("");
   const [reorderZip, setReorderZip]         = useState("");
@@ -70,7 +71,6 @@ export default function HistoriqueCommandes() {
 
   const exportAllToCSV = () => {
     if (orders.length === 0) return;
-    const tva = 1.20;
     const headers = ["Date", "Acheteur", "Articles", "Adresse", "Total HT", "Total TTC"];
     const rows = orders.map(order => [
       new Date(order.created_at).toLocaleDateString('fr-FR'),
@@ -78,7 +78,7 @@ export default function HistoriqueCommandes() {
       order.produits_liste.replace(/,/g, ' |'),
       order.delivery_address.replace(/,/g, ' '),
       `${order.total_ht?.toFixed(2)}€`,
-      `${(order.total_ht * tva).toFixed(2)}€`,
+      `${(order.total_ht * 1.20).toFixed(2)}€`,
     ]);
     const csvContent = "data:text/csv;charset=utf-8,"
       + [headers, ...rows].map(e => e.join(",")).join("\n");
@@ -89,7 +89,6 @@ export default function HistoriqueCommandes() {
   };
 
   const exportSingleCSV = (order: any) => {
-    const tva = 1.20;
     const headers = ["Date", "Acheteur", "Articles", "Adresse", "Total HT", "Total TTC"];
     const row = [
       new Date(order.created_at).toLocaleDateString('fr-FR'),
@@ -97,7 +96,7 @@ export default function HistoriqueCommandes() {
       order.produits_liste.replace(/,/g, ' |'),
       order.delivery_address.replace(/,/g, ' '),
       `${order.total_ht?.toFixed(2)}€`,
-      `${(order.total_ht * tva).toFixed(2)}€`,
+      `${(order.total_ht * 1.20).toFixed(2)}€`,
     ];
     const csvContent = "data:text/csv;charset=utf-8,"
       + [headers, row].map(e => e.join(",")).join("\n");
@@ -107,12 +106,25 @@ export default function HistoriqueCommandes() {
     link.click();
   };
 
+  // ─── Vérifie si un item était nominatif à la commande originale ──
+  const isNominatif = (item: any): boolean => {
+    return !!(
+      item.nominatif_prenom ||
+      item.nominatif_nom    ||
+      item.nominatif_mail   ||
+      item.nominatif_tel    ||
+      item.nominatif_photo
+    );
+  };
+
+  // ─── RECOMMANDER + WEBHOOK MAKE ──────────────────────────────────
   const confirmReorder = async () => {
     if (!orderToReorder) return;
     setIsReordering(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
+      // 1. Prochain order_number
       const { data: counterData } = await supabase
         .from('config')
         .select('last_value')
@@ -124,16 +136,23 @@ export default function HistoriqueCommandes() {
         .update({ last_value: nextOrderId })
         .eq('counter_name', 'order_id');
 
-      const { data: collabs } = await supabase
-        .from('collaborateurs')
-        .select('id, full_name, first_name, last_name, email, phone, fonction, avatar_url')
-        .eq('agency_id', agencyData?.id);
+      // 2. Charger les collabs UNIQUEMENT si au moins un item est nominatif
+      const hasNominatifItems = (orderToReorder.items || []).some(isNominatif);
+      let collabs: any[] = [];
+      if (hasNominatifItems) {
+        const { data } = await supabase
+          .from('collaborateurs')
+          .select('id, full_name, first_name, last_name, email, phone, fonction, avatar_url')
+          .eq('agency_id', agencyData?.id);
+        collabs = data || [];
+      }
 
       const findCollab = (nom: string) =>
-        (collabs || []).find(
+        collabs.find(
           (c) => (c.full_name || `${c.first_name} ${c.last_name}`) === nom
         );
 
+      // 3. Insérer dans Supabase
       const { error } = await supabase.from('orders').insert([{
         order_number:     nextOrderId,
         agency_name:      orderToReorder.agency_name,
@@ -155,14 +174,37 @@ export default function HistoriqueCommandes() {
 
       const totalTTC = (orderToReorder.total_ht * 1.20).toFixed(2);
 
+      // 4. Reconstruire itemsPayload
+      //    → infos nominatives SEULEMENT si le produit original l'était
       const itemsPayload = (orderToReorder.items || []).map((item: any) => {
-        const nomMembre = item.ordered_by || item.membre || reorderCollab;
-        const collab    = findCollab(nomMembre);
+        const nomMembre   = item.ordered_by || item.membre || reorderCollab;
+        const produitNom  = item.name    || item.produit  || "";
+        const qte         = item.qty     || item.quantite || "";
+        const prixLigne   = item.total_row || item.prix_ligne
+          || ((item.price_unit || 0) * (item.qty || item.quantite || 0)).toFixed(2);
+
+        // Produit non nominatif → on envoie les champs vides
+        if (!isNominatif(item)) {
+          return {
+            produit:            produitNom,
+            quantite:           qte,
+            prix_ligne:         prixLigne,
+            membre:             nomMembre,
+            nominatif_prenom:   "",
+            nominatif_nom:      "",
+            nominatif_mail:     "",
+            nominatif_tel:      "",
+            nominatif_fonction: "",
+            nominatif_photo:    "",
+          };
+        }
+
+        // Produit nominatif → on re-fetche depuis Supabase en priorité
+        const collab = findCollab(nomMembre);
         return {
-          produit:            item.name    || item.produit  || "",
-          quantite:           item.qty     || item.quantite || "",
-          prix_ligne:         item.total_row || item.prix_ligne
-            || ((item.price_unit || 0) * (item.qty || item.quantite || 0)).toFixed(2),
+          produit:            produitNom,
+          quantite:           qte,
+          prix_ligne:         prixLigne,
           membre:             nomMembre,
           nominatif_prenom:   collab?.first_name  || item.nominatif_prenom   || "",
           nominatif_nom:      collab?.last_name   || item.nominatif_nom      || "",
@@ -173,6 +215,7 @@ export default function HistoriqueCommandes() {
         };
       });
 
+      // 5. Envoyer au webhook Make
       await fetch('https://hook.eu1.make.com/mb6ok4o2jv41vrhd37r101wi98b1lfz4', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -206,6 +249,8 @@ export default function HistoriqueCommandes() {
       });
 
       setOrderToReorder(null);
+      setReorderSuccess(true);
+      setTimeout(() => setReorderSuccess(false), 4000);
       fetchOrders();
     } catch (err) {
       console.error(err);
@@ -274,7 +319,7 @@ export default function HistoriqueCommandes() {
                 <div className="flex flex-col lg:flex-row gap-8 items-start">
 
                   {/* Passée par */}
-                  <div className="w-full lg:w-1/4 lg:border-r border-white/5 lg:pr-8">
+                  <div className="w-full lg:w-1/4 lg:border-r border-white/5 lg:pr-8 shrink-0">
                     <span className="text-[8px] font-black uppercase text-blue-500/60 block mb-1">Passée par</span>
                     <h2 className="text-xl font-black uppercase truncate">
                       {order.profiles?.full_name || 'Système'}
@@ -284,7 +329,7 @@ export default function HistoriqueCommandes() {
                     </p>
                   </div>
 
-                  {/* ── Produits un par un ── */}
+                  {/* Produits */}
                   <div className="flex-1 w-full bg-white/5 rounded-2xl p-5 border border-white/5 group-hover:bg-white/10 transition-colors">
                     <span className="text-[8px] font-black uppercase text-white/20 tracking-widest mb-3 block italic">
                       Cliquez pour CSV ↓
@@ -307,14 +352,17 @@ export default function HistoriqueCommandes() {
                                   </p>
                                 </div>
                                 <div className="text-right shrink-0">
-                                  <p className="text-[10px] font-black tabular-nums">{ht.toFixed(2)}€ <span className="text-[8px] opacity-30">HT</span></p>
-                                  <p className="text-[9px] font-bold text-blue-400 tabular-nums">{ttc.toFixed(2)}€ <span className="opacity-60">TTC</span></p>
+                                  <p className="text-[10px] font-black tabular-nums">
+                                    {ht.toFixed(2)}€ <span className="text-[8px] opacity-30">HT</span>
+                                  </p>
+                                  <p className="text-[9px] font-bold text-blue-400 tabular-nums">
+                                    {ttc.toFixed(2)}€ <span className="opacity-60">TTC</span>
+                                  </p>
                                 </div>
                               </div>
                             );
                           })
                         : (
-                          // Fallback si pas d'items structurés (vieilles commandes)
                           <p className="text-sm font-bold text-white leading-relaxed">
                             {order.produits_liste.split(',').join(' • ')}
                           </p>
@@ -325,10 +373,10 @@ export default function HistoriqueCommandes() {
                   </div>
 
                   {/* Prix + boutons */}
-                  <div className="flex items-center gap-6 w-full lg:w-auto justify-between lg:justify-end">
+                  <div className="flex items-center gap-6 w-full lg:w-auto justify-between lg:justify-end shrink-0">
                     <div className="text-right border-r border-white/5 pr-6">
                       <div className="flex items-center justify-end gap-2 opacity-30">
-                        <span className="text-[8px] font-black uppercase mr-1">HT</span>
+                        <span className="text-[8px] font-black uppercase">HT</span>
                         <span className="text-sm font-bold">{order.total_ht?.toFixed(2)}€</span>
                       </div>
                       <div className="flex items-center justify-end gap-2">
@@ -338,7 +386,6 @@ export default function HistoriqueCommandes() {
                         </span>
                       </div>
                     </div>
-
                     <div className="flex items-center gap-3">
                       <button
                         onClick={(e) => { e.stopPropagation(); openReorder(order); }}
@@ -384,7 +431,7 @@ export default function HistoriqueCommandes() {
                 </p>
               </div>
 
-              {/* ── Produits un par un avec HT + TTC ── */}
+              {/* Produits un par un avec HT + TTC */}
               <div className="bg-blue-50 rounded-[28px] p-6">
                 <span className="text-[8px] font-black uppercase text-blue-400 tracking-widest block mb-4">
                   Produits commandés
@@ -409,7 +456,7 @@ export default function HistoriqueCommandes() {
                             </div>
                             <div className="text-right shrink-0">
                               <p className="text-[11px] font-black tabular-nums text-[#0f092e]">
-                                {ht.toFixed(2)}€ <span className="text-[8px] font-bold opacity-30">HT</span>
+                                {ht.toFixed(2)}€ <span className="text-[8px] opacity-30">HT</span>
                               </p>
                               <p className="text-[9px] font-bold text-blue-500 tabular-nums">
                                 {ttc.toFixed(2)}€ <span className="opacity-60">TTC</span>
@@ -440,7 +487,7 @@ export default function HistoriqueCommandes() {
                 </div>
               </div>
 
-              {/* Champs livraison modifiables */}
+              {/* Champs livraison */}
               <div className="space-y-4">
                 <p className="text-[8px] font-black uppercase opacity-30 tracking-widest">
                   Livraison — modifiable
@@ -568,6 +615,47 @@ export default function HistoriqueCommandes() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* ── TOAST SUCCÈS ─────────────────────────────────────────── */}
+      <AnimatePresence>
+        {reorderSuccess && (
+          <motion.div
+            initial={{ opacity: 0, y: 60, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0,  scale: 1    }}
+            exit={{    opacity: 0, y: 60, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[200] flex items-center gap-5 bg-white text-[#0f092e] px-10 py-6 rounded-[30px] shadow-2xl shadow-black/40 overflow-hidden"
+          >
+            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
+              <motion.svg
+                viewBox="0 0 24 24" fill="none"
+                stroke="white" strokeWidth="3"
+                strokeLinecap="round" strokeLinejoin="round"
+                className="w-5 h-5"
+              >
+                <motion.path
+                  d="M5 13l4 4L19 7"
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ duration: 0.4, delay: 0.2 }}
+                />
+              </motion.svg>
+            </div>
+            <div>
+              <p className="text-[12px] font-black uppercase italic tracking-tight">Commande envoyée !</p>
+              <p className="text-[9px] font-bold opacity-30 mt-0.5">Elle apparaît dans votre historique</p>
+            </div>
+            <motion.div
+              initial={{ scaleX: 1 }}
+              animate={{ scaleX: 0 }}
+              transition={{ duration: 4, ease: 'linear' }}
+              style={{ transformOrigin: 'left' }}
+              className="absolute bottom-0 left-0 h-1 w-full bg-blue-600 rounded-b-[30px]"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }
