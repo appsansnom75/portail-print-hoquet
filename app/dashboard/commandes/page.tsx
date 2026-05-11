@@ -1,16 +1,22 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function HistoriqueCommandes() {
-  const [orders, setOrders] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [agencyName, setAgencyName] = useState("");
-  const [isReordering, setIsReordering] = useState(false);
+  const [orders, setOrders]               = useState<any[]>([]);
+  const [loading, setLoading]             = useState(true);
+  const [agencyName, setAgencyName]       = useState("");
+  const [isReordering, setIsReordering]   = useState(false);
   const [orderToReorder, setOrderToReorder] = useState<any | null>(null);
+
+  // Champs éditables dans l'overlay recommande
+  const [reorderAddress, setReorderAddress]   = useState("");
+  const [reorderZip, setReorderZip]           = useState("");
+  const [reorderCity, setReorderCity]         = useState("");
+  const [reorderPhone, setReorderPhone]       = useState("");
+  const [reorderCollab, setReorderCollab]     = useState("");
 
   const fetchOrders = async () => {
     try {
@@ -41,7 +47,19 @@ export default function HistoriqueCommandes() {
 
   useEffect(() => { fetchOrders(); }, []);
 
-  // ─── EXPORT GLOBAL ─────────────────────────────────────────────────
+  // ─── Ouvrir l'overlay recommande avec les infos pré-remplies ──
+  const openReorder = (order: any) => {
+    // Décompose l'adresse de livraison si possible
+    const parts = (order.delivery_address || "").split(',').map((s: string) => s.trim());
+    setReorderAddress(parts[0] || order.delivery_address || "");
+    setReorderZip(order.zip_code || "");
+    setReorderCity(order.city || parts[1] || "");
+    setReorderPhone(order.client_phone || "");
+    setReorderCollab(order.client_email || "");
+    setOrderToReorder(order);
+  };
+
+  // ─── EXPORT GLOBAL ────────────────────────────────────────────
   const exportAllToCSV = () => {
     if (orders.length === 0) return;
     const tva = 1.20;
@@ -61,7 +79,7 @@ export default function HistoriqueCommandes() {
     link.click();
   };
 
-  // ─── EXPORT UNITAIRE ───────────────────────────────────────────────
+  // ─── EXPORT UNITAIRE ──────────────────────────────────────────
   const exportSingleCSV = (order: any) => {
     const tva = 1.20;
     const headers = ["Date", "Acheteur", "Articles", "Adresse", "Total HT", "Total TTC"];
@@ -80,24 +98,30 @@ export default function HistoriqueCommandes() {
     link.click();
   };
 
-  // ─── RECOMMANDER ───────────────────────────────────────────────────
+  // ─── RECOMMANDER ──────────────────────────────────────────────
   const confirmReorder = async () => {
     if (!orderToReorder) return;
     setIsReordering(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      const fullAddress = reorderAddress;
+
       const { error } = await supabase.from('orders').insert([{
         agency_name:      orderToReorder.agency_name,
-        client_email:     orderToReorder.client_email,
-        client_phone:     orderToReorder.client_phone,
-        delivery_address: orderToReorder.delivery_address,
+        client_email:     reorderCollab,
+        client_phone:     reorderPhone,
+        delivery_address: fullAddress,
+        zip_code:         reorderZip,
+        city:             reorderCity,
         produits_liste:   orderToReorder.produits_liste,
         quantite_liste:   orderToReorder.quantite_liste,
+        items:            orderToReorder.items,
         total_ht:         orderToReorder.total_ht,
         instructions:     `(RECO) - ${orderToReorder.instructions || ''}`,
         status:           'En attente',
         user_id:          user?.id,
       }]);
+
       if (error) throw error;
       setOrderToReorder(null);
       fetchOrders();
@@ -108,7 +132,7 @@ export default function HistoriqueCommandes() {
     }
   };
 
-  // ─── ✅ SUPPRIMER ──────────────────────────────────────────────────
+  // ─── SUPPRIMER ────────────────────────────────────────────────
   const deleteOrder = async (orderId: string) => {
     if (!confirm("Supprimer cette commande de l'historique ?")) return;
     const { error } = await supabase.from('orders').delete().eq('id', orderId);
@@ -194,10 +218,9 @@ export default function HistoriqueCommandes() {
                       </div>
                     </div>
 
-                    {/* ✅ Recommander + Supprimer */}
                     <div className="flex items-center gap-3">
                       <button
-                        onClick={(e) => { e.stopPropagation(); setOrderToReorder(order); }}
+                        onClick={(e) => { e.stopPropagation(); openReorder(order); }}
                         className="bg-white text-[#0f092e] hover:bg-blue-600 hover:text-white text-[9px] font-black uppercase px-8 py-5 rounded-2xl transition-all active:scale-95 shadow-xl"
                       >
                         Recommander
@@ -227,28 +250,122 @@ export default function HistoriqueCommandes() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white text-[#0f092e] w-full max-w-md rounded-[40px] p-10 space-y-6 shadow-2xl"
+              className="relative bg-white text-[#0f092e] w-full max-w-lg rounded-[45px] p-12 space-y-8 shadow-2xl overflow-y-auto max-h-[90vh]"
             >
-              <h3 className="text-2xl font-black uppercase italic text-center">Refaire la commande ?</h3>
-              <div className="bg-gray-100 rounded-3xl p-6">
-                <p className="text-sm font-black uppercase leading-tight mb-4">{orderToReorder.produits_liste}</p>
-                <div className="text-[10px] font-bold uppercase opacity-40 border-t border-gray-200 pt-4">
-                  📍 {orderToReorder.delivery_address}
+              {/* Barre bleue top */}
+              <div className="absolute top-0 left-0 w-full h-2 bg-blue-600 rounded-t-[45px]" />
+
+              <div className="text-center pt-2">
+                <h3 className="text-3xl font-black uppercase italic tracking-tighter text-blue-600">
+                  Recommander
+                </h3>
+                <p className="text-[9px] font-black uppercase opacity-30 mt-2 tracking-widest">
+                  Vérifie les infos avant de confirmer
+                </p>
+              </div>
+
+              {/* Produits (non modifiables) */}
+              <div className="bg-blue-50 rounded-[28px] p-6">
+                <span className="text-[8px] font-black uppercase text-blue-400 tracking-widest block mb-3">
+                  Produits commandés
+                </span>
+                <p className="text-[11px] font-black uppercase leading-relaxed text-[#0f092e]">
+                  {orderToReorder.produits_liste.split(',').join(' • ')}
+                </p>
+                <div className="flex justify-between items-center mt-4 pt-3 border-t border-blue-100">
+                  <span className="text-[8px] font-black uppercase opacity-40">Total HT</span>
+                  <span className="text-xl font-black italic text-blue-600">
+                    {orderToReorder.total_ht?.toFixed(2)}€
+                  </span>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+
+              {/* Infos modifiables */}
+              <div className="space-y-4">
+                <p className="text-[8px] font-black uppercase opacity-30 tracking-widest">
+                  Informations de livraison — modifiables
+                </p>
+
+                {/* Collaborateur / destinataire */}
+                <div className="space-y-1">
+                  <label className="text-[8px] font-black uppercase tracking-widest opacity-40 ml-2 block">
+                    Collaborateur
+                  </label>
+                  <input
+                    value={reorderCollab}
+                    onChange={(e) => setReorderCollab(e.target.value)}
+                    placeholder="Nom du collaborateur"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 text-[10px] font-black outline-none focus:border-blue-400 transition-all"
+                  />
+                </div>
+
+                {/* Adresse */}
+                <div className="space-y-1">
+                  <label className="text-[8px] font-black uppercase tracking-widest opacity-40 ml-2 block">
+                    Adresse
+                  </label>
+                  <input
+                    value={reorderAddress}
+                    onChange={(e) => setReorderAddress(e.target.value)}
+                    placeholder="Adresse de livraison"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 text-[10px] font-black outline-none focus:border-blue-400 transition-all uppercase"
+                  />
+                </div>
+
+                {/* CP + Ville */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[8px] font-black uppercase tracking-widest opacity-40 ml-2 block">
+                      Code postal
+                    </label>
+                    <input
+                      value={reorderZip}
+                      onChange={(e) => setReorderZip(e.target.value)}
+                      placeholder="75001"
+                      className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 text-[10px] font-black outline-none focus:border-blue-400 transition-all"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[8px] font-black uppercase tracking-widest opacity-40 ml-2 block">
+                      Ville
+                    </label>
+                    <input
+                      value={reorderCity}
+                      onChange={(e) => setReorderCity(e.target.value)}
+                      placeholder="Paris"
+                      className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 text-[10px] font-black outline-none focus:border-blue-400 transition-all uppercase"
+                    />
+                  </div>
+                </div>
+
+                {/* Téléphone */}
+                <div className="space-y-1">
+                  <label className="text-[8px] font-black uppercase tracking-widest opacity-40 ml-2 block">
+                    Téléphone
+                  </label>
+                  <input
+                    value={reorderPhone}
+                    onChange={(e) => setReorderPhone(e.target.value)}
+                    placeholder="06 00 00 00 00"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 text-[10px] font-black outline-none focus:border-blue-400 transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Boutons */}
+              <div className="grid grid-cols-2 gap-4 pt-2">
                 <button
                   onClick={() => setOrderToReorder(null)}
-                  className="py-4 text-[10px] font-black uppercase opacity-40"
+                  className="py-5 text-[10px] font-black uppercase opacity-30 hover:opacity-60 transition-all"
                 >
                   Annuler
                 </button>
                 <button
                   onClick={confirmReorder}
-                  disabled={isReordering}
-                  className="py-4 bg-blue-600 text-white rounded-2xl font-black uppercase text-[10px] shadow-lg shadow-blue-200 disabled:opacity-50"
+                  disabled={isReordering || !reorderAddress.trim() || !reorderCollab.trim()}
+                  className="py-5 bg-blue-600 text-white rounded-2xl font-black uppercase text-[10px] shadow-lg shadow-blue-200 hover:bg-[#0f092e] transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                 >
-                  {isReordering ? "..." : "Confirmer"}
+                  {isReordering ? "Envoi..." : "✓ Confirmer"}
                 </button>
               </div>
             </motion.div>
