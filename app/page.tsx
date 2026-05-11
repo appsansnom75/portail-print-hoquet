@@ -58,7 +58,7 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* BANNER DYNAMIQUE */}
+      {/* BANNER */}
       <section className="w-full relative overflow-hidden">
         <div className="h-[180px] md:h-[280px] w-full relative">
           <img src="/banner-1.jpg" alt="Bannière" className="w-full h-full object-cover opacity-[0.07] scale-110" />
@@ -72,7 +72,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* BARRE DE NAVIGATION & STATUT (STICKY) */}
+      {/* NAV STICKY */}
       <div className="sticky top-0 z-50 border-y border-white/5 bg-[#0f092e]/80 backdrop-blur-xl">
         <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
@@ -129,13 +129,13 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* GRILLE DES SECTIONS — 2 en haut, 3 en bas */}
+      {/* GRILLE — 2 en haut, 3 en bas */}
       <main className="flex-grow container mx-auto max-w-5xl px-6 py-20 space-y-8">
 
-        {/* LIGNE 1 — 2 tuiles */}
+        {/* LIGNE 1 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
-          <Link href="/perso" className="group relative">
+          <Link href="/perso" className="group">
             <div className="h-44 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-blue-600/10 group-hover:border-blue-500/40 group-hover:-translate-y-1 shadow-2xl">
               <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-blue-400 transition-colors">Produits personnalisables</span>
               <div className="h-[2px] w-6 bg-blue-500 my-4 group-hover:w-20 transition-all duration-700"></div>
@@ -143,7 +143,7 @@ export default function HomePage() {
             </div>
           </Link>
 
-          <Link href="/stock" className="group relative">
+          <Link href="/stock" className="group">
             <div className="h-44 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-green-600/10 group-hover:border-green-500/40 group-hover:-translate-y-1 shadow-2xl">
               <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-green-400 transition-colors">Produits non personnalisés</span>
               <div className="h-[2px] w-6 bg-green-500 my-4 group-hover:w-20 transition-all duration-700"></div>
@@ -153,10 +153,10 @@ export default function HomePage() {
 
         </div>
 
-        {/* LIGNE 2 — 3 tuiles */}
+        {/* LIGNE 2 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
 
-          <Link href="/hoquet" className="group relative">
+          <Link href="/hoquet" className="group">
             <div className="h-44 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-orange-600/10 group-hover:border-orange-500/40 group-hover:-translate-y-1 shadow-2xl">
               <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-orange-400 transition-colors">Gamme Business</span>
               <div className="h-[2px] w-6 bg-orange-500 my-4 group-hover:w-20 transition-all duration-700"></div>
@@ -164,7 +164,7 @@ export default function HomePage() {
             </div>
           </Link>
 
-          <Link href="/signaletique" className="group relative">
+          <Link href="/signaletique" className="group">
             <div className="h-44 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-cyan-600/10 group-hover:border-cyan-400/40 group-hover:-translate-y-1 shadow-2xl">
               <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-cyan-400 transition-colors">Signalétique</span>
               <div className="h-[2px] w-6 bg-cyan-400 my-4 group-hover:w-20 transition-all duration-700"></div>
@@ -172,7 +172,7 @@ export default function HomePage() {
             </div>
           </Link>
 
-          <Link href="/operations" className="group relative">
+          <Link href="/operations" className="group">
             <div className="h-44 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-purple-600/15 group-hover:border-purple-500/50 group-hover:-translate-y-1 shadow-2xl">
               <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-purple-400 transition-colors">Opérations du moment</span>
               <div className="h-[2px] w-6 bg-purple-500 my-4 group-hover:w-20 transition-all duration-700"></div>
@@ -184,27 +184,27 @@ export default function HomePage() {
       </main>
 
       {/* FOOTER */}
-      <footer className="py-10 border-t border-white/5 bg-black/20 mt-auto">
-        <div className="max-w-5xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
+      <footer className="py-12 border-t border-white/5 bg-black/20 mt-auto">
+        <div className="max-w-5xl mx-auto px-6 flex flex-col items-center gap-4 text-center">
 
-          {/* COPYRIGHT */}
-          <p className="text-[8px] font-black uppercase tracking-[0.4em] text-white/10 shrink-0">
-            © 2026 Imprimerie Connivence pour Guy Hoquet
+          <p className="text-xs font-bold text-white/30 leading-relaxed">
+            Besoin d'aide ? Suivi de commande, facturation, devis, fichiers ou toute autre question ?
           </p>
 
-          {/* CONTACT */}
-          <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4 text-center md:text-right">
-            <p className="text-[8px] font-bold text-white/20 leading-relaxed">
-              Besoin d'aide ? Suivi de commande, facturation, devis, fichiers ou toute autre question ?
-            </p>
-            <div className="flex flex-col items-center md:items-end gap-1 shrink-0">
-              <a href="tel:0241870078" className="text-[10px] font-black text-white/60 hover:text-white transition-colors tracking-widest">
-                02 41 87 00 78
-              </a>
-              <a href="mailto:webtoprint@imprimerie-connivence.com" className="text-[8px] font-bold text-white/30 hover:text-blue-400 transition-colors">
-                webtoprint@imprimerie-connivence.com
-              </a>
-            </div>
+          <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6">
+            <a
+              href="tel:0241870078"
+              className="text-sm font-black text-white/70 hover:text-white transition-colors tracking-widest"
+            >
+              02 41 87 00 78
+            </a>
+            <span className="hidden sm:block w-px h-4 bg-white/10"></span>
+            <a
+              href="mailto:webtoprint@imprimerie-connivence.com"
+              className="text-xs font-bold text-white/40 hover:text-blue-400 transition-colors"
+            >
+              webtoprint@imprimerie-connivence.com
+            </a>
           </div>
 
         </div>
