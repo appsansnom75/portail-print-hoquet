@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 
+
 export interface CartItem {
   id: string;
   cartLineId: string;
@@ -13,6 +14,7 @@ export interface CartItem {
   orderedBy?: string | null;
 }
 
+
 interface CartContextType {
   cart: CartItem[];
   addToCart: (item: Omit<CartItem, 'cartLineId'>) => void;
@@ -21,15 +23,19 @@ interface CartContextType {
   clearCart: () => void;
 }
 
+
 const CartContext = createContext<CartContextType | undefined>(undefined);
+
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
+
   // ── Clé de stockage unique par utilisateur ────────────────────
   const storageKey = userId ? `cart_storage_${userId}` : null;
+
 
   // ── 1. Charger le panier au montage ──────────────────────────
   useEffect(() => {
@@ -37,6 +43,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const { data: { user } } = await supabase.auth.getUser();
       const uid = user?.id ?? null;
       setUserId(uid);
+
 
       if (uid) {
         const key = `cart_storage_${uid}`;
@@ -50,16 +57,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     init();
   }, []);
 
+
   // ── 2. Vider le panier à chaque changement de session ────────
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const newUid = session?.user?.id ?? null;
+
 
       if (event === 'SIGNED_OUT') {
         // Vide le panier en mémoire mais garde le localStorage intact
         setCart([]);
         setUserId(null);
       }
+
 
       if (event === 'SIGNED_IN' && newUid) {
         setUserId(newUid);
@@ -74,8 +84,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
+
     return () => subscription.unsubscribe();
   }, []);
+
 
   // ── 3. Sauvegarder le panier à chaque modification ───────────
   useEffect(() => {
@@ -84,12 +96,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [cart, isInitialized, storageKey]);
 
+
   // ── ACTIONS ───────────────────────────────────────────────────
   const addToCart = (item: Omit<CartItem, 'cartLineId'>) => {
     setCart((prevCart) => {
       const existingIndex = prevCart.findIndex(
         (i) => i.id === item.id && i.orderedBy === item.orderedBy
       );
+
 
       if (existingIndex > -1) {
         const newCart = [...prevCart];
@@ -100,14 +114,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         return newCart;
       }
 
+
       const cartLineId = `${item.id}_${item.orderedBy ?? 'none'}_${Date.now()}`;
       return [...prevCart, { ...item, cartLineId }];
     });
   };
 
+
   const removeFromCart = (cartLineId: string) => {
     setCart((prevCart) => prevCart.filter((item) => item.cartLineId !== cartLineId));
   };
+
 
   const updateQty = (cartLineId: string, newQty: number) => {
     if (newQty <= 0) { removeFromCart(cartLineId); return; }
@@ -118,6 +135,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
+
   const clearCart = () => {
     setCart([]);
     if (typeof window !== 'undefined' && storageKey) {
@@ -125,12 +143,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+
   return (
     <CartContext.Provider value={{ cart, addToCart, removeFromCart, updateQty, clearCart }}>
       {children}
     </CartContext.Provider>
   );
 }
+
 
 export function useCart() {
   const context = useContext(CartContext);
