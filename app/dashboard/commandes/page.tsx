@@ -13,7 +13,6 @@ export default function HistoriqueCommandes() {
   const [orderToReorder, setOrderToReorder]   = useState<any | null>(null);
   const [showFacturation, setShowFacturation] = useState(false);
 
-  // Champs éditables livraison
   const [reorderAddress, setReorderAddress] = useState("");
   const [reorderZip, setReorderZip]         = useState("");
   const [reorderCity, setReorderCity]       = useState("");
@@ -59,7 +58,6 @@ export default function HistoriqueCommandes() {
 
   useEffect(() => { fetchOrders(); }, []);
 
-  // ─── Ouvrir overlay recommande ────────────────────────────────
   const openReorder = (order: any) => {
     setReorderAddress(order.delivery_address || "");
     setReorderZip(order.zip_code || "");
@@ -70,7 +68,6 @@ export default function HistoriqueCommandes() {
     setOrderToReorder(order);
   };
 
-  // ─── EXPORT GLOBAL ────────────────────────────────────────────
   const exportAllToCSV = () => {
     if (orders.length === 0) return;
     const tva = 1.20;
@@ -91,7 +88,6 @@ export default function HistoriqueCommandes() {
     link.click();
   };
 
-  // ─── EXPORT UNITAIRE ──────────────────────────────────────────
   const exportSingleCSV = (order: any) => {
     const tva = 1.20;
     const headers = ["Date", "Acheteur", "Articles", "Adresse", "Total HT", "Total TTC"];
@@ -111,14 +107,12 @@ export default function HistoriqueCommandes() {
     link.click();
   };
 
-  // ─── RECOMMANDER + WEBHOOK MAKE ──────────────────────────────
   const confirmReorder = async () => {
     if (!orderToReorder) return;
     setIsReordering(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
-      // 1. Prochain order_number
       const { data: counterData } = await supabase
         .from('config')
         .select('last_value')
@@ -130,7 +124,6 @@ export default function HistoriqueCommandes() {
         .update({ last_value: nextOrderId })
         .eq('counter_name', 'order_id');
 
-      // 2. Charger les collabs à jour pour les infos nominatives
       const { data: collabs } = await supabase
         .from('collaborateurs')
         .select('id, full_name, first_name, last_name, email, phone, fonction, avatar_url')
@@ -141,7 +134,6 @@ export default function HistoriqueCommandes() {
           (c) => (c.full_name || `${c.first_name} ${c.last_name}`) === nom
         );
 
-      // 3. Insérer dans Supabase
       const { error } = await supabase.from('orders').insert([{
         order_number:     nextOrderId,
         agency_name:      orderToReorder.agency_name,
@@ -163,18 +155,15 @@ export default function HistoriqueCommandes() {
 
       const totalTTC = (orderToReorder.total_ht * 1.20).toFixed(2);
 
-      // 4. Reconstruire itemsPayload en croisant les collabs Supabase
       const itemsPayload = (orderToReorder.items || []).map((item: any) => {
         const nomMembre = item.ordered_by || item.membre || reorderCollab;
         const collab    = findCollab(nomMembre);
-
         return {
-          produit:   item.name    || item.produit  || "",
-          quantite:  item.qty     || item.quantite || "",
-          prix_ligne: item.total_row || item.prix_ligne
+          produit:            item.name    || item.produit  || "",
+          quantite:           item.qty     || item.quantite || "",
+          prix_ligne:         item.total_row || item.prix_ligne
             || ((item.price_unit || 0) * (item.qty || item.quantite || 0)).toFixed(2),
-          membre: nomMembre,
-          // Infos fraîches Supabase en priorité, fallback sur ce qui était stocké
+          membre:             nomMembre,
           nominatif_prenom:   collab?.first_name  || item.nominatif_prenom   || "",
           nominatif_nom:      collab?.last_name   || item.nominatif_nom      || "",
           nominatif_mail:     collab?.email       || item.nominatif_mail     || "",
@@ -184,7 +173,6 @@ export default function HistoriqueCommandes() {
         };
       });
 
-      // 5. Envoyer au webhook Make
       await fetch('https://hook.eu1.make.com/mb6ok4o2jv41vrhd37r101wi98b1lfz4', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -227,7 +215,6 @@ export default function HistoriqueCommandes() {
     }
   };
 
-  // ─── SUPPRIMER ────────────────────────────────────────────────
   const deleteOrder = async (orderId: string) => {
     if (!confirm("Supprimer cette commande de l'historique ?")) return;
     const { error } = await supabase.from('orders').delete().eq('id', orderId);
@@ -284,10 +271,10 @@ export default function HistoriqueCommandes() {
                 onClick={() => exportSingleCSV(order)}
                 className="bg-white/[0.03] border border-white/10 rounded-[35px] p-7 hover:bg-white/[0.06] hover:border-blue-500/30 transition-all group cursor-pointer"
               >
-                <div className="flex flex-col lg:flex-row gap-8 items-center">
+                <div className="flex flex-col lg:flex-row gap-8 items-start">
 
                   {/* Passée par */}
-                  <div className="w-full lg:w-1/4 border-r border-white/5">
+                  <div className="w-full lg:w-1/4 lg:border-r border-white/5 lg:pr-8">
                     <span className="text-[8px] font-black uppercase text-blue-500/60 block mb-1">Passée par</span>
                     <h2 className="text-xl font-black uppercase truncate">
                       {order.profiles?.full_name || 'Système'}
@@ -297,15 +284,44 @@ export default function HistoriqueCommandes() {
                     </p>
                   </div>
 
-                  {/* Produits & adresse */}
+                  {/* ── Produits un par un ── */}
                   <div className="flex-1 w-full bg-white/5 rounded-2xl p-5 border border-white/5 group-hover:bg-white/10 transition-colors">
-                    <span className="text-[8px] font-black uppercase text-white/20 tracking-widest mb-2 block italic">
+                    <span className="text-[8px] font-black uppercase text-white/20 tracking-widest mb-3 block italic">
                       Cliquez pour CSV ↓
                     </span>
-                    <p className="text-sm font-bold text-white leading-relaxed">
-                      {order.produits_liste.split(',').join(' • ')}
-                    </p>
-                    <p className="mt-3 text-[10px] text-white/40 truncate">📍 {order.delivery_address}</p>
+                    <div className="space-y-3">
+                      {(order.items && order.items.length > 0)
+                        ? order.items.map((item: any, idx: number) => {
+                            const nom    = item.name     || item.produit  || "Produit";
+                            const qte    = item.qty      || item.quantite || 1;
+                            const ht     = parseFloat(item.total_row || item.prix_ligne || 0);
+                            const ttc    = ht * 1.20;
+                            const membre = item.ordered_by || item.membre || null;
+                            return (
+                              <div key={idx} className="flex justify-between items-start gap-4 border-b border-white/5 pb-3 last:border-0 last:pb-0">
+                                <div>
+                                  <p className="text-[11px] font-black uppercase leading-tight">{nom}</p>
+                                  <p className="text-[8px] font-bold opacity-30 mt-0.5">
+                                    x{qte}
+                                    {membre && <span className="text-blue-400 ml-2">— {membre}</span>}
+                                  </p>
+                                </div>
+                                <div className="text-right shrink-0">
+                                  <p className="text-[10px] font-black tabular-nums">{ht.toFixed(2)}€ <span className="text-[8px] opacity-30">HT</span></p>
+                                  <p className="text-[9px] font-bold text-blue-400 tabular-nums">{ttc.toFixed(2)}€ <span className="opacity-60">TTC</span></p>
+                                </div>
+                              </div>
+                            );
+                          })
+                        : (
+                          // Fallback si pas d'items structurés (vieilles commandes)
+                          <p className="text-sm font-bold text-white leading-relaxed">
+                            {order.produits_liste.split(',').join(' • ')}
+                          </p>
+                        )
+                      }
+                    </div>
+                    <p className="mt-4 text-[10px] text-white/40 truncate">📍 {order.delivery_address}</p>
                   </div>
 
                   {/* Prix + boutons */}
@@ -368,19 +384,59 @@ export default function HistoriqueCommandes() {
                 </p>
               </div>
 
-              {/* Produits (lecture seule) */}
+              {/* ── Produits un par un avec HT + TTC ── */}
               <div className="bg-blue-50 rounded-[28px] p-6">
-                <span className="text-[8px] font-black uppercase text-blue-400 tracking-widest block mb-3">
+                <span className="text-[8px] font-black uppercase text-blue-400 tracking-widest block mb-4">
                   Produits commandés
                 </span>
-                <p className="text-[11px] font-black uppercase leading-relaxed text-[#0f092e]">
-                  {orderToReorder.produits_liste.split(',').join(' • ')}
-                </p>
-                <div className="flex justify-between items-center mt-4 pt-3 border-t border-blue-100">
-                  <span className="text-[8px] font-black uppercase opacity-40">Total HT</span>
-                  <span className="text-xl font-black italic text-blue-600">
-                    {orderToReorder.total_ht?.toFixed(2)}€
-                  </span>
+
+                <div className="space-y-3">
+                  {(orderToReorder.items && orderToReorder.items.length > 0)
+                    ? orderToReorder.items.map((item: any, idx: number) => {
+                        const nom    = item.name     || item.produit  || "Produit";
+                        const qte    = item.qty      || item.quantite || 1;
+                        const ht     = parseFloat(item.total_row || item.prix_ligne || 0);
+                        const ttc    = ht * 1.20;
+                        const membre = item.ordered_by || item.membre || null;
+                        return (
+                          <div key={idx} className="flex justify-between items-start gap-4 py-3 border-b border-blue-100 last:border-0 last:pb-0">
+                            <div className="flex-1">
+                              <p className="text-[11px] font-black uppercase leading-tight text-[#0f092e]">{nom}</p>
+                              <p className="text-[8px] font-bold opacity-40 mt-1">
+                                x{qte}
+                                {membre && <span className="text-blue-500 ml-2">— {membre}</span>}
+                              </p>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <p className="text-[11px] font-black tabular-nums text-[#0f092e]">
+                                {ht.toFixed(2)}€ <span className="text-[8px] font-bold opacity-30">HT</span>
+                              </p>
+                              <p className="text-[9px] font-bold text-blue-500 tabular-nums">
+                                {ttc.toFixed(2)}€ <span className="opacity-60">TTC</span>
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })
+                    : (
+                      <p className="text-[11px] font-black uppercase leading-relaxed text-[#0f092e]">
+                        {orderToReorder.produits_liste.split(',').join(' • ')}
+                      </p>
+                    )
+                  }
+                </div>
+
+                {/* Total */}
+                <div className="flex justify-between items-center mt-4 pt-4 border-t border-blue-200">
+                  <span className="text-[8px] font-black uppercase opacity-40">Total</span>
+                  <div className="text-right">
+                    <p className="text-[11px] font-black text-[#0f092e]">
+                      {orderToReorder.total_ht?.toFixed(2)}€ <span className="text-[8px] opacity-30">HT</span>
+                    </p>
+                    <p className="text-xl font-black italic text-blue-600">
+                      {(orderToReorder.total_ht * 1.20).toFixed(2)}€ <span className="text-[9px] opacity-60">TTC</span>
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -391,9 +447,7 @@ export default function HistoriqueCommandes() {
                 </p>
 
                 <div className="space-y-1">
-                  <label className="text-[8px] font-black uppercase tracking-widest opacity-40 ml-2 block">
-                    Collaborateur
-                  </label>
+                  <label className="text-[8px] font-black uppercase tracking-widest opacity-40 ml-2 block">Collaborateur</label>
                   <input
                     value={reorderCollab}
                     onChange={(e) => setReorderCollab(e.target.value)}
@@ -403,9 +457,7 @@ export default function HistoriqueCommandes() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[8px] font-black uppercase tracking-widest opacity-40 ml-2 block">
-                    Adresse
-                  </label>
+                  <label className="text-[8px] font-black uppercase tracking-widest opacity-40 ml-2 block">Adresse</label>
                   <input
                     value={reorderAddress}
                     onChange={(e) => setReorderAddress(e.target.value)}
@@ -416,9 +468,7 @@ export default function HistoriqueCommandes() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-[8px] font-black uppercase tracking-widest opacity-40 ml-2 block">
-                      Code postal
-                    </label>
+                    <label className="text-[8px] font-black uppercase tracking-widest opacity-40 ml-2 block">Code postal</label>
                     <input
                       value={reorderZip}
                       onChange={(e) => setReorderZip(e.target.value)}
@@ -427,9 +477,7 @@ export default function HistoriqueCommandes() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[8px] font-black uppercase tracking-widest opacity-40 ml-2 block">
-                      Ville
-                    </label>
+                    <label className="text-[8px] font-black uppercase tracking-widest opacity-40 ml-2 block">Ville</label>
                     <input
                       value={reorderCity}
                       onChange={(e) => setReorderCity(e.target.value)}
@@ -440,9 +488,7 @@ export default function HistoriqueCommandes() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[8px] font-black uppercase tracking-widest opacity-40 ml-2 block">
-                    Téléphone
-                  </label>
+                  <label className="text-[8px] font-black uppercase tracking-widest opacity-40 ml-2 block">Téléphone</label>
                   <input
                     value={reorderPhone}
                     onChange={(e) => setReorderPhone(e.target.value)}
