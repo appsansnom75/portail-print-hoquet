@@ -22,6 +22,15 @@ interface VariantItem {
 function SortableItem({ p, startEdit, handleDelete }: any) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: p.id });
   const style = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 100 : 1, opacity: isDragging ? 0.6 : 1 };
+
+  const CATEGORY_COLOR: Record<string, string> = {
+    Perso: 'text-blue-500',
+    Stock: 'text-green-500',
+    Vetements: 'text-orange-500',
+    Signaletique: 'text-cyan-400',
+    Operations: 'text-purple-500',
+  };
+
   return (
     <div ref={setNodeRef} style={style} className="flex items-center gap-4 bg-white/[0.02] p-4 rounded-[24px] border border-white/5 hover:border-blue-500/30 transition-all group">
       <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-2 text-white/10 hover:text-blue-500 transition-colors">
@@ -32,10 +41,9 @@ function SortableItem({ p, startEdit, handleDelete }: any) {
       </div>
       <div className="flex-1 min-w-0">
         <p className="font-black uppercase text-[10px] tracking-widest truncate">{p.name}</p>
-        <p className="text-[7px] text-white/20 font-bold uppercase">
+        <p className={`text-[7px] font-bold uppercase ${CATEGORY_COLOR[p.category] || 'text-white/20'}`}>
           {p.has_variants ? `${p.config.variants?.length} modèles` : 'Modèle unique'}
         </p>
-        {/* ✅ BADGE si "Qui commande ?" est activé */}
         {p.config?.show_ordered_by && (
           <p className="text-[7px] text-blue-500/60 font-black uppercase tracking-widest mt-0.5">✓ Qui commande ?</p>
         )}
@@ -66,9 +74,12 @@ export default function AdminPortal() {
   const [hasVariants, setHasVariants] = useState(false);
   const [variantsList, setVariantsList] = useState<VariantItem[]>([]);
   const [existingProducts, setExistingProducts] = useState<any[]>([]);
-  const [showOrderedBy, setShowOrderedBy] = useState(false); // ✅ NOUVEAU
+  const [showOrderedBy, setShowOrderedBy] = useState(false);
 
-  const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   useEffect(() => {
     const checkAccess = async () => {
@@ -139,11 +150,11 @@ export default function AdminPortal() {
       const payload = {
         name, category, image_recto: mainUrl, image_verso: versoUrl || null,
         has_variants: hasVariants,
-        config: { 
-          quantities: qtyArray, 
-          prices: finalPrices, 
+        config: {
+          quantities: qtyArray,
+          prices: finalPrices,
           variants: finalVariants,
-          show_ordered_by: showOrderedBy  // ✅ NOUVEAU
+          show_ordered_by: showOrderedBy
         }
       };
 
@@ -158,14 +169,14 @@ export default function AdminPortal() {
   const resetForm = () => {
     setEditingId(null); setName(''); setCategory('Perso'); setImageFile(null); setImageFileVerso(null);
     setQuantities('500, 1000, 5000'); setBasePrices('100, 180, 500'); setHasVariants(false);
-    setVariantsList([]); setShowOrderedBy(false); // ✅ NOUVEAU
+    setVariantsList([]); setShowOrderedBy(false);
   };
 
   const startEdit = (p: any) => {
     setEditingId(p.id); setName(p.name); setCategory(p.category);
     setQuantities(p.config.quantities.join(', '));
     setHasVariants(p.has_variants);
-    setShowOrderedBy(p.config?.show_ordered_by || false); // ✅ NOUVEAU
+    setShowOrderedBy(p.config?.show_ordered_by || false);
     if (p.has_variants) {
       setVariantsList(p.config.variants.map((v: any) => ({
         id: v.id, name: v.name, image_recto: v.image_recto, image_verso: v.image_verso,
@@ -198,6 +209,15 @@ export default function AdminPortal() {
     </div>
   );
 
+  // Sections du listing avec leurs configs
+  const SECTIONS = [
+    { id: 'Perso',        label: 'Produits personnalisables',  color: 'text-blue-500'   },
+    { id: 'Stock',        label: 'Produits non personnalisés', color: 'text-green-500'  },
+    { id: 'Vetements',    label: 'Gamme Business',             color: 'text-orange-500' },
+    { id: 'Signaletique', label: 'Signalétique',               color: 'text-cyan-400'   },
+    { id: 'Operations',   label: 'Opérations du moment',       color: 'text-purple-500' },
+  ];
+
   return (
     <div className="min-h-screen bg-[#0f092e] text-white p-10 font-sans relative">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-16">
@@ -205,8 +225,14 @@ export default function AdminPortal() {
         {/* FORMULAIRE GAUCHE */}
         <div className="lg:col-span-5 space-y-8">
           <div className="flex justify-between items-center sticky top-0 z-40 bg-[#0f092e]/90 py-4 backdrop-blur-md">
-            <h1 className="text-3xl font-black uppercase text-blue-500 italic tracking-tighter">{editingId ? 'Édition' : 'Nouveau'}</h1>
-            {editingId && <button onClick={resetForm} className="bg-red-500/10 text-red-500 px-4 py-2 rounded-full text-[9px] font-black uppercase">Annuler</button>}
+            <h1 className="text-3xl font-black uppercase text-blue-500 italic tracking-tighter">
+              {editingId ? 'Édition' : 'Nouveau'}
+            </h1>
+            {editingId && (
+              <button onClick={resetForm} className="bg-red-500/10 text-red-500 px-4 py-2 rounded-full text-[9px] font-black uppercase">
+                Annuler
+              </button>
+            )}
           </div>
 
           <div className="bg-white/5 p-8 rounded-[40px] border border-white/10 space-y-6 relative shadow-2xl">
@@ -216,21 +242,34 @@ export default function AdminPortal() {
               </div>
             )}
 
+            {/* SELECT CATÉGORIE */}
             <div className="space-y-1">
               <label className="text-[9px] font-black uppercase text-white/30 ml-2">Emplacement</label>
-              <select value={category} onChange={e => setCategory(e.target.value)} className="w-full bg-[#16103a] border border-white/10 p-4 rounded-2xl text-[11px] font-black uppercase outline-none focus:border-blue-500">
+              <select
+                value={category}
+                onChange={e => setCategory(e.target.value)}
+                className="w-full bg-[#16103a] border border-white/10 p-4 rounded-2xl text-[11px] font-black uppercase outline-none focus:border-blue-500"
+              >
                 <option value="Perso">Produits personnalisables</option>
-                <option value="Signaletique">Produits non personnalisés</option>
-                <option value="Vetements">Gamme business</option>
+                <option value="Stock">Produits non personnalisés</option>
+                <option value="Vetements">Gamme Business</option>
+                <option value="Signaletique">Signalétique</option>
                 <option value="Operations">Opérations du moment</option>
               </select>
             </div>
 
+            {/* NOM */}
             <div className="space-y-1">
               <label className="text-[9px] font-black uppercase text-white/30 ml-2">Nom du produit</label>
-              <input value={name} onChange={e => setName(e.target.value)} className="w-full bg-black/40 border border-white/10 p-4 rounded-2xl text-sm font-bold outline-none" placeholder="Ex: Panneau de chantier" />
+              <input
+                value={name}
+                onChange={e => setName(e.target.value)}
+                className="w-full bg-black/40 border border-white/10 p-4 rounded-2xl text-sm font-bold outline-none"
+                placeholder="Ex: Panneau de chantier"
+              />
             </div>
 
+            {/* IMAGES */}
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
                 <p className="text-[8px] font-black text-white/30 uppercase mb-2">Image Recto</p>
@@ -242,41 +281,76 @@ export default function AdminPortal() {
               </div>
             </div>
 
+            {/* QUANTITÉS */}
             <div className="space-y-1">
               <label className="text-[9px] font-black uppercase text-white/30 ml-2">Paliers de quantités</label>
-              <input value={quantities} onChange={e => setQuantities(e.target.value)} className="w-full bg-black/40 border border-white/10 p-4 rounded-2xl text-sm font-mono" placeholder="500, 1000, 2000" />
+              <input
+                value={quantities}
+                onChange={e => setQuantities(e.target.value)}
+                className="w-full bg-black/40 border border-white/10 p-4 rounded-2xl text-sm font-mono"
+                placeholder="500, 1000, 2000"
+              />
             </div>
 
+            {/* PRIX DE BASE */}
             {!hasVariants && (
               <div className="space-y-1">
                 <label className="text-[9px] font-black uppercase text-white/30 ml-2">Prix par palier</label>
-                <input value={basePrices} onChange={e => setBasePrices(e.target.value)} className="w-full bg-black/40 border border-white/10 p-4 rounded-2xl text-sm font-mono text-blue-400" placeholder="100, 180, 300" />
+                <input
+                  value={basePrices}
+                  onChange={e => setBasePrices(e.target.value)}
+                  className="w-full bg-black/40 border border-white/10 p-4 rounded-2xl text-sm font-mono text-blue-400"
+                  placeholder="100, 180, 300"
+                />
               </div>
             )}
 
-            <button onClick={() => setHasVariants(!hasVariants)} className={`w-full py-4 border-2 border-dashed rounded-2xl text-[9px] font-black uppercase transition-all ${hasVariants ? 'border-blue-500 text-blue-500 bg-blue-500/5' : 'border-white/10 text-white/30'}`}>
+            {/* TOGGLE VARIANTES */}
+            <button
+              onClick={() => setHasVariants(!hasVariants)}
+              className={`w-full py-4 border-2 border-dashed rounded-2xl text-[9px] font-black uppercase transition-all ${hasVariants ? 'border-blue-500 text-blue-500 bg-blue-500/5' : 'border-white/10 text-white/30'}`}
+            >
               {hasVariants ? "✓ Plusieurs modèles configurés" : "+ Ajouter des options / tailles"}
             </button>
 
+            {/* LISTE VARIANTES */}
             {hasVariants && (
               <div className="space-y-4 border-l-2 border-blue-500 pl-4 py-2">
                 {variantsList.map((v, idx) => (
                   <div key={idx} className="bg-white/5 p-4 rounded-2xl space-y-3 relative group">
-                    <button onClick={() => setVariantsList(variantsList.filter((_, i) => i !== idx))} className="absolute top-2 right-2 text-red-500 text-[8px] font-black opacity-0 group-hover:opacity-100 transition-all uppercase">Supprimer</button>
+                    <button
+                      onClick={() => setVariantsList(variantsList.filter((_, i) => i !== idx))}
+                      className="absolute top-2 right-2 text-red-500 text-[8px] font-black opacity-0 group-hover:opacity-100 transition-all uppercase"
+                    >
+                      Supprimer
+                    </button>
                     <p className="text-[10px] font-black text-blue-500 uppercase italic tracking-tighter">{v.name}</p>
-                    <input value={v.prices} onChange={(e) => { const c = [...variantsList]; c[idx].prices = e.target.value; setVariantsList(c); }} className="w-full bg-black/40 border border-white/5 p-3 rounded-xl text-[10px] font-mono outline-none" placeholder="Prix..." />
+                    <input
+                      value={v.prices}
+                      onChange={(e) => { const c = [...variantsList]; c[idx].prices = e.target.value; setVariantsList(c); }}
+                      className="w-full bg-black/40 border border-white/5 p-3 rounded-xl text-[10px] font-mono outline-none"
+                      placeholder="Prix..."
+                    />
                     <div className="grid grid-cols-2 gap-2">
                       <input type="file" onChange={(e) => { const c = [...variantsList]; c[idx].fileRecto = e.target.files?.[0] || null; setVariantsList(c); }} className="text-[7px]" />
                       <input type="file" onChange={(e) => { const c = [...variantsList]; c[idx].fileVerso = e.target.files?.[0] || null; setVariantsList(c); }} className="text-[7px]" />
                     </div>
                   </div>
                 ))}
-                <button onClick={() => { const n = prompt("Nom de l'option :"); if(n) setVariantsList([...variantsList, { id: n.toLowerCase().replace(/\s/g, '-'), name: n, prices: basePrices }]); }} className="w-full py-3 bg-blue-500/10 text-blue-500 rounded-xl text-[9px] font-black uppercase hover:bg-blue-500/20 transition-all">+ Nouvelle variante</button>
+                <button
+                  onClick={() => {
+                    const n = prompt("Nom de l'option :");
+                    if (n) setVariantsList([...variantsList, { id: n.toLowerCase().replace(/\s/g, '-'), name: n, prices: basePrices }]);
+                  }}
+                  className="w-full py-3 bg-blue-500/10 text-blue-500 rounded-xl text-[9px] font-black uppercase hover:bg-blue-500/20 transition-all"
+                >
+                  + Nouvelle variante
+                </button>
               </div>
             )}
 
-            {/* ✅ TOGGLE "QUI COMMANDE ?" */}
-            <div 
+            {/* TOGGLE "QUI COMMANDE ?" */}
+            <div
               onClick={() => setShowOrderedBy(!showOrderedBy)}
               className={`flex items-center gap-4 p-4 rounded-2xl border cursor-pointer transition-all ${showOrderedBy ? 'border-blue-500/40 bg-blue-500/5' : 'border-white/5 bg-white/[0.02] hover:border-white/10'}`}
             >
@@ -289,7 +363,12 @@ export default function AdminPortal() {
               </div>
             </div>
 
-            <button onClick={handleSaveProduct} disabled={isUploading} className="w-full py-5 rounded-2xl font-black uppercase bg-blue-600 hover:bg-blue-500 shadow-xl shadow-blue-500/20 active:scale-95 transition-all tracking-[0.2em]">
+            {/* BOUTON SAVE */}
+            <button
+              onClick={handleSaveProduct}
+              disabled={isUploading}
+              className="w-full py-5 rounded-2xl font-black uppercase bg-blue-600 hover:bg-blue-500 shadow-xl shadow-blue-500/20 active:scale-95 transition-all tracking-[0.2em]"
+            >
               {editingId ? 'Sauvegarder' : 'Publier'}
             </button>
           </div>
@@ -297,23 +376,32 @@ export default function AdminPortal() {
 
         {/* LISTING DRAG & DROP DROITE */}
         <div className="lg:col-span-7 space-y-12 pb-20">
-          {[
-            { id: 'Perso', label: 'Produits personnalisables', color: 'text-blue-500' },
-            { id: 'Signaletique', label: 'Produits non personnalisés', color: 'text-green-500' },
-            { id: 'Vetements', label: 'Gamme business', color: 'text-orange-500' },
-            { id: 'Operations', label: 'Opérations du moment', color: 'text-purple-500' }
-          ].map(section => (
+          {SECTIONS.map(section => (
             <div key={section.id} className="space-y-6">
               <div className="flex items-center gap-4">
-                <h2 className={`text-xs font-black uppercase tracking-[0.3em] italic ${section.color}`}>{section.label}</h2>
+                <h2 className={`text-xs font-black uppercase tracking-[0.3em] italic ${section.color}`}>
+                  {section.label}
+                </h2>
                 <div className="h-[1px] flex-1 bg-white/5"></div>
+                <span className="text-[8px] font-black text-white/10 uppercase">
+                  {existingProducts.filter(p => p.category === section.id).length} produit(s)
+                </span>
               </div>
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                <SortableContext items={existingProducts.filter(p => p.category === section.id)} strategy={verticalListSortingStrategy}>
+                <SortableContext
+                  items={existingProducts.filter(p => p.category === section.id)}
+                  strategy={verticalListSortingStrategy}
+                >
                   <div className="grid gap-2">
-                    {existingProducts.filter(p => p.category === section.id).map((p) => (
-                      <SortableItem key={p.id} p={p} startEdit={startEdit} handleDelete={handleDelete} />
-                    ))}
+                    {existingProducts.filter(p => p.category === section.id).length === 0 ? (
+                      <p className="text-[8px] text-white/10 font-black uppercase tracking-widest text-center py-6 border border-dashed border-white/5 rounded-2xl">
+                        Aucun produit
+                      </p>
+                    ) : (
+                      existingProducts.filter(p => p.category === section.id).map((p) => (
+                        <SortableItem key={p.id} p={p} startEdit={startEdit} handleDelete={handleDelete} />
+                      ))
+                    )}
                   </div>
                 </SortableContext>
               </DndContext>
