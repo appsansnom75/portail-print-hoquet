@@ -71,50 +71,6 @@ export default function HistoriqueCommandes() {
     setOrderToReorder(order);
   };
 
-  // ─── Cherche une valeur dans toutes les clés d'un objet ──────────
-  const deepFind = (obj: any, keywords: string[]): string => {
-    if (!obj || typeof obj !== 'object') return "";
-    // Cherche dans les clés directes
-    for (const key of Object.keys(obj)) {
-      const lowerKey = key.toLowerCase();
-      if (keywords.some(k => lowerKey.includes(k))) {
-        const val = obj[key];
-        if (val && typeof val === 'string' && val.trim()) return val.trim();
-      }
-    }
-    // Cherche dans les sous-objets (ex: item.nominatif.prenom)
-    for (const key of Object.keys(obj)) {
-      if (typeof obj[key] === 'object' && obj[key] !== null) {
-        const found = deepFind(obj[key], keywords);
-        if (found) return found;
-      }
-    }
-    return "";
-  };
-
-  // ─── Vérifie si un item est nominatif ────────────────────────────
-  const isNominatif = (item: any): boolean => {
-    return !!(
-      deepFind(item, ['prenom', 'firstname', 'first_name'])          ||
-      deepFind(item, ['nominatif_nom', 'lastname', 'last_name', 'nom_famille']) ||
-      deepFind(item, ['nominatif_mail', 'nominatif_email'])           ||
-      deepFind(item, ['nominatif_photo', 'photo_url', 'avatar'])
-    );
-  };
-
-  // ─── Extrait un champ nominatif quelle que soit la structure ─────
-  const getNom = (item: any, field: string): string => {
-    const keywords: Record<string, string[]> = {
-      prenom:   ['prenom', 'firstname', 'first_name'],
-      nom:      ['nominatif_nom', 'lastname', 'last_name', 'nom_famille'],
-      mail:     ['nominatif_mail', 'nominatif_email', 'mail', 'email'],
-      tel:      ['nominatif_tel', 'nominatif_phone', 'tel', 'phone'],
-      fonction: ['fonction', 'function', 'poste', 'role'],
-      photo:    ['nominatif_photo', 'photo_url', 'avatar', 'photo'],
-    };
-    return deepFind(item, keywords[field] || [field]);
-  };
-
   // ─── Export CSV global ───────────────────────────────────────────
   const exportAllToCSV = () => {
     if (orders.length === 0) return;
@@ -158,9 +114,6 @@ export default function HistoriqueCommandes() {
   const confirmReorder = async () => {
     if (!orderToReorder) return;
     setIsReordering(true);
-
-    console.log("🔍 ITEMS BRUTS Supabase :", JSON.stringify(orderToReorder.items, null, 2));
-
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
@@ -176,16 +129,13 @@ export default function HistoriqueCommandes() {
         .update({ last_value: nextOrderId })
         .eq('counter_name', 'order_id');
 
-      // 2. Charger les collabs si au moins un item est nominatif
-      const hasNominatif = (orderToReorder.items || []).some(isNominatif);
-      let collabs: any[] = [];
-      if (hasNominatif) {
-        const { data } = await supabase
-          .from('collaborateurs')
-          .select('id, full_name, first_name, last_name, email, phone, fonction, avatar_url')
-          .eq('agency_id', agencyData?.id);
-        collabs = data || [];
-      }
+      // 2. Charger tous les collabs de l'agence
+      //    (nécessaire pour récupérer les infos nominatives via ordered_by)
+      const { data: collabsData } = await supabase
+        .from('collaborateurs')
+        .select('id, full_name, first_name, last_name, email, phone, fonction, avatar_url')
+        .eq('agency_id', agencyData?.id);
+      const collabs = collabsData || [];
 
       const findCollab = (nom: string) =>
         collabs.find(
@@ -215,15 +165,16 @@ export default function HistoriqueCommandes() {
       const totalTTC = (orderToReorder.total_ht * 1.20).toFixed(2);
 
       // 4. Reconstruire itemsPayload
+      //    → ordered_by null/vide = produit standard = pas de nominatif
+      //    → ordered_by rempli   = produit nominatif = on fetch le collab
       const itemsPayload = (orderToReorder.items || []).map((item: any) => {
-        const nomMembre  = item.ordered_by || item.membre || reorderCollab;
-        const produitNom = item.name       || item.produit  || "";
-        const qte        = item.qty        || item.quantite || "";
-        const prixLigne  = item.total_row  || item.prix_ligne
-          || ((item.price_unit || 0) * (item.qty || item.quantite || 0)).toFixed(2);
+        const produitNom = item.name      || item.produit  || "";
+        const qte        = item.qty       || item.quantite || "";
+        const prixLigne  = item.total_row || item.prix_ligne || "";
+        const nomMembre  = item.ordered_by || reorderCollab;
 
-        // Produit NON nominatif → champs vides
-        if (!isNominatif(item)) {
+        // Pas de ordered_by → produit standard, champs nominatifs vides
+        if (!item.ordered_by || !item.ordered_by.trim()) {
           return {
             produit:            produitNom,
             quantite:           qte,
@@ -238,19 +189,19 @@ export default function HistoriqueCommandes() {
           };
         }
 
-        // Produit NOMINATIF → Supabase en priorité, fallback deepFind
-        const collab = findCollab(nomMembre);
+        // ordered_by présent → produit nominatif → on cherche dans Supabase
+        const collab = findCollab(item.ordered_by);
         return {
           produit:            produitNom,
           quantite:           qte,
           prix_ligne:         prixLigne,
-          membre:             nomMembre,
-          nominatif_prenom:   collab?.first_name || getNom(item, 'prenom'),
-          nominatif_nom:      collab?.last_name  || getNom(item, 'nom'),
-          nominatif_mail:     collab?.email      || getNom(item, 'mail'),
-          nominatif_tel:      collab?.phone      || getNom(item, 'tel'),
-          nominatif_fonction: collab?.fonction   || getNom(item, 'fonction'),
-          nominatif_photo:    collab?.avatar_url || getNom(item, 'photo'),
+          membre:             item.ordered_by,
+          nominatif_prenom:   collab?.first_name  || "",
+          nominatif_nom:      collab?.last_name   || "",
+          nominatif_mail:     collab?.email       || "",
+          nominatif_tel:      collab?.phone       || "",
+          nominatif_fonction: collab?.fonction    || "",
+          nominatif_photo:    collab?.avatar_url  || "",
         };
       });
 
@@ -381,7 +332,7 @@ export default function HistoriqueCommandes() {
                             const qte    = item.qty      || item.quantite || 1;
                             const ht     = parseFloat(item.total_row || item.prix_ligne || 0);
                             const ttc    = ht * 1.20;
-                            const membre = item.ordered_by || item.membre || null;
+                            const membre = item.ordered_by || null;
                             return (
                               <div key={idx} className="flex justify-between items-start gap-4 border-b border-white/5 pb-3 last:border-0 last:pb-0">
                                 <div>
@@ -483,7 +434,7 @@ export default function HistoriqueCommandes() {
                         const qte    = item.qty      || item.quantite || 1;
                         const ht     = parseFloat(item.total_row || item.prix_ligne || 0);
                         const ttc    = ht * 1.20;
-                        const membre = item.ordered_by || item.membre || null;
+                        const membre = item.ordered_by || null;
                         return (
                           <div key={idx} className="flex justify-between items-start gap-4 py-3 border-b border-blue-100 last:border-0 last:pb-0">
                             <div className="flex-1">
