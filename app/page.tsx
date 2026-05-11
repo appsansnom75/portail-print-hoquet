@@ -129,11 +129,12 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* GRILLE DES SECTIONS */}
-      <main className="flex-grow container mx-auto max-w-5xl px-6 py-20">
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+      {/* GRILLE DES SECTIONS — 2 en haut, 3 en bas */}
+      <main className="flex-grow container mx-auto max-w-5xl px-6 py-20 space-y-8">
 
-          {/* Produits personnalisables */}
+        {/* LIGNE 1 — 2 tuiles */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+
           <Link href="/perso" className="group relative">
             <div className="h-44 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-blue-600/10 group-hover:border-blue-500/40 group-hover:-translate-y-1 shadow-2xl">
               <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-blue-400 transition-colors">Produits personnalisables</span>
@@ -142,7 +143,6 @@ export default function HomePage() {
             </div>
           </Link>
 
-          {/* Produits non personnalisés */}
           <Link href="/stock" className="group relative">
             <div className="h-44 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-green-600/10 group-hover:border-green-500/40 group-hover:-translate-y-1 shadow-2xl">
               <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-green-400 transition-colors">Produits non personnalisés</span>
@@ -151,7 +151,11 @@ export default function HomePage() {
             </div>
           </Link>
 
-          {/* Gamme Business */}
+        </div>
+
+        {/* LIGNE 2 — 3 tuiles */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+
           <Link href="/hoquet" className="group relative">
             <div className="h-44 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-orange-600/10 group-hover:border-orange-500/40 group-hover:-translate-y-1 shadow-2xl">
               <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-orange-400 transition-colors">Gamme Business</span>
@@ -160,7 +164,6 @@ export default function HomePage() {
             </div>
           </Link>
 
-          {/* Signalétique */}
           <Link href="/signaletique" className="group relative">
             <div className="h-44 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-cyan-600/10 group-hover:border-cyan-400/40 group-hover:-translate-y-1 shadow-2xl">
               <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-cyan-400 transition-colors">Signalétique</span>
@@ -169,7 +172,6 @@ export default function HomePage() {
             </div>
           </Link>
 
-          {/* Opérations du moment */}
           <Link href="/operations" className="group relative">
             <div className="h-44 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-purple-600/15 group-hover:border-purple-500/50 group-hover:-translate-y-1 shadow-2xl">
               <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-purple-400 transition-colors">Opérations du moment</span>
@@ -178,40 +180,33 @@ export default function HomePage() {
             </div>
           </Link>
 
-          {/* CASE CONTACT */}
-          <div className="relative h-44 bg-gradient-to-br from-rose-500/[0.08] to-transparent border border-rose-500/25 rounded-3xl flex flex-col justify-between p-8 shadow-2xl overflow-hidden">
-            <div className="absolute -top-6 -right-6 w-32 h-32 rounded-full bg-rose-500/10 blur-2xl pointer-events-none"></div>
-
-            {/* BESOIN D'AIDE — grand et blanc */}
-            <p className="font-black text-lg uppercase tracking-widest text-white leading-none">
-              Besoin d'aide ?
-            </p>
-
-            {/* TEXTE DESCRIPTIF */}
-            <p className="text-[10px] text-white/40 font-bold leading-relaxed">
-              Suivi de commande, facturation,<br />devis ou autre question ?
-            </p>
-
-            {/* NUMÉRO */}
-            <div>
-              <span className="text-[8px] font-black uppercase tracking-widest text-white/25 block mb-1">
-                Un seul contact privilégié
-              </span>
-              <span className="text-2xl font-black text-white tracking-tight">
-                02 41 87 00 78
-              </span>
-            </div>
-          </div>
-
         </div>
       </main>
 
       {/* FOOTER */}
-      <footer className="py-12 border-t border-white/5 bg-black/20 mt-auto">
-        <div className="flex flex-col items-center gap-4">
-          <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/10">
+      <footer className="py-10 border-t border-white/5 bg-black/20 mt-auto">
+        <div className="max-w-5xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
+
+          {/* COPYRIGHT */}
+          <p className="text-[8px] font-black uppercase tracking-[0.4em] text-white/10 shrink-0">
             © 2026 Imprimerie Connivence pour Guy Hoquet
           </p>
+
+          {/* CONTACT */}
+          <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4 text-center md:text-right">
+            <p className="text-[8px] font-bold text-white/20 leading-relaxed">
+              Besoin d'aide ? Suivi de commande, facturation, devis, fichiers ou toute autre question ?
+            </p>
+            <div className="flex flex-col items-center md:items-end gap-1 shrink-0">
+              <a href="tel:0241870078" className="text-[10px] font-black text-white/60 hover:text-white transition-colors tracking-widest">
+                02 41 87 00 78
+              </a>
+              <a href="mailto:webtoprint@imprimerie-connivence.com" className="text-[8px] font-bold text-white/30 hover:text-blue-400 transition-colors">
+                webtoprint@imprimerie-connivence.com
+              </a>
+            </div>
+          </div>
+
         </div>
       </footer>
 
