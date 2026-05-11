@@ -174,7 +174,7 @@ export default function HomePage() {
             </div>
           </Link>
 
-          {/* Signalétique ←*/}
+          {/* Signalétique */}
           <Link href="/signaletique" className="group relative">
             <div className="h-44 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-cyan-600/10 group-hover:border-cyan-400/40 group-hover:-translate-y-1 shadow-2xl">
               <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-cyan-400 transition-colors">Signalétique</span>
@@ -191,6 +191,27 @@ export default function HomePage() {
               <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.3em] group-hover:text-purple-500/50">Offres Ephémères</span>
             </div>
           </Link>
+
+          {/* CASE CONTACT — non cliquable */}
+          <div className="relative h-44 bg-gradient-to-br from-rose-500/[0.07] to-transparent border border-rose-500/20 rounded-3xl flex flex-col justify-center p-8 shadow-2xl overflow-hidden">
+            {/* Halo décoratif */}
+            <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full bg-rose-500/10 blur-2xl pointer-events-none"></div>
+
+            <p className="font-black text-[9px] uppercase tracking-[0.3em] text-rose-400 mb-3">
+              Besoin d'aide ?
+            </p>
+
+            <p className="text-[8px] text-white/30 font-bold leading-relaxed mb-4 max-w-[22ch]">
+              Question sur le catalogue, suivi de commande, facturation ou devis ?
+            </p>
+
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[7px] font-black uppercase tracking-widest text-white/20">Votre contact privilégié</span>
+              <span className="text-lg font-black text-white tracking-tight">
+                02 41 87 00 78
+              </span>
+            </div>
+          </div>
 
         </div>
       </main>
