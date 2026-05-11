@@ -174,7 +174,7 @@ export default function HomePage() {
             </div>
           </Link>
 
-          {/* Signalétique ← NOUVEAU */}
+          {/* Signalétique ←*/}
           <Link href="/signaletique" className="group relative">
             <div className="h-44 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-cyan-600/10 group-hover:border-cyan-400/40 group-hover:-translate-y-1 shadow-2xl">
               <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-cyan-400 transition-colors">Signalétique</span>
