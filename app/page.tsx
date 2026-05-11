@@ -187,21 +187,21 @@ export default function HomePage() {
       <footer className="py-12 border-t border-white/5 bg-black/20 mt-auto">
         <div className="max-w-5xl mx-auto px-6 flex flex-col items-center gap-4 text-center">
 
-          <p className="text-xs font-bold text-white/30 leading-relaxed">
+          <p className="text-xs font-bold text-white leading-relaxed">
             Besoin d'aide ? Suivi de commande, facturation, devis, fichiers ou toute autre question ?
           </p>
 
           <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6">
             <a
               href="tel:0241870078"
-              className="text-sm font-black text-white/70 hover:text-white transition-colors tracking-widest"
+              className="text-sm font-black text-white hover:text-blue-400 transition-colors tracking-widest"
             >
               02 41 87 00 78
             </a>
-            <span className="hidden sm:block w-px h-4 bg-white/10"></span>
+            <span className="hidden sm:block w-px h-4 bg-white/20"></span>
             <a
               href="mailto:webtoprint@imprimerie-connivence.com"
-              className="text-xs font-bold text-white/40 hover:text-blue-400 transition-colors"
+              className="text-xs font-bold text-white hover:text-blue-400 transition-colors"
             >
               webtoprint@imprimerie-connivence.com
             </a>
