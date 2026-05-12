@@ -7,10 +7,34 @@ import { supabase } from '@/lib/supabase';
 import CartDrawer from '@/components/CartDrawer';
 
 
-// --- COMPOSANT MODAL ZOOM ---
-function ImageModal({
-  isOpen, onClose, imageSrc, imageAlt
+// ─── MODAL FIELD — EN DEHORS DE TOUT COMPOSANT ───────────────────────────────
+function ModalField({
+  label, value, onChange, placeholder, type = 'text', span2 = false, prefilled = false, required = false
 }: {
+  label: string; value: string; onChange: (v: string) => void;
+  placeholder: string; type?: string; span2?: boolean; prefilled?: boolean; required?: boolean;
+}) {
+  return (
+    <div className={span2 ? 'md:col-span-2' : ''}>
+      <label className="flex items-center gap-1.5 text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1">
+        {label}
+        {required && <span className="text-red-400">*</span>}
+        {prefilled && value && <span className="text-blue-400/50 normal-case font-bold tracking-normal">· agence</span>}
+      </label>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full bg-white/[0.06] border border-white/10 px-4 py-3 rounded-2xl outline-none focus:border-blue-500 focus:bg-white/[0.09] transition-all text-sm text-white font-medium placeholder:text-white/20"
+      />
+    </div>
+  );
+}
+
+
+// ─── MODAL ZOOM IMAGE ─────────────────────────────────────────────────────────
+function ImageModal({ isOpen, onClose, imageSrc, imageAlt }: {
   isOpen: boolean; onClose: () => void; imageSrc: string; imageAlt: string;
 }) {
   return (
@@ -34,30 +58,28 @@ function ImageModal({
 }
 
 
-// --- COMPOSANT MODAL CRÉER UN PROFIL ---
-function CreateProfileModal({
-  isOpen, onClose, agencyId, onCreated, agencyDefaults
-}: {
+// ─── MODAL CRÉER UN PROFIL ────────────────────────────────────────────────────
+function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaults }: {
   isOpen: boolean;
   onClose: () => void;
   agencyId: string;
   onCreated: (member: any) => void;
   agencyDefaults: { phone_fix: string; adresse: string; ville: string; code_postal: string; };
 }) {
-  const [prenom, setPrenom]       = useState('');
-  const [nom, setNom]             = useState('');
-  const [email, setEmail]         = useState('');
-  const [phone, setPhone]         = useState('');
-  const [phoneFix, setPhoneFix]   = useState('');
-  const [fonction, setFonction]   = useState('');
-  const [rsac, setRsac]           = useState('');
-  const [adresse, setAdresse]     = useState('');
-  const [ville, setVille]         = useState('');
-  const [codePostal, setCodePostal] = useState('');
-  const [avatarFile, setAvatarFile]       = useState<File | null>(null);
+  const [prenom, setPrenom]           = useState('');
+  const [nom, setNom]                 = useState('');
+  const [email, setEmail]             = useState('');
+  const [phone, setPhone]             = useState('');
+  const [phoneFix, setPhoneFix]       = useState('');
+  const [fonction, setFonction]       = useState('');
+  const [rsac, setRsac]               = useState('');
+  const [adresse, setAdresse]         = useState('');
+  const [ville, setVille]             = useState('');
+  const [codePostal, setCodePostal]   = useState('');
+  const [avatarFile, setAvatarFile]   = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError]         = useState('');
+  const [isLoading, setIsLoading]     = useState(false);
+  const [errors, setErrors]           = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Pré-remplir depuis l'agence à chaque ouverture
@@ -110,17 +132,33 @@ function CreateProfileModal({
 
   const resetForm = () => {
     setPrenom(''); setNom(''); setEmail(''); setPhone(''); setFonction(''); setRsac('');
-    setAvatarFile(null); setAvatarPreview(null); setError('');
-    // Garder les valeurs agence
+    setAvatarFile(null); setAvatarPreview(null); setErrors({});
     setPhoneFix(agencyDefaults.phone_fix);
     setAdresse(agencyDefaults.adresse);
     setVille(agencyDefaults.ville);
     setCodePostal(agencyDefaults.code_postal);
   };
 
+  const validate = () => {
+    const e: Record<string, string> = {};
+    if (!prenom.trim())     e.prenom     = 'Requis';
+    if (!nom.trim())        e.nom        = 'Requis';
+    if (!email.trim())      e.email      = 'Requis';
+    if (!phone.trim())      e.phone      = 'Requis';
+    if (!phoneFix.trim())   e.phoneFix   = 'Requis';
+    if (!fonction.trim())   e.fonction   = 'Requis';
+    if (!rsac.trim())       e.rsac       = 'Requis';
+    if (!adresse.trim())    e.adresse    = 'Requis';
+    if (!ville.trim())      e.ville      = 'Requis';
+    if (!codePostal.trim()) e.codePostal = 'Requis';
+    if (!avatarFile && !avatarPreview) e.avatar = 'Photo requise';
+    return e;
+  };
+
   const handleCreate = async () => {
-    if (!prenom.trim() || !nom.trim()) { setError('Le prénom et le nom sont requis'); return; }
-    setIsLoading(true); setError('');
+    const e = validate();
+    if (Object.keys(e).length > 0) { setErrors(e); return; }
+    setIsLoading(true); setErrors({});
     try {
       const avatarUrl = avatarFile ? await uploadAvatar(avatarFile) : '';
       const { data, error: err } = await supabase
@@ -129,49 +167,34 @@ function CreateProfileModal({
           first_name:  prenom.trim(),
           last_name:   nom.trim(),
           full_name:   `${prenom.trim()} ${nom.trim()}`,
-          email:       email.trim()     || null,
-          phone:       phone.trim()     || null,
-          phone_fix:   phoneFix.trim()  || null,
-          fonction:    fonction.trim()  || null,
-          rsac:        rsac.trim()      || null,
-          adresse:     adresse.trim()   || null,
-          ville:       ville.trim()     || null,
-          code_postal: codePostal.trim()|| null,
-          avatar_url:  avatarUrl        || null,
+          email:       email.trim(),
+          phone:       phone.trim(),
+          phone_fix:   phoneFix.trim(),
+          fonction:    fonction.trim(),
+          rsac:        rsac.trim(),
+          adresse:     adresse.trim(),
+          ville:       ville.trim(),
+          code_postal: codePostal.trim(),
+          avatar_url:  avatarUrl || null,
           agency_id:   agencyId,
         }])
         .select()
         .single();
-
       if (err) throw err;
       onCreated({ ...data, full_name: `${prenom.trim()} ${nom.trim()}`, _source: 'collaborateurs' });
       resetForm();
       onClose();
     } catch (err: any) {
-      setError(err.message);
+      setErrors({ global: err.message });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Helper champ
-  const F = ({
-    label, value, onChange, placeholder, type = 'text', span2 = false, prefilled = false
-  }: {
-    label: string; value: string; onChange: (v: string) => void;
-    placeholder: string; type?: string; span2?: boolean; prefilled?: boolean;
-  }) => (
-    <div className={span2 ? 'md:col-span-2' : ''}>
-      <label className="flex items-center gap-1.5 text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1">
-        {label}
-        {prefilled && value && (
-          <span className="text-blue-400/50 normal-case font-bold tracking-normal text-[7px]">· agence</span>
-        )}
-      </label>
-      <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
-        className="w-full bg-white/[0.06] border border-white/10 px-4 py-3 rounded-2xl outline-none focus:border-blue-500 focus:bg-white/[0.09] transition-all text-sm text-white font-medium placeholder:text-white/20" />
-    </div>
-  );
+  const inputClass = (key: string) =>
+    `w-full bg-white/[0.06] border px-4 py-3 rounded-2xl outline-none focus:bg-white/[0.09] transition-all text-sm text-white font-medium placeholder:text-white/20 ${
+      errors[key] ? 'border-red-500/60 focus:border-red-400' : 'border-white/10 focus:border-blue-500'
+    }`;
 
   return (
     <AnimatePresence>
@@ -187,28 +210,40 @@ function CreateProfileModal({
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
             className="relative bg-[#16103a] border border-white/10 rounded-[32px] p-8 w-full max-w-2xl shadow-2xl z-10 max-h-[90vh] overflow-y-auto"
           >
-            <h3 className="text-xl font-black uppercase mb-8 text-blue-500 tracking-tighter italic">
-              Nouveau Collaborateur
-            </h3>
+            <div className="flex items-start justify-between mb-8">
+              <div>
+                <h3 className="text-xl font-black uppercase text-blue-500 tracking-tighter italic">Nouveau Collaborateur</h3>
+                <p className="text-[8px] font-bold text-white/25 uppercase tracking-widest mt-1">Tous les champs sont obligatoires</p>
+              </div>
+              <button onClick={() => { resetForm(); onClose(); }}
+                className="text-white/30 hover:text-white transition-colors text-lg font-black">×</button>
+            </div>
 
             <div className="space-y-7">
 
               {/* PHOTO */}
-              <div className="flex items-center gap-6">
-                <div onClick={() => fileInputRef.current?.click()}
-                  className="h-20 w-20 rounded-full border-2 border-dashed border-white/20 bg-white/5 flex items-center justify-center cursor-pointer hover:border-blue-500 transition-all overflow-hidden shrink-0">
-                  {avatarPreview
-                    ? <img src={avatarPreview} className="h-full w-full object-cover" alt="preview" />
-                    : <span className="text-2xl">📷</span>}
+              <div>
+                <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 block">
+                  Photo de profil <span className="text-red-400">*</span>
+                </label>
+                <div className="flex items-center gap-5">
+                  <div onClick={() => fileInputRef.current?.click()}
+                    className={`h-20 w-20 rounded-full border-2 border-dashed flex items-center justify-center cursor-pointer transition-all overflow-hidden shrink-0 ${
+                      errors.avatar ? 'border-red-500/60' : 'border-white/20 hover:border-blue-500'
+                    } bg-white/5`}>
+                    {avatarPreview
+                      ? <img src={avatarPreview} className="h-full w-full object-cover" alt="preview" />
+                      : <span className="text-2xl">📷</span>}
+                  </div>
+                  <div>
+                    <button type="button" onClick={() => fileInputRef.current?.click()}
+                      className="text-[9px] font-black uppercase text-blue-400 hover:text-blue-300 transition-colors">
+                      Choisir une photo →
+                    </button>
+                    {errors.avatar && <p className="text-red-400 text-[8px] font-bold mt-1">{errors.avatar}</p>}
+                  </div>
+                  <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
                 </div>
-                <div>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-1">Photo de profil</p>
-                  <button type="button" onClick={() => fileInputRef.current?.click()}
-                    className="text-[9px] font-black uppercase text-blue-400 hover:text-blue-300 transition-colors">
-                    Choisir une photo →
-                  </button>
-                </div>
-                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
               </div>
 
               {/* IDENTITÉ */}
@@ -217,10 +252,34 @@ function CreateProfileModal({
                   <span className="w-4 h-px bg-white/20 inline-block"></span> Identité
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <F label="Prénom" value={prenom} onChange={setPrenom} placeholder="Prénom" />
-                  <F label="Nom" value={nom} onChange={setNom} placeholder="Nom" />
-                  <F label="Fonction" value={fonction} onChange={setFonction} placeholder="Négociateur, Directeur..." />
-                  <F label="RSAC" value={rsac} onChange={setRsac} placeholder="Ex: 123 456 789" />
+                  <div>
+                    <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">
+                      Prénom <span className="text-red-400">*</span>
+                    </label>
+                    <input type="text" value={prenom} onChange={(e) => setPrenom(e.target.value)}
+                      placeholder="Prénom" className={inputClass('prenom')} />
+                  </div>
+                  <div>
+                    <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">
+                      Nom <span className="text-red-400">*</span>
+                    </label>
+                    <input type="text" value={nom} onChange={(e) => setNom(e.target.value)}
+                      placeholder="Nom" className={inputClass('nom')} />
+                  </div>
+                  <div>
+                    <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">
+                      Fonction <span className="text-red-400">*</span>
+                    </label>
+                    <input type="text" value={fonction} onChange={(e) => setFonction(e.target.value)}
+                      placeholder="Négociateur, Directeur..." className={inputClass('fonction')} />
+                  </div>
+                  <div>
+                    <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">
+                      RSAC <span className="text-red-400">*</span>
+                    </label>
+                    <input type="text" value={rsac} onChange={(e) => setRsac(e.target.value)}
+                      placeholder="Ex: 123 456 789" className={inputClass('rsac')} />
+                  </div>
                 </div>
               </div>
 
@@ -230,10 +289,28 @@ function CreateProfileModal({
                   <span className="w-4 h-px bg-white/20 inline-block"></span> Contact
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <F label="Email professionnel" value={email} onChange={setEmail} placeholder="prenom@agence.com" type="email" />
-                  <F label="Téléphone mobile" value={phone} onChange={setPhone} placeholder="06 00 00 00 00" type="tel" />
-                  <F label="Téléphone fixe agence" value={phoneFix} onChange={setPhoneFix}
-                    placeholder="02 00 00 00 00" type="tel" prefilled span2 />
+                  <div>
+                    <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">
+                      Email professionnel <span className="text-red-400">*</span>
+                    </label>
+                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                      placeholder="prenom@agence.com" className={inputClass('email')} />
+                  </div>
+                  <div>
+                    <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">
+                      Téléphone mobile <span className="text-red-400">*</span>
+                    </label>
+                    <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
+                      placeholder="06 00 00 00 00" className={inputClass('phone')} />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1.5">
+                      Téléphone fixe agence <span className="text-red-400">*</span>
+                      {phoneFix && agencyDefaults.phone_fix && <span className="text-blue-400/50 normal-case font-bold tracking-normal">· agence</span>}
+                    </label>
+                    <input type="tel" value={phoneFix} onChange={(e) => setPhoneFix(e.target.value)}
+                      placeholder="02 00 00 00 00" className={inputClass('phoneFix')} />
+                  </div>
                 </div>
               </div>
 
@@ -243,15 +320,42 @@ function CreateProfileModal({
                   <span className="w-4 h-px bg-white/20 inline-block"></span> Adresse
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <F label="Adresse" value={adresse} onChange={setAdresse} placeholder="12 rue de la Paix" prefilled span2 />
-                  <F label="Ville" value={ville} onChange={setVille} placeholder="Angers" prefilled />
-                  <F label="Code postal" value={codePostal} onChange={setCodePostal} placeholder="49000" prefilled />
+                  <div className="md:col-span-2">
+                    <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1.5">
+                      Adresse <span className="text-red-400">*</span>
+                      {adresse && agencyDefaults.adresse && <span className="text-blue-400/50 normal-case font-bold tracking-normal">· agence</span>}
+                    </label>
+                    <input type="text" value={adresse} onChange={(e) => setAdresse(e.target.value)}
+                      placeholder="12 rue de la Paix" className={inputClass('adresse')} />
+                  </div>
+                  <div>
+                    <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1.5">
+                      Ville <span className="text-red-400">*</span>
+                      {ville && agencyDefaults.ville && <span className="text-blue-400/50 normal-case font-bold tracking-normal">· agence</span>}
+                    </label>
+                    <input type="text" value={ville} onChange={(e) => setVille(e.target.value)}
+                      placeholder="Angers" className={inputClass('ville')} />
+                  </div>
+                  <div>
+                    <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1.5">
+                      Code postal <span className="text-red-400">*</span>
+                      {codePostal && agencyDefaults.code_postal && <span className="text-blue-400/50 normal-case font-bold tracking-normal">· agence</span>}
+                    </label>
+                    <input type="text" value={codePostal} onChange={(e) => setCodePostal(e.target.value)}
+                      placeholder="49000" className={inputClass('codePostal')} />
+                  </div>
                 </div>
               </div>
 
-              {error && (
+              {errors.global && (
                 <p className="text-red-400 text-[10px] font-black uppercase bg-red-500/10 border border-red-500/20 px-4 py-3 rounded-xl">
-                  {error}
+                  {errors.global}
+                </p>
+              )}
+
+              {Object.keys(errors).filter(k => k !== 'global').length > 0 && (
+                <p className="text-red-400 text-[9px] font-black uppercase bg-red-500/10 border border-red-500/20 px-4 py-3 rounded-xl">
+                  ⚠ Veuillez remplir tous les champs obligatoires
                 </p>
               )}
 
@@ -274,6 +378,7 @@ function CreateProfileModal({
 }
 
 
+// ─── THEME ────────────────────────────────────────────────────────────────────
 const THEME = {
   category: 'Perso',
   label: 'Produits Personnalisables',
@@ -282,23 +387,22 @@ const THEME = {
 };
 
 
+// ─── PAGE PRINCIPALE ──────────────────────────────────────────────────────────
 export default function PersoPage() {
-  const { cart, addToCart } = useCart();
-  const [isCartOpen, setIsCartOpen]     = useState(false);
-  const [products, setProducts]         = useState<any[]>([]);
-  const [loading, setLoading]           = useState(true);
-  const [selections, setSelections]     = useState<any>({});
+  const { cart, addToCart }           = useCart();
+  const [isCartOpen, setIsCartOpen]   = useState(false);
+  const [products, setProducts]       = useState<any[]>([]);
+  const [loading, setLoading]         = useState(true);
+  const [selections, setSelections]   = useState<any>({});
   const [flippedProducts, setFlippedProducts] = useState<Record<string, boolean>>({});
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage]     = useState<string | null>(null);
 
-  const [userRole, setUserRole]         = useState<string>('');
-  const [agencyId, setAgencyId]         = useState<string>('');
-  const [teamMembers, setTeamMembers]   = useState<any[]>([]);
-  const [orderedBy, setOrderedBy]       = useState<Record<string, string>>({});
+  const [userRole, setUserRole]       = useState<string>('');
+  const [agencyId, setAgencyId]       = useState<string>('');
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [orderedBy, setOrderedBy]     = useState<Record<string, string>>({});
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [pendingProductId, setPendingProductId]   = useState<string | null>(null);
-
-  // Données agence pour pré-remplissage dans la modal
   const [agencyDefaults, setAgencyDefaults] = useState({
     phone_fix: '', adresse: '', ville: '', code_postal: '',
   });
@@ -307,24 +411,16 @@ export default function PersoPage() {
     const fetchUserData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-
       const { data: profile } = await supabase
         .from('profiles').select('role, agency_id').eq('id', user.id).single();
-
       if (profile) {
         setUserRole(profile.role);
         setAgencyId(profile.agency_id);
-
         if (profile.agency_id) {
           fetchTeamMembers(profile.agency_id);
-
-          // Charger les defaults agence
           const { data: agence } = await supabase
-            .from('agencies')
-            .select('phone_fix, adresse, ville, code_postal')
-            .eq('id', profile.agency_id)
-            .single();
-
+            .from('agencies').select('phone_fix, adresse, ville, code_postal')
+            .eq('id', profile.agency_id).single();
           if (agence) {
             setAgencyDefaults({
               phone_fix:   agence.phone_fix   || '',
@@ -344,18 +440,15 @@ export default function PersoPage() {
       .from('profiles')
       .select('id, full_name, first_name, last_name, role, email, phone, fonction, avatar_url')
       .eq('agency_id', agId);
-
     const { data: collabs } = await supabase
       .from('collaborateurs')
       .select('id, full_name, first_name, last_name, email, phone, phone_fix, fonction, rsac, adresse, ville, code_postal, avatar_url')
       .eq('agency_id', agId);
-
-    const adminsTagged  = (admins  || []).map(m => ({ ...m, _source: 'profiles' }));
-    const collabsTagged = (collabs || []).map(m => ({ ...m, _source: 'collaborateurs' }));
-
-    setTeamMembers(
-      [...adminsTagged, ...collabsTagged].sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''))
-    );
+    const merged = [
+      ...(admins  || []).map(m => ({ ...m, _source: 'profiles' })),
+      ...(collabs || []).map(m => ({ ...m, _source: 'collaborateurs' })),
+    ].sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''));
+    setTeamMembers(merged);
   };
 
   useEffect(() => {
@@ -369,9 +462,9 @@ export default function PersoPage() {
             id: p.id, name: p.name,
             image_recto: p.image_recto, image_verso: p.image_verso,
             hasVariants: p.has_variants,
-            variants:   p.config?.variants   || [],
-            quantities: p.config?.quantities || [],
-            prices:     p.config?.prices     || { default: [] },
+            variants:      p.config?.variants      || [],
+            quantities:    p.config?.quantities    || [],
+            prices:        p.config?.prices        || { default: [] },
             showOrderedBy: p.config?.show_ordered_by || false,
           }));
           setProducts(formatted);
@@ -388,9 +481,15 @@ export default function PersoPage() {
     fetchProducts();
   }, []);
 
-  const toggleFlip = (id: string) => setFlippedProducts(prev => ({ ...prev, [id]: !prev[id] }));
+  const toggleFlip = (id: string) =>
+    setFlippedProducts(prev => ({ ...prev, [id]: !prev[id] }));
 
   const handleAddToCart = (p: any) => {
+    // Bloquer si collaborateur non sélectionné sur un produit showOrderedBy
+    if (p.showOrderedBy && (userRole === 'admin_agence' || userRole === 'super_admin') && !orderedBy[p.id]) {
+      alert('⚠ Veuillez sélectionner un collaborateur avant de commander.');
+      return;
+    }
     const s = selections[p.id];
     const pList = p.prices[s.variant] || p.prices.default || [];
     const totalHT = pList[p.quantities.indexOf(Number(s.qty))] || 0;
@@ -436,10 +535,8 @@ export default function PersoPage() {
     <div className="min-h-screen bg-[#0f092e] text-white flex flex-col relative overflow-x-hidden">
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
 
-      <ImageModal
-        isOpen={!!selectedImage} onClose={() => setSelectedImage(null)}
-        imageSrc={selectedImage || ''} imageAlt="Aperçu produit"
-      />
+      <ImageModal isOpen={!!selectedImage} onClose={() => setSelectedImage(null)}
+        imageSrc={selectedImage || ''} imageAlt="Aperçu produit" />
 
       <CreateProfileModal
         isOpen={isCreateModalOpen}
@@ -460,13 +557,18 @@ export default function PersoPage() {
           {products.map((p) => {
             const sel = selections[p.id];
             if (!sel) return null;
-            const pList = p.prices[sel.variant] || p.prices.default || [];
+            const pList        = p.prices[sel.variant] || p.prices.default || [];
             const currentPrice = pList[p.quantities.indexOf(Number(sel.qty))] || 0;
-            const isFlipped = flippedProducts[p.id] || false;
+            const isFlipped    = flippedProducts[p.id] || false;
             const currentVariant = p.variants.find((v: any) => v.id === sel.variant);
-            const currentImg = isFlipped
+            const currentImg   = isFlipped
               ? (currentVariant?.image_verso || p.image_verso || p.image_recto)
               : (currentVariant?.image_recto || p.image_recto);
+
+            // Le bouton Ajouter est bloqué si showOrderedBy et pas de collaborateur choisi
+            const needsMember    = p.showOrderedBy && (userRole === 'admin_agence' || userRole === 'super_admin');
+            const memberSelected = !!orderedBy[p.id];
+            const canOrder       = !needsMember || memberSelected;
 
             return (
               <div key={p.id} className="pt-10 relative group">
@@ -487,7 +589,8 @@ export default function PersoPage() {
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: isFlipped ? -20 : 20 }}
                       transition={{ duration: 0.3, ease: 'easeOut' }}
-                      src={currentImg} onClick={() => setSelectedImage(currentImg)}
+                      src={currentImg}
+                      onClick={() => setSelectedImage(currentImg)}
                       className="max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,20,100,0.5)] cursor-zoom-in transition-transform duration-500 group-hover:scale-110"
                       alt={p.name}
                     />
@@ -518,12 +621,17 @@ export default function PersoPage() {
                       </select>
                     </div>
 
-                    {(userRole === 'admin_agence' || userRole === 'super_admin') && p.showOrderedBy && (
+                    {needsMember && (
                       <div className="space-y-1 border-t border-white/5 pt-4">
-                        <label className="text-[8px] font-black text-white/30 uppercase ml-2 tracking-widest">Qui commande ?</label>
+                        <label className="text-[8px] font-black uppercase ml-2 tracking-widest flex items-center gap-1.5">
+                          <span className={memberSelected ? 'text-white/30' : 'text-red-400/80'}>Qui commande ?</span>
+                          {!memberSelected && <span className="text-red-400 text-[7px] font-bold normal-case tracking-normal">— requis pour commander</span>}
+                        </label>
                         <select value={orderedBy[p.id] || ''}
                           onChange={(e) => handleOrderedByChange(p.id, e.target.value)}
-                          className="w-full bg-black/40 border border-blue-500/20 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none cursor-pointer hover:border-blue-500 transition-all">
+                          className={`w-full bg-black/40 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none cursor-pointer transition-all border ${
+                            memberSelected ? 'border-blue-500/30 hover:border-blue-500' : 'border-red-500/30 hover:border-red-400'
+                          }`}>
                           <option value="">— Sélectionner un membre —</option>
                           {teamMembers.map(m => <option key={m.id} value={m.id}>{m.full_name}</option>)}
                           <option value="__create__">✚ Créer un profil</option>
@@ -536,9 +644,14 @@ export default function PersoPage() {
                         <span className="text-2xl font-black">{currentPrice.toFixed(2)}€</span>
                         <span className="text-[8px] text-white/30 font-bold uppercase tracking-widest italic">Hors Taxes (HT)</span>
                       </div>
-                      <button onClick={() => handleAddToCart(p)}
-                        className="bg-white text-[#0f092e] px-8 py-3.5 rounded-2xl font-black uppercase text-[9px] hover:bg-blue-500 hover:text-white transition-all active:scale-95 shadow-lg shadow-white/5">
-                        Ajouter
+                      <button onClick={() => handleAddToCart(p)} disabled={!canOrder}
+                        title={!canOrder ? 'Sélectionnez un collaborateur' : ''}
+                        className={`px-8 py-3.5 rounded-2xl font-black uppercase text-[9px] transition-all active:scale-95 shadow-lg ${
+                          canOrder
+                            ? 'bg-white text-[#0f092e] hover:bg-blue-500 hover:text-white shadow-white/5 cursor-pointer'
+                            : 'bg-white/10 text-white/20 cursor-not-allowed border border-white/10'
+                        }`}>
+                        {canOrder ? 'Ajouter' : 'Choisir membre'}
                       </button>
                     </div>
                   </div>
