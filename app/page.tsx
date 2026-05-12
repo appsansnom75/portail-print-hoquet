@@ -52,9 +52,9 @@ export default function HomePage() {
       {/* HEADER LOGOS */}
       <header className="py-10 px-4">
         <div className="max-w-6xl mx-auto flex items-center justify-center gap-8 md:gap-16">
-          <img src="/logo-imprimeur.png" alt="Mon Imprimerie" className="h-6 md:h-8 object-contain" />
-          <div className="w-px h-6 bg-white/10 rotate-[20deg]"></div>
-          <img src="/logo-hoquet.png" alt="Guy Hoquet" className="h-8 md:h-10 object-contain" />
+          <img src="/logo-imprimeur.png" alt="Mon Imprimerie" className="h-8 md:h-10 object-contain" />
+          <div className="w-px h-8 bg-white/10 rotate-[20deg]"></div>
+          <img src="/logo-hoquet.png" alt="Guy Hoquet" className="h-10 md:h-12 object-contain" />
         </div>
       </header>
 
