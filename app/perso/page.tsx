@@ -642,7 +642,7 @@ export default function PersoPage() {
                     {needsMember && (
                       <div className="space-y-1 border-t border-white/5 pt-4">
                         <label className="text-[8px] font-black uppercase ml-2 tracking-widest flex items-center gap-1.5">
-                          <span className={memberSelected ? 'text-white/30' : 'text-red-400/80'}>Qui commande ?</span>
+                          <span className={memberSelected ? 'text-white/30' : 'text-red-400/80'}>Nom du collaborateur</span>
                           {!memberSelected && <span className="text-red-400 text-[7px] font-bold normal-case tracking-normal">— requis pour commander</span>}
                         </label>
                         <select value={orderedBy[p.id] || ''}
