@@ -17,9 +17,6 @@ export default function CartPage() {
   const [membres, setMembres]           = useState<any[]>([]);
   const [loading, setLoading]           = useState(true);
 
-  // 01 - IDENTIFICATION
-  const [selectedCollaborateur, setSelectedCollaborateur] = useState('');
-
   // 03 - LIVRAISON
   const [phone, setPhone]         = useState('');
   const [phoneFix, setPhoneFix]   = useState('');
@@ -36,19 +33,19 @@ export default function CartPage() {
   const [altPhoneFix, setAltPhoneFix]     = useState('');
 
   // 04 - FACTURATION & LÉGALES
-  const [mentionsVilleAgence, setMentionsVilleAgence]             = useState('');
-  const [mentionsUrlQrCode, setMentionsUrlQrCode]                 = useState('');
-  const [mentionsNomSociete, setMentionsNomSociete]               = useState('');
-  const [mentionsStatut, setMentionsStatut]                       = useState('');
-  const [mentionsCapital, setMentionsCapital]                     = useState('');
-  const [mentionsRcs, setMentionsRcs]                             = useState('');
-  const [mentionsApe, setMentionsApe]                             = useState('');
-  const [mentionsCartePro, setMentionsCartePro]                   = useState('');
-  const [mentionsCarteProDelivree, setMentionsCarteProDelivree]   = useState('');
-  const [mentionsCaisseGarantie, setMentionsCaisseGarantie]       = useState('');
-  const [mentionsCaisseGarantieAdresse, setMentionsCaisseGarantieAdresse] = useState('');
-  const [mentionsTva, setMentionsTva]                             = useState('');
-  const [mentionsMailRgpd, setMentionsMailRgpd]                   = useState('');
+  const [mentionsVilleAgence, setMentionsVilleAgence]                       = useState('');
+  const [mentionsUrlQrCode, setMentionsUrlQrCode]                           = useState('');
+  const [mentionsNomSociete, setMentionsNomSociete]                         = useState('');
+  const [mentionsStatut, setMentionsStatut]                                 = useState('');
+  const [mentionsCapital, setMentionsCapital]                               = useState('');
+  const [mentionsRcs, setMentionsRcs]                                       = useState('');
+  const [mentionsApe, setMentionsApe]                                       = useState('');
+  const [mentionsCartePro, setMentionsCartePro]                             = useState('');
+  const [mentionsCarteProDelivree, setMentionsCarteProDelivree]             = useState('');
+  const [mentionsCaisseGarantie, setMentionsCaisseGarantie]                 = useState('');
+  const [mentionsCaisseGarantieAdresse, setMentionsCaisseGarantieAdresse]   = useState('');
+  const [mentionsTva, setMentionsTva]                                       = useState('');
+  const [mentionsMailRgpd, setMentionsMailRgpd]                             = useState('');
 
   const totalHT  = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
   const totalTTC = totalHT * 1.2;
@@ -61,7 +58,7 @@ export default function CartPage() {
       if (!user) { setLoading(false); return; }
 
       const { data: profile } = await supabase
-        .from('profiles').select('agency_id, first_name, last_name, email')
+        .from('profiles').select('agency_id')
         .eq('id', user.id).single();
 
       if (profile?.agency_id) {
@@ -78,7 +75,6 @@ export default function CartPage() {
           setSiret(agency.siret                  || '');
           setPhone(agency.agence_telephone       || '');
           setPhoneFix(agency.phone_fix           || '');
-          // 04
           setMentionsVilleAgence(agency.mentions_ville_agence             || agency.ville || '');
           setMentionsUrlQrCode(agency.mentions_url_qr_code                || '');
           setMentionsNomSociete(agency.mentions_nom_societe               || '');
@@ -94,12 +90,11 @@ export default function CartPage() {
           setMentionsMailRgpd(agency.mentions_mail_rgpd                   || '');
         }
 
+        // On charge quand même les membres pour résoudre les orderedBy des produits perso
         const { data: collabs } = await supabase
           .from('collaborateurs')
           .select('id, full_name, first_name, last_name, email, phone, phone_fix, fonction, rsac, adresse, ville, code_postal, avatar_url')
-          .eq('agency_id', profile.agency_id)
-          .order('first_name', { ascending: true });
-
+          .eq('agency_id', profile.agency_id);
         setMembres(collabs || []);
       }
       setLoading(false);
@@ -158,7 +153,7 @@ export default function CartPage() {
       mentionsTva.trim() &&
       mentionsMailRgpd.trim();
 
-    return !!(selectedCollaborateur.trim() && siret.trim() && livraisonOk && mentionsOk);
+    return !!(siret.trim() && livraisonOk && mentionsOk);
   };
 
 
@@ -174,10 +169,10 @@ export default function CartPage() {
       const nextOrderId = (counterData?.last_value || 0) + 1;
       await supabase.from('config').update({ last_value: nextOrderId }).eq('counter_name', 'order_id');
 
-      const deliveryAddress = useAltAddress ? altAddress  : address;
-      const deliveryZip     = useAltAddress ? altZipCode  : zipCode;
-      const deliveryCity    = useAltAddress ? altCity     : city;
-      const deliveryPhone   = useAltAddress ? altPhone    : phone;
+      const deliveryAddress  = useAltAddress ? altAddress  : address;
+      const deliveryZip      = useAltAddress ? altZipCode  : zipCode;
+      const deliveryCity     = useAltAddress ? altCity     : city;
+      const deliveryPhone    = useAltAddress ? altPhone    : phone;
       const deliveryPhoneFix = useAltAddress ? altPhoneFix : phoneFix;
 
       const produitsListeTexte = cart.map(item =>
@@ -195,7 +190,6 @@ export default function CartPage() {
       const { error: insertError } = await supabase.from('orders').insert([{
         order_number:     nextOrderId,
         agency_name:      agencyData?.name || 'Agence',
-        client_email:     selectedCollaborateur,
         client_phone:     deliveryPhone,
         delivery_address: deliveryAddress,
         zip_code:         deliveryZip,
@@ -204,36 +198,31 @@ export default function CartPage() {
         produits_liste:   produitsListeTexte,
         total_ht:         totalHT,
         items:            itemsFormattedJSON,
-        instructions:     `Collaborateur : ${selectedCollaborateur}${useAltAddress ? ' | Adresse différente' : ''}`,
         status:           'En attente',
       }]);
       if (insertError) throw insertError;
 
-      const collaborateurData = membres.find(
-        m => (m.full_name || `${m.first_name} ${m.last_name}`) === selectedCollaborateur
-      );
-
-      // ITEMS PAYLOAD — avec tous les champs nominatifs
+      // ITEMS PAYLOAD — champs nominatifs complets pour Make
       const itemsPayload = cart.map(item => {
         const collabNominatif = item.orderedBy
           ? membres.find(m => (m.full_name || `${m.first_name} ${m.last_name}`) === item.orderedBy)
           : null;
         return {
-          produit:             item.name,
-          quantite:            item.qty,
-          prix_ligne:          (item.price * item.qty).toFixed(2),
-          membre:              item.orderedBy || selectedCollaborateur,
-          nominatif_prenom:    collabNominatif?.first_name  || '',
-          nominatif_nom:       collabNominatif?.last_name   || '',
-          nominatif_mail:      collabNominatif?.email       || '',
-          nominatif_tel:       collabNominatif?.phone       || '',
-          nominatif_tel_fix:   collabNominatif?.phone_fix   || deliveryPhoneFix,
-          nominatif_fonction:  collabNominatif?.fonction    || '',
-          nominatif_rsac:      collabNominatif?.rsac        || '',
-          nominatif_adresse:   collabNominatif?.adresse     || deliveryAddress,
-          nominatif_ville:     collabNominatif?.ville       || deliveryCity,
-          nominatif_cp:        collabNominatif?.code_postal || deliveryZip,
-          nominatif_photo:     collabNominatif?.avatar_url  || '',
+          produit:            item.name,
+          quantite:           item.qty,
+          prix_ligne:         (item.price * item.qty).toFixed(2),
+          membre:             item.orderedBy || '',
+          nominatif_prenom:   collabNominatif?.first_name  || '',
+          nominatif_nom:      collabNominatif?.last_name   || '',
+          nominatif_mail:     collabNominatif?.email       || '',
+          nominatif_tel:      collabNominatif?.phone       || '',
+          nominatif_tel_fix:  collabNominatif?.phone_fix   || deliveryPhoneFix,
+          nominatif_fonction: collabNominatif?.fonction    || '',
+          nominatif_rsac:     collabNominatif?.rsac        || '',
+          nominatif_adresse:  collabNominatif?.adresse     || deliveryAddress,
+          nominatif_ville:    collabNominatif?.ville       || deliveryCity,
+          nominatif_cp:       collabNominatif?.code_postal || deliveryZip,
+          nominatif_photo:    collabNominatif?.avatar_url  || '',
         };
       });
 
@@ -241,21 +230,18 @@ export default function CartPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          order_number:         nextOrderId,
-          agency_name:          agencyData?.name || '',
-          adresse:              deliveryAddress,
-          code_postal:          deliveryZip,
-          ville:                deliveryCity,
-          tel:                  deliveryPhone,
-          tel_fix:              deliveryPhoneFix,
+          order_number:  nextOrderId,
+          agency_name:   agencyData?.name || '',
+          adresse:       deliveryAddress,
+          code_postal:   deliveryZip,
+          ville:         deliveryCity,
+          tel:           deliveryPhone,
+          tel_fix:       deliveryPhoneFix,
           siret,
-          collaborateur_nom:    selectedCollaborateur,
-          collaborateur_email:  collaborateurData?.email || agencyData?.agence_email || '',
-          collaborateur_phone:  collaborateurData?.phone || deliveryPhone,
-          items:                itemsPayload,
-          total_ht:             totalHT,
-          total_ttc:            totalTTC.toFixed(2),
-          date:                 new Date().toLocaleString('fr-FR'),
+          items:         itemsPayload,
+          total_ht:      totalHT,
+          total_ttc:     totalTTC.toFixed(2),
+          date:          new Date().toLocaleString('fr-FR'),
           mentions_ville_agence:            mentionsVilleAgence,
           mentions_url_qr_code:             mentionsUrlQrCode,
           mentions_nom_societe:             mentionsNomSociete,
@@ -309,14 +295,18 @@ export default function CartPage() {
 
   const formValid = isFormValid();
 
-  // Helper input styling
   const inp = (val: string) =>
     `w-full bg-black/40 border rounded-2xl p-5 text-[10px] font-black outline-none transition-all ${
-      !val.trim() ? 'border-red-500/30 hover:border-red-500/50 focus:border-red-500' : 'border-white/10 hover:border-blue-500/50 focus:border-blue-500'
+      !val.trim()
+        ? 'border-red-500/30 hover:border-red-500/50 focus:border-red-500'
+        : 'border-white/10 hover:border-blue-500/50 focus:border-blue-500'
     }`;
+
   const inpAlt = (val: string) =>
     `w-full bg-black/40 border rounded-2xl p-5 text-[10px] font-black outline-none transition-all ${
-      !val.trim() ? 'border-red-500/30 focus:border-red-500' : 'border-blue-500/20 focus:border-blue-500'
+      !val.trim()
+        ? 'border-red-500/30 focus:border-red-500'
+        : 'border-blue-500/20 focus:border-blue-500'
     }`;
 
 
@@ -334,36 +324,12 @@ export default function CartPage() {
 
 
           {/* ── 01. IDENTIFICATION ──────────────────────────────────────────── */}
-          <section className="bg-blue-600/5 border border-blue-500/20 rounded-[45px] p-10 space-y-8">
+          <section className="bg-blue-600/5 border border-blue-500/20 rounded-[45px] p-10 space-y-4">
             <h2 className="text-[11px] font-black uppercase text-blue-400 italic">01. Identification</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-3">
-                <label className="text-[9px] font-black opacity-30 italic ml-2 uppercase">Agence</label>
-                <div className="bg-black/40 border border-white/10 rounded-2xl p-5 text-[11px] font-black text-blue-400">
-                  {agencyData?.name || 'Non détectée'}
-                </div>
-              </div>
-              <div className="space-y-3">
-                <label className="text-[9px] font-black opacity-30 italic ml-2 uppercase">
-                  Collaborateur <span className="text-red-400">*</span>
-                </label>
-                <select value={selectedCollaborateur} onChange={(e) => setSelectedCollaborateur(e.target.value)}
-                  className={`w-full bg-black/40 border rounded-2xl p-5 text-[10px] font-black outline-none uppercase appearance-none cursor-pointer transition-all ${
-                    !selectedCollaborateur ? 'border-red-500/30 hover:border-red-500/60' : 'border-white/10 hover:border-blue-500'
-                  }`}>
-                  <option value="">— Sélectionner —</option>
-                  {membres.map((m) => (
-                    <option key={m.id} value={m.full_name || `${m.first_name} ${m.last_name}`}>
-                      {m.full_name || `${m.first_name} ${m.last_name}`}
-                    </option>
-                  ))}
-                </select>
-                {membres.length === 0 && (
-                  <p className="text-[8px] text-white/30 font-black uppercase ml-2">
-                    Aucun collaborateur —{' '}
-                    <Link href="/dashboard/equipe" className="text-blue-400 hover:underline">Ajouter dans Équipe</Link>
-                  </p>
-                )}
+            <div className="space-y-2">
+              <label className="text-[9px] font-black opacity-30 italic ml-2 uppercase">Agence</label>
+              <div className="bg-black/40 border border-white/10 rounded-2xl p-5 text-[11px] font-black text-blue-400">
+                {agencyData?.name || 'Non détectée'}
               </div>
             </div>
           </section>
@@ -440,12 +406,12 @@ export default function CartPage() {
             <div className="space-y-6">
               {!useAltAddress ? (
                 <>
-                  <input placeholder="ADRESSE DE LIVRAISON *" value={address} onChange={(e) => setAddress(e.target.value)} className={inp(address)} />
+                  <input placeholder="ADRESSE DE LIVRAISON *" value={address}   onChange={(e) => setAddress(e.target.value)}   className={inp(address)} />
                   <div className="grid grid-cols-2 gap-6">
-                    <input placeholder="CODE POSTAL *" value={zipCode} onChange={(e) => setZipCode(e.target.value)} className={inp(zipCode)} />
-                    <input placeholder="VILLE *" value={city} onChange={(e) => setCity(e.target.value)} className={inp(city)} />
+                    <input placeholder="CODE POSTAL *"         value={zipCode}  onChange={(e) => setZipCode(e.target.value)}   className={inp(zipCode)} />
+                    <input placeholder="VILLE *"               value={city}     onChange={(e) => setCity(e.target.value)}      className={inp(city)} />
                   </div>
-                  <input placeholder="TÉLÉPHONE MOBILE CONTACT *" value={phone} onChange={(e) => setPhone(e.target.value)} className={inp(phone)} />
+                  <input placeholder="TÉLÉPHONE MOBILE *"      value={phone}    onChange={(e) => setPhone(e.target.value)}     className={inp(phone)} />
                   <input placeholder="TÉLÉPHONE FIXE AGENCE *" value={phoneFix} onChange={(e) => setPhoneFix(e.target.value)} className={inp(phoneFix)} />
                   <div className="space-y-1">
                     <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">Numéro SIRET *</label>
@@ -458,13 +424,13 @@ export default function CartPage() {
                   <p className="text-[8px] font-black uppercase text-blue-400/60 tracking-widest">
                     Adresse unique pour cette commande — non sauvegardée dans vos infos agence
                   </p>
-                  <input placeholder="ADRESSE DE LIVRAISON *" value={altAddress} onChange={(e) => setAltAddress(e.target.value)} className={inpAlt(altAddress)} />
+                  <input placeholder="ADRESSE DE LIVRAISON *"  value={altAddress}  onChange={(e) => setAltAddress(e.target.value)}   className={inpAlt(altAddress)} />
                   <div className="grid grid-cols-2 gap-6">
-                    <input placeholder="CODE POSTAL *" value={altZipCode} onChange={(e) => setAltZipCode(e.target.value)} className={inpAlt(altZipCode).replace('w-full ', '')} />
-                    <input placeholder="VILLE *" value={altCity} onChange={(e) => setAltCity(e.target.value)} className={inpAlt(altCity).replace('w-full ', '')} />
+                    <input placeholder="CODE POSTAL *"          value={altZipCode} onChange={(e) => setAltZipCode(e.target.value)}   className={inpAlt(altZipCode)} />
+                    <input placeholder="VILLE *"                value={altCity}    onChange={(e) => setAltCity(e.target.value)}      className={inpAlt(altCity)} />
                   </div>
-                  <input placeholder="TÉLÉPHONE MOBILE CONTACT *" value={altPhone} onChange={(e) => setAltPhone(e.target.value)} className={inpAlt(altPhone)} />
-                  <input placeholder="TÉLÉPHONE FIXE AGENCE *" value={altPhoneFix} onChange={(e) => setAltPhoneFix(e.target.value)} className={inpAlt(altPhoneFix)} />
+                  <input placeholder="TÉLÉPHONE MOBILE *"       value={altPhone}    onChange={(e) => setAltPhone(e.target.value)}    className={inpAlt(altPhone)} />
+                  <input placeholder="TÉLÉPHONE FIXE AGENCE *"  value={altPhoneFix} onChange={(e) => setAltPhoneFix(e.target.value)} className={inpAlt(altPhoneFix)} />
                   <div className="space-y-1">
                     <label className="text-[8px] font-black uppercase tracking-[0.2em] text-blue-400/50 ml-2">
                       Numéro SIRET * <span className="normal-case italic font-bold text-blue-400/40 ml-1">— non sauvegardé</span>
@@ -488,13 +454,12 @@ export default function CartPage() {
             </div>
 
             <div className="space-y-5">
-              {/* Ville sous logo — pré-rempli agence */}
+
+              {/* Ville sous logo */}
               <div className="space-y-1">
                 <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 flex items-center gap-2">
                   Ville sous le logo <span className="text-red-400">*</span>
-                  {mentionsVilleAgence && agencyData?.ville && (
-                    <span className="text-blue-400/50 normal-case font-bold tracking-normal">· agence</span>
-                  )}
+                  {mentionsVilleAgence && <span className="text-blue-400/50 normal-case font-bold tracking-normal">· agence</span>}
                 </label>
                 <input value={mentionsVilleAgence} onChange={(e) => setMentionsVilleAgence(e.target.value)}
                   placeholder="Ex: ANGERS" className={inp(mentionsVilleAgence)} />
@@ -509,9 +474,9 @@ export default function CartPage() {
                   placeholder="Ex: https://www.guy-hoquet.com/agence-angers" className={inp(mentionsUrlQrCode)} />
               </div>
 
-              {/* Reste des champs légaux */}
+              {/* Champs légaux */}
               {([
-                { label: 'Nom Société',              val: mentionsNomSociete,            set: setMentionsNomSociete,            ph: 'Ex: GUY HOQUET PARIS 1',                          prefilled: true },
+                { label: 'Nom Société',              val: mentionsNomSociete,            set: setMentionsNomSociete,            ph: 'Ex: GUY HOQUET PARIS 1',                    prefilled: true },
                 { label: 'Statut Juridique',         val: mentionsStatut,                set: setMentionsStatut,                ph: 'Ex: SARL, SAS, EI...' },
                 { label: 'Capital Social (€)',       val: mentionsCapital,               set: setMentionsCapital,               ph: 'Ex: 10 000' },
                 { label: 'RCS',                      val: mentionsRcs,                   set: setMentionsRcs,                   ph: 'Ex: Paris 123 456 789' },
@@ -526,9 +491,7 @@ export default function CartPage() {
                 <div key={label} className="space-y-1">
                   <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 flex items-center gap-2">
                     {label} <span className="text-red-400">*</span>
-                    {prefilled && val && agencyData?.mentions_nom_societe && (
-                      <span className="text-blue-400/50 normal-case font-bold tracking-normal">· agence</span>
-                    )}
+                    {prefilled && val && <span className="text-blue-400/50 normal-case font-bold tracking-normal">· agence</span>}
                   </label>
                   <input value={val} onChange={(e) => set(e.target.value)} placeholder={ph} className={inp(val)} />
                 </div>
@@ -582,19 +545,15 @@ export default function CartPage() {
                   <span className="text-blue-600">{agencyData?.name}</span>
                 </div>
                 <div className="flex justify-between text-[10px] font-black uppercase italic">
-                  <span className="opacity-40">Collaborateur</span>
-                  <span>{selectedCollaborateur}</span>
+                  <span className="opacity-40">Livraison</span>
+                  <span className="text-right">
+                    {useAltAddress ? `${altAddress}, ${altZipCode} ${altCity}` : `${address}, ${zipCode} ${city}`}
+                  </span>
                 </div>
                 <div className="flex justify-between text-[10px] font-black uppercase italic">
                   <span className="opacity-40">Tél. fixe agence</span>
                   <span>{useAltAddress ? altPhoneFix : phoneFix}</span>
                 </div>
-                {useAltAddress && (
-                  <div className="flex justify-between text-[10px] font-black uppercase italic">
-                    <span className="opacity-40">Livraison</span>
-                    <span className="text-blue-500 text-right">{altAddress}, {altZipCode} {altCity}</span>
-                  </div>
-                )}
 
                 <div className="border-t border-gray-200 pt-4 space-y-3">
                   <span className="text-[8px] font-black uppercase opacity-30 tracking-widest block">Produits</span>
