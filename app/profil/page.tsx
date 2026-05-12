@@ -1,15 +1,15 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
 const CAISSES_GARANTIE = [
   { nom: 'ASCO', adresse: '6 Boulevard Malesherbes - 75008 PARIS' },
-  { nom: 'AXA FRANCE I.A.R.D.', adresse: '313 Terrasses de l\'Arche - 92727 NANTERRE Cedex' },
+  { nom: 'AXA FRANCE I.A.R.D.', adresse: "313 Terrasses de l'Arche - 92727 NANTERRE Cedex" },
   { nom: 'CEGC', adresse: '59 avenue Pierre Mendès France - 75013 Paris' },
   { nom: 'CEGI', adresse: '128 rue de la Boétie - 75378 Paris cedex 08' },
   { nom: 'GALIAN', adresse: '89 Rue la Boétie - 75008 Paris' },
-  { nom: 'LLOYD\'S', adresse: '8-10 rue Lammenais - 75008 Paris' },
+  { nom: "LLOYD'S", adresse: '8-10 rue Lammenais - 75008 Paris' },
   { nom: 'LSME', adresse: '42 rue Washington - 75008 PARIS' },
   { nom: 'SEGAP', adresse: '11 rue de Grenelle - 75007 Paris' },
   { nom: 'SMA SA', adresse: '8 rue Louis Armand - CS 71201 - 75738 PARIS CEDEX 15' },
@@ -19,15 +19,12 @@ const CAISSES_GARANTIE = [
 ];
 
 export default function ProfilPage() {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading]   = useState(true);
   const [updating, setUpdating] = useState(false);
-  const [uploadingLogo, setUploadingLogo] = useState(false);
   const router = useRouter();
-  const logoInputRef = useRef<HTMLInputElement>(null);
 
   const [agenceId, setAgenceId] = useState<string | null>(null);
   const [agenceData, setAgenceData] = useState({
-    logo_url: '',
     ville: '',
     adresse: '',
     code_postal: '',
@@ -70,7 +67,6 @@ export default function ProfilPage() {
 
         if (agence) {
           setAgenceData({
-            logo_url:                         agence.logo_url || '',
             ville:                            agence.ville || '',
             adresse:                          agence.adresse || '',
             code_postal:                      agence.code_postal || '',
@@ -98,52 +94,6 @@ export default function ProfilPage() {
     getProfile();
   }, [router]);
 
-  const compressImage = (file: File): Promise<File> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      const url = URL.createObjectURL(file);
-      img.src = url;
-      img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
-      img.onload = () => {
-        URL.revokeObjectURL(url);
-        const MAX = 800;
-        let width = img.width, height = img.height;
-        if (width > MAX || height > MAX) {
-          const ratio = Math.min(MAX / width, MAX / height);
-          width = Math.round(width * ratio);
-          height = Math.round(height * ratio);
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = width; canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return resolve(file);
-        ctx.drawImage(img, 0, 0, width, height);
-        canvas.toBlob((blob) => {
-          if (!blob) return resolve(file);
-          resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.webp'), { type: 'image/webp' }));
-        }, 'image/webp', 0.85);
-      };
-    });
-  };
-
-  const uploadLogo = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    try {
-      setUploadingLogo(true);
-      if (!event.target.files?.[0] || !agenceId) return;
-      const compressed = await compressImage(event.target.files[0]);
-      const fileName = `${Date.now()}-${compressed.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9._-]/g, '-')}`;
-      const { error } = await supabase.storage.from('avatars').upload(fileName, compressed);
-      if (error) throw error;
-      const { data } = supabase.storage.from('avatars').getPublicUrl(fileName);
-      await supabase.from('agencies').update({ logo_url: data.publicUrl }).eq('id', agenceId);
-      setAgenceData(prev => ({ ...prev, logo_url: data.publicUrl }));
-    } catch {
-      alert("Erreur lors de l'envoi du logo.");
-    } finally {
-      setUploadingLogo(false);
-    }
-  };
-
   const handleCaisseChange = (nomCaisse: string) => {
     const found = CAISSES_GARANTIE.find(c => c.nom === nomCaisse);
     setAgenceData(prev => ({
@@ -158,9 +108,9 @@ export default function ProfilPage() {
     if (!agenceId) return;
     setUpdating(true);
     const { error } = await supabase.from('agencies').update({
+      ville:                            agenceData.ville,
       adresse:                          agenceData.adresse,
       code_postal:                      agenceData.code_postal,
-      ville:                            agenceData.ville,
       agence_telephone:                 agenceData.agence_telephone,
       phone_fix:                        agenceData.phone_fix,
       agence_email:                     agenceData.agence_email,
@@ -190,7 +140,7 @@ export default function ProfilPage() {
     type = 'text'
   ) => (
     <div className="space-y-1">
-      <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">{label}</label>
+      <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 block">{label}</label>
       <input
         type={type}
         value={agenceData[key] as string}
@@ -229,49 +179,17 @@ export default function ProfilPage() {
           {/* ── BLOC 1 : INFOS PRINCIPALES ── */}
           <div className="space-y-6 bg-white/5 p-8 rounded-[40px] border border-white/10 backdrop-blur-xl shadow-2xl">
 
-            {/* LOGO + VILLE */}
-            <div className="flex flex-col items-center justify-center space-y-3 pb-6 border-b border-white/5">
-              <div
-                onClick={() => logoInputRef.current?.click()}
-                className="h-36 w-36 rounded-[28px] overflow-hidden border-2 border-dashed border-blue-500/30 bg-black/40 shadow-2xl flex items-center justify-center cursor-pointer hover:border-blue-500 transition-all relative"
-              >
-                {agenceData.logo_url ? (
-                  <img src={agenceData.logo_url} alt="Logo agence" className="h-full w-full object-contain p-3" />
-                ) : (
-                  <div className="flex flex-col items-center gap-2 text-white/20">
-                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      <rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18M9 21V9"/>
-                    </svg>
-                    <span className="text-[8px] font-black uppercase tracking-widest">Logo</span>
-                  </div>
-                )}
-                {uploadingLogo && (
-                  <div className="absolute inset-0 bg-black/70 flex items-center justify-center rounded-[28px]">
-                    <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                  </div>
-                )}
-              </div>
-              <input ref={logoInputRef} type="file" className="hidden" accept="image/*" onChange={uploadLogo} disabled={uploadingLogo} />
-              <button
-                type="button"
-                onClick={() => logoInputRef.current?.click()}
-                className="text-[9px] font-black uppercase text-blue-400 hover:text-blue-300 transition-colors"
-              >
-                {uploadingLogo ? 'Upload en cours...' : '+ Changer le logo'}
-              </button>
-              <p className="text-[7px] font-bold text-white/20 uppercase tracking-[0.3em]">PNG transparent recommandé</p>
-
-              {/* CHAMP VILLE SOUS LE LOGO */}
-              <div className="w-full pt-2">
-                <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 block mb-1">Ville</label>
-                <input
-                  type="text"
-                  value={agenceData.ville}
-                  onChange={(e) => setAgenceData({ ...agenceData, ville: e.target.value })}
-                  placeholder="Ex: Angers"
-                  className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-medium text-sm text-white placeholder:text-white/20 text-center"
-                />
-              </div>
+            {/* VILLE — affiché en titre centré en haut du bloc */}
+            <div className="flex flex-col items-center pb-6 border-b border-white/5 space-y-2">
+              <p className="text-[8px] font-black uppercase tracking-[0.3em] text-white/20">Guy Hoquet</p>
+              <input
+                type="text"
+                value={agenceData.ville}
+                onChange={(e) => setAgenceData({ ...agenceData, ville: e.target.value })}
+                placeholder="Ville de l'agence"
+                className="bg-transparent border-b border-white/10 focus:border-blue-500 outline-none text-center text-xl font-black uppercase tracking-tight text-white w-full transition-all placeholder:text-white/15 pb-1"
+              />
+              <p className="text-[7px] font-bold text-white/15 uppercase tracking-widest">Nom affiché sous le logo Guy Hoquet</p>
             </div>
 
             {field('Adresse', 'adresse', 'Ex: 12 rue de la Paix')}
@@ -294,14 +212,13 @@ export default function ProfilPage() {
                 className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-medium text-sm text-white placeholder:text-white/20"
               />
               {agenceData.qr_code_url && (
-                <p className="text-[8px] text-blue-400/60 font-bold ml-2 mt-1 truncate">
-                  ✓ {agenceData.qr_code_url}
-                </p>
+                <p className="text-[8px] text-blue-400/60 font-bold ml-2 mt-1 truncate">✓ {agenceData.qr_code_url}</p>
               )}
             </div>
 
+            {/* SIRET */}
             <div className="space-y-1">
-              <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">Numéro SIRET</label>
+              <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 block">Numéro SIRET</label>
               <input
                 type="text"
                 value={agenceData.siret}
@@ -332,7 +249,7 @@ export default function ProfilPage() {
               {field('Délivrée par la CCI de', 'mentions_carte_pro_delivree', 'Ex: Paris Île-de-France')}
             </div>
 
-            {/* CAISSE DE GARANTIE — menu déroulant */}
+            {/* CAISSE DE GARANTIE */}
             <div className="space-y-3">
               <div className="space-y-1">
                 <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 block">
@@ -341,8 +258,12 @@ export default function ProfilPage() {
                 <select
                   value={agenceData.mentions_caisse_garantie}
                   onChange={(e) => handleCaisseChange(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-medium text-sm text-white appearance-none cursor-pointer"
-                  style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.3)' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 16px center' }}
+                  className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-medium text-sm text-white cursor-pointer appearance-none"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.3)' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 16px center',
+                  }}
                 >
                   <option value="" className="bg-[#0f092e]">— Sélectionner une caisse —</option>
                   {CAISSES_GARANTIE.map((c) => (
@@ -353,7 +274,6 @@ export default function ProfilPage() {
                 </select>
               </div>
 
-              {/* ADRESSE PRÉ-REMPLIE */}
               <div className="space-y-1">
                 <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 block">
                   Adresse Caisse de Garantie
@@ -376,7 +296,7 @@ export default function ProfilPage() {
 
             {/* APERÇU MENTIONS */}
             {agenceData.mentions_nom_societe && (
-              <div className="bg-black/30 border border-white/5 rounded-2xl p-5 space-y-1">
+              <div className="bg-black/30 border border-white/5 rounded-2xl p-5">
                 <p className="text-[7px] font-black uppercase tracking-widest text-white/20 mb-3">Aperçu</p>
                 <p className="text-[9px] text-white/50 font-medium leading-relaxed">
                   {agenceData.mentions_nom_societe}
