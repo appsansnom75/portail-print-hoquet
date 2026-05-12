@@ -1,9 +1,11 @@
 @import "tailwindcss";
 
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
 }
+
 
 @theme inline {
   --color-background: var(--background);
@@ -12,12 +14,19 @@
   --font-mono: var(--font-geist-mono);
 }
 
+
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: 0a0a0a;
     --foreground: #ededed;
   }
 }
+
+
+html {
+  font-size: 112.5%; /* 18px base — augmente tout ce qui est en rem */
+}
+
 
 body {
   background: var(--background);
