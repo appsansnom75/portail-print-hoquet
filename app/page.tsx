@@ -52,9 +52,9 @@ export default function HomePage() {
       {/* HEADER LOGOS */}
       <header className="py-10 px-4">
         <div className="max-w-6xl mx-auto flex items-center justify-center gap-8 md:gap-16">
-          <img src="/logo-imprimeur.png" alt="Mon Imprimerie" className="h-8 md:h-10 object-contain" />
-          <div className="w-px h-8 bg-white/10 rotate-[20deg]"></div>
-          <img src="/logo-hoquet.png" alt="Guy Hoquet" className="h-10 md:h-12 object-contain" />
+          <img src="/logo-imprimeur.png" alt="Mon Imprimerie" className="h-10 md:h-14 object-contain" />
+          <div className="w-px h-10 bg-white/10 rotate-[20deg]"></div>
+          <img src="/logo-hoquet.png" alt="Guy Hoquet" className="h-12 md:h-16 object-contain" />
         </div>
       </header>
 
@@ -67,7 +67,6 @@ export default function HomePage() {
             <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter text-white">
               Catalogue <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-400">Print</span>
             </h2>
-            <p className="text-[13px] md:text-xs font-black uppercase tracking-[0.5em] text-white/20 mt-2">Édition 2026</p>
           </div>
         </div>
       </section>
