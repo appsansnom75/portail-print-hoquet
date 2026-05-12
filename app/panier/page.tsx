@@ -33,6 +33,7 @@ export default function CartPage() {
   const [altPhoneFix, setAltPhoneFix]     = useState('');
 
   // 04 - FACTURATION & LÉGALES
+  const [mentionsMailFacturation, setMentionsMailFacturation]               = useState('');
   const [mentionsVilleAgence, setMentionsVilleAgence]                       = useState('');
   const [mentionsUrlQrCode, setMentionsUrlQrCode]                           = useState('');
   const [mentionsNomSociete, setMentionsNomSociete]                         = useState('');
@@ -49,6 +50,8 @@ export default function CartPage() {
 
   const totalHT  = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
   const totalTTC = totalHT * 1.2;
+
+  const fmt = (n: number) => n.toFixed(2).replace('.', ',');
 
 
   // ─── 1. CHARGEMENT ──────────────────────────────────────────────────────────
@@ -75,22 +78,22 @@ export default function CartPage() {
           setSiret(agency.siret                  || '');
           setPhone(agency.agence_telephone       || '');
           setPhoneFix(agency.phone_fix           || '');
-          setMentionsVilleAgence(agency.mentions_ville_agence             || agency.ville || '');
-          setMentionsUrlQrCode(agency.mentions_url_qr_code                || '');
-          setMentionsNomSociete(agency.mentions_nom_societe               || '');
-          setMentionsStatut(agency.mentions_statut                        || '');
-          setMentionsCapital(agency.mentions_capital                      || '');
-          setMentionsRcs(agency.mentions_rcs                              || '');
-          setMentionsApe(agency.mentions_ape                              || '');
-          setMentionsCartePro(agency.mentions_carte_pro                   || '');
-          setMentionsCarteProDelivree(agency.mentions_carte_pro_delivree  || '');
-          setMentionsCaisseGarantie(agency.mentions_caisse_garantie       || '');
+          setMentionsMailFacturation(agency.mentions_mail_facturation       || agency.agence_email || '');
+          setMentionsVilleAgence(agency.mentions_ville_agence               || agency.ville || '');
+          setMentionsUrlQrCode(agency.mentions_url_qr_code                  || '');
+          setMentionsNomSociete(agency.mentions_nom_societe                 || '');
+          setMentionsStatut(agency.mentions_statut                          || '');
+          setMentionsCapital(agency.mentions_capital                        || '');
+          setMentionsRcs(agency.mentions_rcs                                || '');
+          setMentionsApe(agency.mentions_ape                                || '');
+          setMentionsCartePro(agency.mentions_carte_pro                     || '');
+          setMentionsCarteProDelivree(agency.mentions_carte_pro_delivree    || '');
+          setMentionsCaisseGarantie(agency.mentions_caisse_garantie         || '');
           setMentionsCaisseGarantieAdresse(agency.mentions_caisse_garantie_adresse || '');
-          setMentionsTva(agency.mentions_tva                              || '');
-          setMentionsMailRgpd(agency.mentions_mail_rgpd                   || '');
+          setMentionsTva(agency.mentions_tva                                || '');
+          setMentionsMailRgpd(agency.mentions_mail_rgpd                     || '');
         }
 
-        // On charge quand même les membres pour résoudre les orderedBy des produits perso
         const { data: collabs } = await supabase
           .from('collaborateurs')
           .select('id, full_name, first_name, last_name, email, phone, phone_fix, fonction, rsac, adresse, ville, code_postal, avatar_url')
@@ -115,6 +118,7 @@ export default function CartPage() {
         phone_fix:        phoneFix,
       }),
       siret,
+      mentions_mail_facturation:        mentionsMailFacturation,
       mentions_ville_agence:            mentionsVilleAgence,
       mentions_url_qr_code:             mentionsUrlQrCode,
       mentions_nom_societe:             mentionsNomSociete,
@@ -139,6 +143,7 @@ export default function CartPage() {
       : address.trim() && zipCode.trim() && city.trim() && phone.trim() && phoneFix.trim();
 
     const mentionsOk =
+      mentionsMailFacturation.trim() &&
       mentionsVilleAgence.trim() &&
       mentionsUrlQrCode.trim() &&
       mentionsNomSociete.trim() &&
@@ -183,7 +188,7 @@ export default function CartPage() {
         name:       item.name,
         qty:        item.qty,
         price_unit: item.price,
-        total_row:  (item.price * item.qty).toFixed(2),
+        total_row:  fmt(item.price * item.qty),
         ordered_by: item.orderedBy || null,
       }));
 
@@ -202,7 +207,6 @@ export default function CartPage() {
       }]);
       if (insertError) throw insertError;
 
-      // ITEMS PAYLOAD — champs nominatifs complets pour Make
       const itemsPayload = cart.map(item => {
         const collabNominatif = item.orderedBy
           ? membres.find(m => (m.full_name || `${m.first_name} ${m.last_name}`) === item.orderedBy)
@@ -210,7 +214,7 @@ export default function CartPage() {
         return {
           produit:            item.name,
           quantite:           item.qty,
-          prix_ligne:         (item.price * item.qty).toFixed(2),
+          prix_ligne:         fmt(item.price * item.qty),
           membre:             item.orderedBy || '',
           nominatif_prenom:   collabNominatif?.first_name  || '',
           nominatif_nom:      collabNominatif?.last_name   || '',
@@ -239,9 +243,10 @@ export default function CartPage() {
           tel_fix:       deliveryPhoneFix,
           siret,
           items:         itemsPayload,
-          total_ht:      totalHT,
-          total_ttc:     totalTTC.toFixed(2),
+          total_ht:      fmt(totalHT),
+          total_ttc:     fmt(totalTTC),
           date:          new Date().toLocaleString('fr-FR'),
+          mentions_mail_facturation:        mentionsMailFacturation,
           mentions_ville_agence:            mentionsVilleAgence,
           mentions_url_qr_code:             mentionsUrlQrCode,
           mentions_nom_societe:             mentionsNomSociete,
@@ -353,7 +358,7 @@ export default function CartPage() {
                   </div>
                   <div className="flex items-center gap-4 shrink-0">
                     <div className="text-right">
-                      <p className="text-[14px] font-black italic">{(item.price * item.qty).toFixed(2)}€</p>
+                      <p className="text-[14px] font-black italic">{fmt(item.price * item.qty)}€</p>
                       <p className="text-[8px] font-black opacity-30 uppercase">HT</p>
                     </div>
                     <button type="button" onClick={() => removeFromCart(item.cartLineId)}
@@ -366,14 +371,14 @@ export default function CartPage() {
               {cart.length > 0 && (
                 <div className="pt-4 space-y-2">
                   <div className="flex justify-between text-[10px] font-black uppercase italic opacity-50">
-                    <span>Sous-total HT</span><span>{totalHT.toFixed(2)}€</span>
+                    <span>Sous-total HT</span><span>{fmt(totalHT)}€</span>
                   </div>
                   <div className="flex justify-between text-[10px] font-black uppercase italic opacity-30">
-                    <span>TVA (20%)</span><span>{(totalTTC - totalHT).toFixed(2)}€</span>
+                    <span>TVA (20%)</span><span>{fmt(totalTTC - totalHT)}€</span>
                   </div>
                   <div className="flex justify-between text-[13px] font-black uppercase italic border-t border-white/10 pt-3">
                     <span className="text-white/60">Total TTC</span>
-                    <span className="text-blue-400">{totalTTC.toFixed(2)}€</span>
+                    <span className="text-blue-400">{fmt(totalTTC)}€</span>
                   </div>
                 </div>
               )}
@@ -455,6 +460,16 @@ export default function CartPage() {
 
             <div className="space-y-5">
 
+              {/* ── Mail de facturation — EN PREMIER ── */}
+              <div className="space-y-1">
+                <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 flex items-center gap-2">
+                  Mail de facturation <span className="text-red-400">*</span>
+                  {mentionsMailFacturation && <span className="text-blue-400/50 normal-case font-bold tracking-normal">· agence</span>}
+                </label>
+                <input value={mentionsMailFacturation} onChange={(e) => setMentionsMailFacturation(e.target.value)}
+                  placeholder="Ex: compta@guy-hoquet-angers.com" className={inp(mentionsMailFacturation)} />
+              </div>
+
               {/* Ville sous logo */}
               <div className="space-y-1">
                 <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 flex items-center gap-2">
@@ -506,10 +521,10 @@ export default function CartPage() {
         <div className="lg:col-span-1">
           <div className="bg-white p-12 rounded-[50px] text-[#0f092e] sticky top-12 text-center shadow-2xl">
             <h2 className="text-[10px] font-black uppercase opacity-30 italic mb-4">Total à régler</h2>
-            <span className="text-6xl font-black italic tracking-tighter">{totalHT.toFixed(2)}€</span>
+            <span className="text-6xl font-black italic tracking-tighter">{fmt(totalHT)}€</span>
             <p className="text-[8px] font-black uppercase opacity-30 mt-1 tracking-widest">Hors Taxes (HT)</p>
             <div className="mt-4 bg-black/5 rounded-2xl px-6 py-4">
-              <span className="text-2xl font-black italic tracking-tighter opacity-60">{totalTTC.toFixed(2)}€</span>
+              <span className="text-2xl font-black italic tracking-tighter opacity-60">{fmt(totalTTC)}€</span>
               <p className="text-[8px] font-black uppercase opacity-30 mt-0.5 tracking-widest">TTC (TVA 20%)</p>
             </div>
             {!formValid && cart.length > 0 && (
@@ -567,7 +582,7 @@ export default function CartPage() {
                         </p>
                       </div>
                       <span className="text-[10px] font-black shrink-0 tabular-nums">
-                        {(item.price * item.qty).toFixed(2)}€
+                        {fmt(item.price * item.qty)}€
                       </span>
                     </div>
                   ))}
@@ -575,11 +590,11 @@ export default function CartPage() {
 
                 <div className="flex justify-between text-[10px] font-black uppercase italic border-t border-gray-200 pt-4">
                   <span className="opacity-40">Total HT</span>
-                  <span className="text-2xl text-blue-600">{totalHT.toFixed(2)}€</span>
+                  <span className="text-2xl text-blue-600">{fmt(totalHT)}€</span>
                 </div>
                 <div className="flex justify-between text-[10px] font-black uppercase italic">
                   <span className="opacity-40">Total TTC (20%)</span>
-                  <span className="text-lg text-gray-400">{totalTTC.toFixed(2)}€</span>
+                  <span className="text-lg text-gray-400">{fmt(totalTTC)}€</span>
                 </div>
               </div>
 
