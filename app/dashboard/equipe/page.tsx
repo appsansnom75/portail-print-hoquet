@@ -4,6 +4,31 @@ import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
+
+// ── Composant Field EN DEHORS du composant principal ──
+const Field = ({
+  label, value, onChange, placeholder, type = 'text', span2 = false, prefilled = false
+}: {
+  label: string; value: string; onChange: (v: string) => void;
+  placeholder: string; type?: string; span2?: boolean; prefilled?: boolean;
+}) => (
+  <div className={span2 ? 'md:col-span-2' : ''}>
+    <label className="flex items-center gap-2 text-[8px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1">
+      {label}
+      {prefilled && value && (
+        <span className="text-blue-400/50 normal-case font-bold tracking-normal text-[7px]">· agence</span>
+      )}
+    </label>
+    <input
+      type={type} value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className="w-full bg-white/[0.06] border border-white/10 px-4 py-3.5 rounded-2xl outline-none focus:border-blue-500 focus:bg-white/[0.09] transition-all text-sm text-white font-medium placeholder:text-white/20"
+    />
+  </div>
+);
+
+
 export default function GestionEquipe() {
   const router = useRouter();
 
@@ -18,8 +43,8 @@ export default function GestionEquipe() {
   const [ville, setVille]           = useState('');
   const [codePostal, setCodePostal] = useState('');
   const [rsac, setRsac]             = useState('');
-  const [avatarFile, setAvatarFile]       = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile]             = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview]       = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ── State global ──
@@ -29,9 +54,9 @@ export default function GestionEquipe() {
   const [submitting, setSubmitting]     = useState(false);
 
   // ── Edition inline ──
-  const [editId, setEditId]                   = useState<string | null>(null);
-  const [editData, setEditData]               = useState<any>({});
-  const [editAvatarFile, setEditAvatarFile]   = useState<File | null>(null);
+  const [editId, setEditId]                       = useState<string | null>(null);
+  const [editData, setEditData]                   = useState<any>({});
+  const [editAvatarFile, setEditAvatarFile]       = useState<File | null>(null);
   const [editAvatarPreview, setEditAvatarPreview] = useState<string | null>(null);
   const editFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -42,6 +67,7 @@ export default function GestionEquipe() {
     ville: '',
     code_postal: '',
   });
+
 
   // ─────────────────────────────────────────
   const compressImage = (file: File): Promise<File> => {
@@ -80,6 +106,7 @@ export default function GestionEquipe() {
     return data.publicUrl;
   };
 
+
   // ─────────────────────────────────────────
   const chargerEquipe = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -91,7 +118,6 @@ export default function GestionEquipe() {
     if (profilAdmin?.agency_id) {
       setMonAgencyId(profilAdmin.agency_id);
 
-      // Charger les données agence pour pré-remplissage
       const { data: agence } = await supabase
         .from('agencies')
         .select('phone_fix, adresse, ville, code_postal')
@@ -106,7 +132,6 @@ export default function GestionEquipe() {
           code_postal: agence.code_postal || '',
         };
         setAgencyDefaults(defaults);
-        // Pré-remplir le formulaire d'ajout
         setPhoneFix(defaults.phone_fix);
         setAdresse(defaults.adresse);
         setVille(defaults.ville);
@@ -125,6 +150,7 @@ export default function GestionEquipe() {
 
   useEffect(() => { chargerEquipe(); }, []);
 
+
   // ─────────────────────────────────────────
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
@@ -135,6 +161,7 @@ export default function GestionEquipe() {
     setEditAvatarFile(file); setEditAvatarPreview(URL.createObjectURL(file));
   };
 
+
   // ─────────────────────────────────────────
   const ajouterCollaborateur = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,21 +169,23 @@ export default function GestionEquipe() {
     setSubmitting(true);
     const avatarUrl = avatarFile ? await uploadAvatar(avatarFile) : '';
     const { error } = await supabase.from('collaborateurs').insert([{
-      first_name: prenom, last_name: nom,
-      full_name: `${prenom} ${nom}`,
-      email, fonction, phone,
+      first_name:  prenom,
+      last_name:   nom,
+      full_name:   `${prenom} ${nom}`,
+      email,
+      fonction,
+      phone,
       phone_fix:   phoneFix,
       adresse,
       ville,
       code_postal: codePostal,
       rsac,
-      avatar_url: avatarUrl,
-      agency_id: monAgencyId,
+      avatar_url:  avatarUrl,
+      agency_id:   monAgencyId,
     }]);
     if (!error) {
       setEmail(''); setPrenom(''); setNom(''); setFonction(''); setPhone(''); setRsac('');
       setAvatarFile(null); setAvatarPreview(null);
-      // Re-pré-remplir les champs agence
       setPhoneFix(agencyDefaults.phone_fix);
       setAdresse(agencyDefaults.adresse);
       setVille(agencyDefaults.ville);
@@ -165,6 +194,7 @@ export default function GestionEquipe() {
     } else { alert("Erreur : " + error.message); }
     setSubmitting(false);
   };
+
 
   // ─────────────────────────────────────────
   const ouvrirEdition = (m: any) => {
@@ -214,30 +244,8 @@ export default function GestionEquipe() {
     else alert("Erreur : " + error.message);
   };
 
-  // ─────────────────────────────────────────
-  // Composant champ réutilisable
-  const Field = ({
-    label, value, onChange, placeholder, type = 'text', span2 = false, prefilled = false
-  }: {
-    label: string; value: string; onChange: (v: string) => void;
-    placeholder: string; type?: string; span2?: boolean; prefilled?: boolean;
-  }) => (
-    <div className={span2 ? 'md:col-span-2' : ''}>
-      <label className="flex items-center gap-2 text-[8px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1">
-        {label}
-        {prefilled && value && (
-          <span className="text-blue-400/50 normal-case font-bold tracking-normal text-[7px]">· agence</span>
-        )}
-      </label>
-      <input
-        type={type} value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="w-full bg-white/[0.06] border border-white/10 px-4 py-3.5 rounded-2xl outline-none focus:border-blue-500 focus:bg-white/[0.09] transition-all text-sm text-white font-medium placeholder:text-white/20"
-      />
-    </div>
-  );
 
+  // ─────────────────────────────────────────
   if (loading) return (
     <div className="p-20 text-white font-black uppercase text-[10px] tracking-widest animate-pulse">
       Chargement de l'agence...
@@ -263,6 +271,7 @@ export default function GestionEquipe() {
           </div>
         </div>
 
+
         {/* ── FORMULAIRE AJOUT ── */}
         <div className="bg-white/5 p-8 rounded-[40px] border border-white/10 backdrop-blur-xl shadow-2xl">
           <h2 className="text-xl font-black uppercase mb-8 text-blue-500 tracking-tighter italic">Nouveau Collaborateur</h2>
@@ -278,7 +287,7 @@ export default function GestionEquipe() {
                   : <span className="text-2xl">📷</span>}
               </div>
               <div>
-                <p className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-1">Photo de profil</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-1">Photo de profil <span className="text-white/20 normal-case font-medium">(optionnelle)</span></p>
                 <button type="button" onClick={() => fileInputRef.current?.click()}
                   className="text-[9px] font-black uppercase text-blue-400 hover:text-blue-300 transition-colors">
                   Choisir une photo →
@@ -332,6 +341,7 @@ export default function GestionEquipe() {
           </form>
         </div>
 
+
         {/* ── LISTE ── */}
         <div className="space-y-6">
           <div className="flex items-center justify-between px-4">
@@ -370,10 +380,10 @@ export default function GestionEquipe() {
 
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 flex-grow px-0 md:px-8">
                       {[
-                        { label: 'Email',   val: m.email },
-                        { label: 'Mobile',  val: m.phone },
-                        { label: 'Fixe',    val: m.phone_fix },
-                        { label: 'Ville',   val: m.ville },
+                        { label: 'Email',  val: m.email },
+                        { label: 'Mobile', val: m.phone },
+                        { label: 'Fixe',   val: m.phone_fix },
+                        { label: 'Ville',  val: m.ville },
                       ].map(({ label, val }) => (
                         <div key={label} className="flex flex-col gap-0.5">
                           <span className="text-[7px] font-black text-white/20 uppercase tracking-widest">{label}</span>
@@ -409,10 +419,13 @@ export default function GestionEquipe() {
                               onError={(e) => { (e.target as HTMLImageElement).style.display='none'; }} />
                           : <span className="text-xl">📷</span>}
                       </div>
-                      <button type="button" onClick={() => editFileInputRef.current?.click()}
-                        className="text-[9px] font-black uppercase text-blue-400 hover:text-blue-300 transition-colors">
-                        Changer la photo →
-                      </button>
+                      <div>
+                        <p className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-1">Photo de profil <span className="text-white/20 normal-case font-medium">(optionnelle)</span></p>
+                        <button type="button" onClick={() => editFileInputRef.current?.click()}
+                          className="text-[9px] font-black uppercase text-blue-400 hover:text-blue-300 transition-colors">
+                          Changer la photo →
+                        </button>
+                      </div>
                       <input ref={editFileInputRef} type="file" accept="image/*" onChange={handleEditAvatarChange} className="hidden" />
                     </div>
 
@@ -442,9 +455,9 @@ export default function GestionEquipe() {
                       </p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {[
-                          { k: 'email', label: 'Email', type: 'email' },
-                          { k: 'phone', label: 'Mobile', type: 'tel' },
-                          { k: 'phone_fix', label: 'Téléphone fixe', type: 'tel' },
+                          { k: 'email',     label: 'Email',            type: 'email' },
+                          { k: 'phone',     label: 'Mobile',           type: 'tel' },
+                          { k: 'phone_fix', label: 'Téléphone fixe',   type: 'tel' },
                         ].map(({ k, label, type }) => (
                           <div key={k} className={k === 'phone_fix' ? 'md:col-span-2' : ''}>
                             <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/25 mb-1 block ml-1">{label}</label>
@@ -463,9 +476,9 @@ export default function GestionEquipe() {
                       </p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {[
-                          { k: 'adresse', label: 'Adresse', span2: true },
-                          { k: 'ville', label: 'Ville' },
-                          { k: 'code_postal', label: 'Code postal' },
+                          { k: 'adresse',     label: 'Adresse',      span2: true },
+                          { k: 'ville',       label: 'Ville',        span2: false },
+                          { k: 'code_postal', label: 'Code postal',  span2: false },
                         ].map(({ k, label, span2 }) => (
                           <div key={k} className={span2 ? 'md:col-span-2' : ''}>
                             <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/25 mb-1 block ml-1">{label}</label>

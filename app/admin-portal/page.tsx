@@ -358,7 +358,7 @@ export default function AdminPortal() {
                 <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${showOrderedBy ? 'left-7' : 'left-1'}`}></div>
               </div>
               <div>
-                <p className="text-[9px] font-black uppercase tracking-widest text-white/70">Afficher "Qui commande ?"</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-white/70">Afficher "Nom du collaborateur"</p>
                 <p className="text-[8px] text-white/20 mt-0.5">Affiche la liste de l'équipe sur ce produit (admin agence uniquement)</p>
               </div>
             </div>
