@@ -3,6 +3,21 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
+const CAISSES_GARANTIE = [
+  { nom: 'ASCO', adresse: '6 Boulevard Malesherbes - 75008 PARIS' },
+  { nom: 'AXA FRANCE I.A.R.D.', adresse: '313 Terrasses de l\'Arche - 92727 NANTERRE Cedex' },
+  { nom: 'CEGC', adresse: '59 avenue Pierre Mendès France - 75013 Paris' },
+  { nom: 'CEGI', adresse: '128 rue de la Boétie - 75378 Paris cedex 08' },
+  { nom: 'GALIAN', adresse: '89 Rue la Boétie - 75008 Paris' },
+  { nom: 'LLOYD\'S', adresse: '8-10 rue Lammenais - 75008 Paris' },
+  { nom: 'LSME', adresse: '42 rue Washington - 75008 PARIS' },
+  { nom: 'SEGAP', adresse: '11 rue de Grenelle - 75007 Paris' },
+  { nom: 'SMA SA', adresse: '8 rue Louis Armand - CS 71201 - 75738 PARIS CEDEX 15' },
+  { nom: 'SOCAF', adresse: '26 avenue de Suffren - 75015 Paris' },
+  { nom: 'AXELLIANCE', adresse: '92 Cours Vitton - Immeuble Les Topazes - 69456 LYON CEDEX 06' },
+  { nom: 'Néant', adresse: '' },
+];
+
 export default function ProfilPage() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -13,11 +28,13 @@ export default function ProfilPage() {
   const [agenceId, setAgenceId] = useState<string | null>(null);
   const [agenceData, setAgenceData] = useState({
     logo_url: '',
+    ville: '',
     adresse: '',
     code_postal: '',
-    ville: '',
     agence_telephone: '',
+    phone_fix: '',
     agence_email: '',
+    qr_code_url: '',
     siret: '',
     mentions_nom_societe: '',
     mentions_statut: '',
@@ -54,11 +71,13 @@ export default function ProfilPage() {
         if (agence) {
           setAgenceData({
             logo_url:                         agence.logo_url || '',
+            ville:                            agence.ville || '',
             adresse:                          agence.adresse || '',
             code_postal:                      agence.code_postal || '',
-            ville:                            agence.ville || '',
             agence_telephone:                 agence.agence_telephone || '',
+            phone_fix:                        agence.phone_fix || '',
             agence_email:                     agence.agence_email || '',
+            qr_code_url:                      agence.qr_code_url || '',
             siret:                            agence.siret || '',
             mentions_nom_societe:             agence.mentions_nom_societe || '',
             mentions_statut:                  agence.mentions_statut || '',
@@ -125,6 +144,15 @@ export default function ProfilPage() {
     }
   };
 
+  const handleCaisseChange = (nomCaisse: string) => {
+    const found = CAISSES_GARANTIE.find(c => c.nom === nomCaisse);
+    setAgenceData(prev => ({
+      ...prev,
+      mentions_caisse_garantie: nomCaisse,
+      mentions_caisse_garantie_adresse: found?.adresse || '',
+    }));
+  };
+
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!agenceId) return;
@@ -134,7 +162,9 @@ export default function ProfilPage() {
       code_postal:                      agenceData.code_postal,
       ville:                            agenceData.ville,
       agence_telephone:                 agenceData.agence_telephone,
+      phone_fix:                        agenceData.phone_fix,
       agence_email:                     agenceData.agence_email,
+      qr_code_url:                      agenceData.qr_code_url,
       siret:                            agenceData.siret,
       mentions_nom_societe:             agenceData.mentions_nom_societe,
       mentions_statut:                  agenceData.mentions_statut,
@@ -166,7 +196,7 @@ export default function ProfilPage() {
         value={agenceData[key] as string}
         onChange={(e) => setAgenceData({ ...agenceData, [key]: e.target.value })}
         placeholder={placeholder}
-        className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-medium text-sm"
+        className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-medium text-sm text-white placeholder:text-white/20"
       />
     </div>
   );
@@ -196,11 +226,11 @@ export default function ProfilPage() {
 
         <form onSubmit={handleUpdate} className="space-y-6">
 
-          {/* ── BLOC 1 : INFOS PRINCIPALES ──────────────────────── */}
+          {/* ── BLOC 1 : INFOS PRINCIPALES ── */}
           <div className="space-y-6 bg-white/5 p-8 rounded-[40px] border border-white/10 backdrop-blur-xl shadow-2xl">
 
-            {/* LOGO */}
-            <div className="flex flex-col items-center justify-center space-y-4 pb-6 border-b border-white/5">
+            {/* LOGO + VILLE */}
+            <div className="flex flex-col items-center justify-center space-y-3 pb-6 border-b border-white/5">
               <div
                 onClick={() => logoInputRef.current?.click()}
                 className="h-36 w-36 rounded-[28px] overflow-hidden border-2 border-dashed border-blue-500/30 bg-black/40 shadow-2xl flex items-center justify-center cursor-pointer hover:border-blue-500 transition-all relative"
@@ -222,25 +252,54 @@ export default function ProfilPage() {
                 )}
               </div>
               <input ref={logoInputRef} type="file" className="hidden" accept="image/*" onChange={uploadLogo} disabled={uploadingLogo} />
-              <div className="text-center space-y-1">
-                <button
-                  type="button"
-                  onClick={() => logoInputRef.current?.click()}
-                  className="text-[9px] font-black uppercase text-blue-400 hover:text-blue-300 transition-colors"
-                >
-                  {uploadingLogo ? 'Upload en cours...' : '+ Changer le logo'}
-                </button>
-                <p className="text-[7px] font-bold text-white/20 uppercase tracking-[0.3em]">PNG transparent recommandé</p>
+              <button
+                type="button"
+                onClick={() => logoInputRef.current?.click()}
+                className="text-[9px] font-black uppercase text-blue-400 hover:text-blue-300 transition-colors"
+              >
+                {uploadingLogo ? 'Upload en cours...' : '+ Changer le logo'}
+              </button>
+              <p className="text-[7px] font-bold text-white/20 uppercase tracking-[0.3em]">PNG transparent recommandé</p>
+
+              {/* CHAMP VILLE SOUS LE LOGO */}
+              <div className="w-full pt-2">
+                <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 block mb-1">Ville</label>
+                <input
+                  type="text"
+                  value={agenceData.ville}
+                  onChange={(e) => setAgenceData({ ...agenceData, ville: e.target.value })}
+                  placeholder="Ex: Angers"
+                  className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-medium text-sm text-white placeholder:text-white/20 text-center"
+                />
               </div>
             </div>
 
             {field('Adresse', 'adresse', 'Ex: 12 rue de la Paix')}
             <div className="grid grid-cols-2 gap-4">
-              {field('Code Postal', 'code_postal', 'Ex: 75001')}
-              {field('Ville', 'ville', 'Ex: Paris')}
+              {field('Code Postal', 'code_postal', 'Ex: 49000')}
+              {field('Ville', 'ville', 'Ex: Angers')}
             </div>
-            {field('Téléphone Agence', 'agence_telephone', 'Ex: 01 23 45 67 89', 'tel')}
+            {field('Téléphone Mobile Agence', 'agence_telephone', 'Ex: 06 00 00 00 00', 'tel')}
+            {field('Téléphone Fixe Agence', 'phone_fix', 'Ex: 02 41 87 00 78', 'tel')}
             {field('Email Agence', 'agence_email', 'Ex: contact@agence.com', 'email')}
+
+            {/* QR CODE URL */}
+            <div className="space-y-1">
+              <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 block">QR Code (URL)</label>
+              <input
+                type="url"
+                value={agenceData.qr_code_url}
+                onChange={(e) => setAgenceData({ ...agenceData, qr_code_url: e.target.value })}
+                placeholder="Ex: https://g.page/mon-agence"
+                className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-medium text-sm text-white placeholder:text-white/20"
+              />
+              {agenceData.qr_code_url && (
+                <p className="text-[8px] text-blue-400/60 font-bold ml-2 mt-1 truncate">
+                  ✓ {agenceData.qr_code_url}
+                </p>
+              )}
+            </div>
+
             <div className="space-y-1">
               <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">Numéro SIRET</label>
               <input
@@ -249,12 +308,12 @@ export default function ProfilPage() {
                 onChange={(e) => setAgenceData({ ...agenceData, siret: e.target.value })}
                 placeholder="Ex: 123 456 789 00012"
                 maxLength={17}
-                className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-medium text-sm"
+                className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-medium text-sm text-white placeholder:text-white/20"
               />
             </div>
           </div>
 
-          {/* ── BLOC 2 : MENTIONS LÉGALES ───────────────────────── */}
+          {/* ── BLOC 2 : MENTIONS LÉGALES ── */}
           <div className="space-y-6 bg-white/5 p-8 rounded-[40px] border border-white/10 backdrop-blur-xl shadow-2xl">
             <div className="pb-4 border-b border-white/5">
               <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/60 italic">Mentions Légales</h2>
@@ -263,17 +322,55 @@ export default function ProfilPage() {
               </p>
             </div>
 
-            {field('Nom Société', 'mentions_nom_societe', 'Ex: GUY HOQUET PARIS 1')}
+            {field('Nom Société', 'mentions_nom_societe', 'Ex: GUY HOQUET ANGERS')}
             {field('Statut Juridique', 'mentions_statut', 'Ex: SARL, SAS, EI...')}
             {field('Capital Social (€)', 'mentions_capital', 'Ex: 10 000')}
-            {field('RCS', 'mentions_rcs', 'Ex: Paris 123 456 789')}
+            {field('RCS', 'mentions_rcs', 'Ex: Angers 123 456 789')}
             {field('Code APE', 'mentions_ape', 'Ex: 6831Z')}
             <div className="grid grid-cols-2 gap-4">
               {field('N° Carte Professionnelle', 'mentions_carte_pro', 'Ex: CPI 7501 2016 000 012 345')}
               {field('Délivrée par la CCI de', 'mentions_carte_pro_delivree', 'Ex: Paris Île-de-France')}
             </div>
-            {field('Caisse de Garantie', 'mentions_caisse_garantie', 'Ex: GALIAN Assurances')}
-            {field('Adresse Caisse de Garantie', 'mentions_caisse_garantie_adresse', 'Ex: 89 rue de la Boétie, 75008 Paris')}
+
+            {/* CAISSE DE GARANTIE — menu déroulant */}
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 block">
+                  Caisse de Garantie
+                </label>
+                <select
+                  value={agenceData.mentions_caisse_garantie}
+                  onChange={(e) => handleCaisseChange(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-medium text-sm text-white appearance-none cursor-pointer"
+                  style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.3)' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 16px center' }}
+                >
+                  <option value="" className="bg-[#0f092e]">— Sélectionner une caisse —</option>
+                  {CAISSES_GARANTIE.map((c) => (
+                    <option key={c.nom} value={c.nom} className="bg-[#0f092e]">
+                      {c.nom}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* ADRESSE PRÉ-REMPLIE */}
+              <div className="space-y-1">
+                <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 block">
+                  Adresse Caisse de Garantie
+                  {agenceData.mentions_caisse_garantie && agenceData.mentions_caisse_garantie !== 'Néant' && (
+                    <span className="ml-2 text-blue-400/60 normal-case font-bold tracking-normal">pré-rempli</span>
+                  )}
+                </label>
+                <input
+                  type="text"
+                  value={agenceData.mentions_caisse_garantie_adresse}
+                  onChange={(e) => setAgenceData({ ...agenceData, mentions_caisse_garantie_adresse: e.target.value })}
+                  placeholder="Adresse de la caisse sélectionnée"
+                  className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-medium text-sm text-white placeholder:text-white/20"
+                />
+              </div>
+            </div>
+
             {field('N° TVA Intracommunautaire', 'mentions_tva', 'Ex: FR 12 123456789')}
             {field('Mail Informatique & Libertés', 'mentions_mail_rgpd', 'Ex: informatique-et-libertes-0000@guy-hoquet.com', 'email')}
 
@@ -291,7 +388,7 @@ export default function ProfilPage() {
                   {agenceData.mentions_ape && ` — APE ${agenceData.mentions_ape}`}
                   {agenceData.mentions_carte_pro && ` — Carte professionnelle n° ${agenceData.mentions_carte_pro}`}
                   {agenceData.mentions_carte_pro_delivree && ` délivrée par la CCI de ${agenceData.mentions_carte_pro_delivree}`}
-                  {agenceData.mentions_caisse_garantie && ` — Caisse de garantie ${agenceData.mentions_caisse_garantie}`}
+                  {agenceData.mentions_caisse_garantie && agenceData.mentions_caisse_garantie !== 'Néant' && ` — Caisse de garantie ${agenceData.mentions_caisse_garantie}`}
                   {agenceData.mentions_caisse_garantie_adresse && ` — ${agenceData.mentions_caisse_garantie_adresse}`}
                   {agenceData.mentions_tva && ` — TVA intracommunautaire n° ${agenceData.mentions_tva}`}
                   {agenceData.mentions_mail_rgpd && ` — Informatique & Libertés : ${agenceData.mentions_mail_rgpd}`}
@@ -300,7 +397,7 @@ export default function ProfilPage() {
             )}
           </div>
 
-          {/* ── BOUTON SAVE ─────────────────────────────────────── */}
+          {/* ── BOUTON SAVE ── */}
           <div className="pt-2">
             <button
               type="submit"
