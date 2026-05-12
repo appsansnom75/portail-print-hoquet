@@ -5,89 +5,98 @@ import { useCart } from '@/context/CartContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 
+
 export default function CartPage() {
   const { cart, removeFromCart, clearCart } = useCart();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [orderSent, setOrderSent] = useState(false);
+  const [showConfirm, setShowConfirm]   = useState(false);
+  const [orderSent, setOrderSent]       = useState(false);
 
-  const [agencyData, setAgencyData] = useState<any>(null);
-  const [agenceId, setAgenceId] = useState<string | null>(null);
-  const [membres, setMembres] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [agencyData, setAgencyData]     = useState<any>(null);
+  const [agenceId, setAgenceId]         = useState<string | null>(null);
+  const [membres, setMembres]           = useState<any[]>([]);
+  const [loading, setLoading]           = useState(true);
 
-  const [selectedCollaborateur, setSelectedCollaborateur] = useState("");
-  const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
-  const [zipCode, setZipCode] = useState("");
-  const [city, setCity] = useState("");
-  const [siret, setSiret] = useState("");
+  // 01 - IDENTIFICATION
+  const [selectedCollaborateur, setSelectedCollaborateur] = useState('');
+
+  // 03 - LIVRAISON
+  const [phone, setPhone]         = useState('');
+  const [phoneFix, setPhoneFix]   = useState('');
+  const [address, setAddress]     = useState('');
+  const [zipCode, setZipCode]     = useState('');
+  const [city, setCity]           = useState('');
+  const [siret, setSiret]         = useState('');
 
   const [useAltAddress, setUseAltAddress] = useState(false);
-  const [altAddress, setAltAddress] = useState("");
-  const [altZipCode, setAltZipCode] = useState("");
-  const [altCity, setAltCity] = useState("");
-  const [altPhone, setAltPhone] = useState("");
+  const [altAddress, setAltAddress]       = useState('');
+  const [altZipCode, setAltZipCode]       = useState('');
+  const [altCity, setAltCity]             = useState('');
+  const [altPhone, setAltPhone]           = useState('');
+  const [altPhoneFix, setAltPhoneFix]     = useState('');
 
-  const [mentionsNomSociete, setMentionsNomSociete] = useState("");
-  const [mentionsStatut, setMentionsStatut] = useState("");
-  const [mentionsCapital, setMentionsCapital] = useState("");
-  const [mentionsRcs, setMentionsRcs] = useState("");
-  const [mentionsApe, setMentionsApe] = useState("");
-  const [mentionsCartePro, setMentionsCartePro] = useState("");
-  const [mentionsCarteProDelivree, setMentionsCarteProDelivree] = useState("");
-  const [mentionsCaisseGarantie, setMentionsCaisseGarantie] = useState("");
-  const [mentionsCaisseGarantieAdresse, setMentionsCaisseGarantieAdresse] = useState("");
-  const [mentionsTva, setMentionsTva] = useState("");
-  const [mentionsMailRgpd, setMentionsMailRgpd] = useState("");
+  // 04 - FACTURATION & LÉGALES
+  const [mentionsVilleAgence, setMentionsVilleAgence]             = useState('');
+  const [mentionsUrlQrCode, setMentionsUrlQrCode]                 = useState('');
+  const [mentionsNomSociete, setMentionsNomSociete]               = useState('');
+  const [mentionsStatut, setMentionsStatut]                       = useState('');
+  const [mentionsCapital, setMentionsCapital]                     = useState('');
+  const [mentionsRcs, setMentionsRcs]                             = useState('');
+  const [mentionsApe, setMentionsApe]                             = useState('');
+  const [mentionsCartePro, setMentionsCartePro]                   = useState('');
+  const [mentionsCarteProDelivree, setMentionsCarteProDelivree]   = useState('');
+  const [mentionsCaisseGarantie, setMentionsCaisseGarantie]       = useState('');
+  const [mentionsCaisseGarantieAdresse, setMentionsCaisseGarantieAdresse] = useState('');
+  const [mentionsTva, setMentionsTva]                             = useState('');
+  const [mentionsMailRgpd, setMentionsMailRgpd]                   = useState('');
 
-  const totalHT  = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
-  const totalTTC = totalHT * 1.20;
+  const totalHT  = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
+  const totalTTC = totalHT * 1.2;
 
-  // ─── 1. CHARGEMENT ─────────────────────────────────────────────────
+
+  // ─── 1. CHARGEMENT ──────────────────────────────────────────────────────────
   useEffect(() => {
     const loadData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setLoading(false); return; }
 
       const { data: profile } = await supabase
-        .from('profiles')
-        .select('agency_id, first_name, last_name, email')
-        .eq('id', user.id)
-        .single();
+        .from('profiles').select('agency_id, first_name, last_name, email')
+        .eq('id', user.id).single();
 
       if (profile?.agency_id) {
         setAgenceId(profile.agency_id);
 
         const { data: agency } = await supabase
-          .from('agencies')
-          .select('*')
-          .eq('id', profile.agency_id)
-          .single();
+          .from('agencies').select('*').eq('id', profile.agency_id).single();
 
         if (agency) {
           setAgencyData(agency);
-          setAddress(agency.adresse || "");
-          setZipCode(agency.code_postal || "");
-          setCity(agency.ville || "");
-          setSiret(agency.siret || "");
-          setPhone(agency.agence_telephone || "");
-          setMentionsNomSociete(agency.mentions_nom_societe || "");
-          setMentionsStatut(agency.mentions_statut || "");
-          setMentionsCapital(agency.mentions_capital || "");
-          setMentionsRcs(agency.mentions_rcs || "");
-          setMentionsApe(agency.mentions_ape || "");
-          setMentionsCartePro(agency.mentions_carte_pro || "");
-          setMentionsCarteProDelivree(agency.mentions_carte_pro_delivree || "");
-          setMentionsCaisseGarantie(agency.mentions_caisse_garantie || "");
-          setMentionsCaisseGarantieAdresse(agency.mentions_caisse_garantie_adresse || "");
-          setMentionsTva(agency.mentions_tva || "");
-          setMentionsMailRgpd(agency.mentions_mail_rgpd || "");
+          setAddress(agency.adresse              || '');
+          setZipCode(agency.code_postal          || '');
+          setCity(agency.ville                   || '');
+          setSiret(agency.siret                  || '');
+          setPhone(agency.agence_telephone       || '');
+          setPhoneFix(agency.phone_fix           || '');
+          // 04
+          setMentionsVilleAgence(agency.mentions_ville_agence             || agency.ville || '');
+          setMentionsUrlQrCode(agency.mentions_url_qr_code                || '');
+          setMentionsNomSociete(agency.mentions_nom_societe               || '');
+          setMentionsStatut(agency.mentions_statut                        || '');
+          setMentionsCapital(agency.mentions_capital                      || '');
+          setMentionsRcs(agency.mentions_rcs                              || '');
+          setMentionsApe(agency.mentions_ape                              || '');
+          setMentionsCartePro(agency.mentions_carte_pro                   || '');
+          setMentionsCarteProDelivree(agency.mentions_carte_pro_delivree  || '');
+          setMentionsCaisseGarantie(agency.mentions_caisse_garantie       || '');
+          setMentionsCaisseGarantieAdresse(agency.mentions_caisse_garantie_adresse || '');
+          setMentionsTva(agency.mentions_tva                              || '');
+          setMentionsMailRgpd(agency.mentions_mail_rgpd                   || '');
         }
 
         const { data: collabs } = await supabase
           .from('collaborateurs')
-          .select('id, full_name, first_name, last_name, email, phone, fonction, avatar_url')
+          .select('id, full_name, first_name, last_name, email, phone, phone_fix, fonction, rsac, adresse, ville, code_postal, avatar_url')
           .eq('agency_id', profile.agency_id)
           .order('first_name', { ascending: true });
 
@@ -98,7 +107,8 @@ export default function CartPage() {
     loadData();
   }, []);
 
-  // ─── 2. SYNC INFOS AGENCE ──────────────────────────────────────────
+
+  // ─── 2. SYNC INFOS AGENCE ────────────────────────────────────────────────────
   const syncAgenceData = async () => {
     if (!agenceId) return;
     await supabase.from('agencies').update({
@@ -107,8 +117,11 @@ export default function CartPage() {
         code_postal:      zipCode,
         ville:            city,
         agence_telephone: phone,
+        phone_fix:        phoneFix,
       }),
       siret,
+      mentions_ville_agence:            mentionsVilleAgence,
+      mentions_url_qr_code:             mentionsUrlQrCode,
       mentions_nom_societe:             mentionsNomSociete,
       mentions_statut:                  mentionsStatut,
       mentions_capital:                 mentionsCapital,
@@ -123,13 +136,16 @@ export default function CartPage() {
     }).eq('id', agenceId);
   };
 
-  // ─── 3. VALIDATION FORMULAIRE ──────────────────────────────────────
+
+  // ─── 3. VALIDATION ──────────────────────────────────────────────────────────
   const isFormValid = () => {
     const livraisonOk = useAltAddress
-      ? altAddress.trim() && altZipCode.trim() && altCity.trim() && altPhone.trim()
-      : address.trim() && zipCode.trim() && city.trim() && phone.trim();
+      ? altAddress.trim() && altZipCode.trim() && altCity.trim() && altPhone.trim() && altPhoneFix.trim()
+      : address.trim() && zipCode.trim() && city.trim() && phone.trim() && phoneFix.trim();
 
     const mentionsOk =
+      mentionsVilleAgence.trim() &&
+      mentionsUrlQrCode.trim() &&
       mentionsNomSociete.trim() &&
       mentionsStatut.trim() &&
       mentionsCapital.trim() &&
@@ -145,31 +161,28 @@ export default function CartPage() {
     return !!(selectedCollaborateur.trim() && siret.trim() && livraisonOk && mentionsOk);
   };
 
-  // ─── 4. ENVOI COMMANDE ─────────────────────────────────────────────
+
+  // ─── 4. ENVOI COMMANDE ──────────────────────────────────────────────────────
   const handleFinalSubmit = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
-
     try {
       await syncAgenceData();
 
       const { data: counterData } = await supabase
-        .from('config')
-        .select('last_value')
-        .eq('counter_name', 'order_id')
-        .single();
-
+        .from('config').select('last_value').eq('counter_name', 'order_id').single();
       const nextOrderId = (counterData?.last_value || 0) + 1;
+      await supabase.from('config').update({ last_value: nextOrderId }).eq('counter_name', 'order_id');
 
-      await supabase
-        .from('config')
-        .update({ last_value: nextOrderId })
-        .eq('counter_name', 'order_id');
+      const deliveryAddress = useAltAddress ? altAddress  : address;
+      const deliveryZip     = useAltAddress ? altZipCode  : zipCode;
+      const deliveryCity    = useAltAddress ? altCity     : city;
+      const deliveryPhone   = useAltAddress ? altPhone    : phone;
+      const deliveryPhoneFix = useAltAddress ? altPhoneFix : phoneFix;
 
-      const deliveryAddress = useAltAddress ? altAddress : address;
-      const deliveryZip     = useAltAddress ? altZipCode : zipCode;
-      const deliveryCity    = useAltAddress ? altCity    : city;
-      const deliveryPhone   = useAltAddress ? altPhone   : phone;
+      const produitsListeTexte = cart.map(item =>
+        `${item.name} (x${item.qty})${item.orderedBy ? ` — ${item.orderedBy}` : ''}`
+      ).join(', ');
 
       const itemsFormattedJSON = cart.map(item => ({
         name:       item.name,
@@ -179,13 +192,9 @@ export default function CartPage() {
         ordered_by: item.orderedBy || null,
       }));
 
-      const produitsListeTexte = cart.map(item =>
-        `${item.name} (x${item.qty})${item.orderedBy ? ` — ${item.orderedBy}` : ''}`
-      ).join(', ');
-
       const { error: insertError } = await supabase.from('orders').insert([{
         order_number:     nextOrderId,
-        agency_name:      agencyData?.name || "Agence",
+        agency_name:      agencyData?.name || 'Agence',
         client_email:     selectedCollaborateur,
         client_phone:     deliveryPhone,
         delivery_address: deliveryAddress,
@@ -198,30 +207,33 @@ export default function CartPage() {
         instructions:     `Collaborateur : ${selectedCollaborateur}${useAltAddress ? ' | Adresse différente' : ''}`,
         status:           'En attente',
       }]);
-
       if (insertError) throw insertError;
 
       const collaborateurData = membres.find(
         m => (m.full_name || `${m.first_name} ${m.last_name}`) === selectedCollaborateur
       );
 
-      // ── ITEMS PAYLOAD AVEC PRIX LIGNE ────────────────────────────
+      // ITEMS PAYLOAD — avec tous les champs nominatifs
       const itemsPayload = cart.map(item => {
         const collabNominatif = item.orderedBy
           ? membres.find(m => (m.full_name || `${m.first_name} ${m.last_name}`) === item.orderedBy)
           : null;
-
         return {
-          produit:            item.name,
-          quantite:           item.qty,
-          prix_ligne:         (item.price * item.qty).toFixed(2),  // ← total de la ligne
-          membre:             item.orderedBy || selectedCollaborateur,
-          nominatif_prenom:   collabNominatif?.first_name  || "",
-          nominatif_nom:      collabNominatif?.last_name   || "",
-          nominatif_mail:     collabNominatif?.email       || "",
-          nominatif_tel:      collabNominatif?.phone       || "",
-          nominatif_fonction: collabNominatif?.fonction    || "",
-          nominatif_photo:    collabNominatif?.avatar_url  || "",
+          produit:             item.name,
+          quantite:            item.qty,
+          prix_ligne:          (item.price * item.qty).toFixed(2),
+          membre:              item.orderedBy || selectedCollaborateur,
+          nominatif_prenom:    collabNominatif?.first_name  || '',
+          nominatif_nom:       collabNominatif?.last_name   || '',
+          nominatif_mail:      collabNominatif?.email       || '',
+          nominatif_tel:       collabNominatif?.phone       || '',
+          nominatif_tel_fix:   collabNominatif?.phone_fix   || deliveryPhoneFix,
+          nominatif_fonction:  collabNominatif?.fonction    || '',
+          nominatif_rsac:      collabNominatif?.rsac        || '',
+          nominatif_adresse:   collabNominatif?.adresse     || deliveryAddress,
+          nominatif_ville:     collabNominatif?.ville       || deliveryCity,
+          nominatif_cp:        collabNominatif?.code_postal || deliveryZip,
+          nominatif_photo:     collabNominatif?.avatar_url  || '',
         };
       });
 
@@ -229,20 +241,23 @@ export default function CartPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          order_number:        nextOrderId,
-          agency_name:         agencyData?.name || "",
-          adresse:             deliveryAddress,
-          code_postal:         deliveryZip,
-          ville:               deliveryCity,
-          tel:                 deliveryPhone,
+          order_number:         nextOrderId,
+          agency_name:          agencyData?.name || '',
+          adresse:              deliveryAddress,
+          code_postal:          deliveryZip,
+          ville:                deliveryCity,
+          tel:                  deliveryPhone,
+          tel_fix:              deliveryPhoneFix,
           siret,
-          collaborateur_nom:   selectedCollaborateur,
-          collaborateur_email: collaborateurData?.email || agencyData?.agence_email || "",
-          collaborateur_phone: collaborateurData?.phone || deliveryPhone,
-          items:               itemsPayload,
-          total_ht:            totalHT,
-          total_ttc:           totalTTC.toFixed(2),
-          date:                new Date().toLocaleString('fr-FR'),
+          collaborateur_nom:    selectedCollaborateur,
+          collaborateur_email:  collaborateurData?.email || agencyData?.agence_email || '',
+          collaborateur_phone:  collaborateurData?.phone || deliveryPhone,
+          items:                itemsPayload,
+          total_ht:             totalHT,
+          total_ttc:            totalTTC.toFixed(2),
+          date:                 new Date().toLocaleString('fr-FR'),
+          mentions_ville_agence:            mentionsVilleAgence,
+          mentions_url_qr_code:             mentionsUrlQrCode,
           mentions_nom_societe:             mentionsNomSociete,
           mentions_statut:                  mentionsStatut,
           mentions_capital:                 mentionsCapital,
@@ -262,18 +277,18 @@ export default function CartPage() {
         setShowConfirm(false);
         clearCart();
       } else {
-        throw new Error("Erreur Webhook Make");
+        throw new Error('Erreur Webhook Make');
       }
-
     } catch (err) {
-      console.error("Erreur critique :", err);
-      alert("Erreur lors de la validation. Vérifie les colonnes Supabase.");
+      console.error('Erreur critique :', err);
+      alert('Erreur lors de la validation. Vérifie les colonnes Supabase.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // ─── ÉTATS SPÉCIAUX ────────────────────────────────────────────────
+
+  // ─── ÉTATS SPÉCIAUX ─────────────────────────────────────────────────────────
   if (loading) return (
     <div className="min-h-screen bg-[#0f092e] flex items-center justify-center text-white uppercase text-[10px] animate-pulse italic font-black">
       Initialisation du bon de commande...
@@ -294,6 +309,17 @@ export default function CartPage() {
 
   const formValid = isFormValid();
 
+  // Helper input styling
+  const inp = (val: string) =>
+    `w-full bg-black/40 border rounded-2xl p-5 text-[10px] font-black outline-none transition-all ${
+      !val.trim() ? 'border-red-500/30 hover:border-red-500/50 focus:border-red-500' : 'border-white/10 hover:border-blue-500/50 focus:border-blue-500'
+    }`;
+  const inpAlt = (val: string) =>
+    `w-full bg-black/40 border rounded-2xl p-5 text-[10px] font-black outline-none transition-all ${
+      !val.trim() ? 'border-red-500/30 focus:border-red-500' : 'border-blue-500/20 focus:border-blue-500'
+    }`;
+
+
   return (
     <div className="min-h-screen bg-[#0f092e] text-white pb-20">
 
@@ -306,27 +332,25 @@ export default function CartPage() {
       <main className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-3 gap-16">
         <div className="lg:col-span-2 space-y-12">
 
-          {/* ── 01. IDENTIFICATION ─────────────────────────────────── */}
+
+          {/* ── 01. IDENTIFICATION ──────────────────────────────────────────── */}
           <section className="bg-blue-600/5 border border-blue-500/20 rounded-[45px] p-10 space-y-8">
             <h2 className="text-[11px] font-black uppercase text-blue-400 italic">01. Identification</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
                 <label className="text-[9px] font-black opacity-30 italic ml-2 uppercase">Agence</label>
                 <div className="bg-black/40 border border-white/10 rounded-2xl p-5 text-[11px] font-black text-blue-400">
-                  {agencyData?.name || "Non détectée"}
+                  {agencyData?.name || 'Non détectée'}
                 </div>
               </div>
               <div className="space-y-3">
                 <label className="text-[9px] font-black opacity-30 italic ml-2 uppercase">
                   Collaborateur <span className="text-red-400">*</span>
                 </label>
-                <select
-                  value={selectedCollaborateur}
-                  onChange={(e) => setSelectedCollaborateur(e.target.value)}
+                <select value={selectedCollaborateur} onChange={(e) => setSelectedCollaborateur(e.target.value)}
                   className={`w-full bg-black/40 border rounded-2xl p-5 text-[10px] font-black outline-none uppercase appearance-none cursor-pointer transition-all ${
                     !selectedCollaborateur ? 'border-red-500/30 hover:border-red-500/60' : 'border-white/10 hover:border-blue-500'
-                  }`}
-                >
+                  }`}>
                   <option value="">— Sélectionner —</option>
                   {membres.map((m) => (
                     <option key={m.id} value={m.full_name || `${m.first_name} ${m.last_name}`}>
@@ -344,7 +368,8 @@ export default function CartPage() {
             </div>
           </section>
 
-          {/* ── 02. RÉCAPITULATIF ──────────────────────────────────── */}
+
+          {/* ── 02. RÉCAPITULATIF ───────────────────────────────────────────── */}
           <section className="bg-white/[0.02] border border-white/10 rounded-[45px] p-10">
             <h2 className="text-[11px] font-black uppercase text-white/60 italic mb-10">02. Récapitulatif</h2>
             <div className="space-y-6">
@@ -365,24 +390,20 @@ export default function CartPage() {
                       <p className="text-[14px] font-black italic">{(item.price * item.qty).toFixed(2)}€</p>
                       <p className="text-[8px] font-black opacity-30 uppercase">HT</p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => removeFromCart(item.cartLineId)}
-                      className="w-8 h-8 rounded-full bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white flex items-center justify-center transition-all text-sm font-black"
-                    >×</button>
+                    <button type="button" onClick={() => removeFromCart(item.cartLineId)}
+                      className="w-8 h-8 rounded-full bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white flex items-center justify-center transition-all text-sm font-black">
+                      ×
+                    </button>
                   </div>
                 </div>
               ))}
-
               {cart.length > 0 && (
                 <div className="pt-4 space-y-2">
                   <div className="flex justify-between text-[10px] font-black uppercase italic opacity-50">
-                    <span>Sous-total HT</span>
-                    <span>{totalHT.toFixed(2)}€</span>
+                    <span>Sous-total HT</span><span>{totalHT.toFixed(2)}€</span>
                   </div>
                   <div className="flex justify-between text-[10px] font-black uppercase italic opacity-30">
-                    <span>TVA (20%)</span>
-                    <span>{(totalTTC - totalHT).toFixed(2)}€</span>
+                    <span>TVA (20%)</span><span>{(totalTTC - totalHT).toFixed(2)}€</span>
                   </div>
                   <div className="flex justify-between text-[13px] font-black uppercase italic border-t border-white/10 pt-3">
                     <span className="text-white/60">Total TTC</span>
@@ -393,7 +414,8 @@ export default function CartPage() {
             </div>
           </section>
 
-          {/* ── 03. INFORMATIONS DE LIVRAISON ──────────────────────── */}
+
+          {/* ── 03. INFORMATIONS DE LIVRAISON ───────────────────────────────── */}
           <section className="bg-white/[0.02] border border-white/10 rounded-[45px] p-10 space-y-8">
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <div>
@@ -404,15 +426,12 @@ export default function CartPage() {
                   </p>
                 )}
               </div>
-              <button
-                type="button"
-                onClick={() => setUseAltAddress(!useAltAddress)}
+              <button type="button" onClick={() => setUseAltAddress(!useAltAddress)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-full border text-[8px] font-black uppercase tracking-widest transition-all ${
                   useAltAddress
                     ? 'border-blue-500 bg-blue-500/10 text-blue-400'
                     : 'border-white/10 bg-white/5 text-white/30 hover:text-white/60 hover:border-white/20'
-                }`}
-              >
+                }`}>
                 <span className={`w-2 h-2 rounded-full transition-all ${useAltAddress ? 'bg-blue-400' : 'bg-white/20'}`} />
                 {useAltAddress ? '✓ Adresse différente' : '+ Adresse différente'}
               </button>
@@ -421,41 +440,17 @@ export default function CartPage() {
             <div className="space-y-6">
               {!useAltAddress ? (
                 <>
-                  <input
-                    placeholder="ADRESSE DE LIVRAISON *"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    className={`w-full bg-black/40 border rounded-2xl p-5 text-[10px] font-black outline-none uppercase transition-all ${!address.trim() ? 'border-red-500/30 hover:border-red-500/50 focus:border-red-500' : 'border-white/10 hover:border-blue-500/50 focus:border-blue-500'}`}
-                  />
+                  <input placeholder="ADRESSE DE LIVRAISON *" value={address} onChange={(e) => setAddress(e.target.value)} className={inp(address)} />
                   <div className="grid grid-cols-2 gap-6">
-                    <input
-                      placeholder="CODE POSTAL *"
-                      value={zipCode}
-                      onChange={(e) => setZipCode(e.target.value)}
-                      className={`bg-black/40 border rounded-2xl p-5 text-[10px] font-black outline-none transition-all ${!zipCode.trim() ? 'border-red-500/30 hover:border-red-500/50 focus:border-red-500' : 'border-white/10 hover:border-blue-500/50 focus:border-blue-500'}`}
-                    />
-                    <input
-                      placeholder="VILLE *"
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      className={`bg-black/40 border rounded-2xl p-5 text-[10px] font-black outline-none uppercase transition-all ${!city.trim() ? 'border-red-500/30 hover:border-red-500/50 focus:border-red-500' : 'border-white/10 hover:border-blue-500/50 focus:border-blue-500'}`}
-                    />
+                    <input placeholder="CODE POSTAL *" value={zipCode} onChange={(e) => setZipCode(e.target.value)} className={inp(zipCode)} />
+                    <input placeholder="VILLE *" value={city} onChange={(e) => setCity(e.target.value)} className={inp(city)} />
                   </div>
-                  <input
-                    placeholder="TÉLÉPHONE CONTACT *"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className={`w-full bg-black/40 border rounded-2xl p-5 text-[10px] font-black outline-none transition-all ${!phone.trim() ? 'border-red-500/30 hover:border-red-500/50 focus:border-red-500' : 'border-white/10 hover:border-blue-500/50 focus:border-blue-500'}`}
-                  />
+                  <input placeholder="TÉLÉPHONE MOBILE CONTACT *" value={phone} onChange={(e) => setPhone(e.target.value)} className={inp(phone)} />
+                  <input placeholder="TÉLÉPHONE FIXE AGENCE *" value={phoneFix} onChange={(e) => setPhoneFix(e.target.value)} className={inp(phoneFix)} />
                   <div className="space-y-1">
                     <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">Numéro SIRET *</label>
-                    <input
-                      placeholder="Ex: 123 456 789 00012"
-                      value={siret}
-                      onChange={(e) => setSiret(e.target.value)}
-                      maxLength={17}
-                      className={`w-full bg-black/40 border rounded-2xl p-5 text-[10px] font-black outline-none transition-all ${!siret.trim() ? 'border-red-500/30 hover:border-red-500/50 focus:border-red-500' : 'border-white/10 hover:border-blue-500/50 focus:border-blue-500'}`}
-                    />
+                    <input placeholder="Ex: 123 456 789 00012" value={siret} onChange={(e) => setSiret(e.target.value)}
+                      maxLength={17} className={inp(siret)} />
                   </div>
                 </>
               ) : (
@@ -463,51 +458,27 @@ export default function CartPage() {
                   <p className="text-[8px] font-black uppercase text-blue-400/60 tracking-widest">
                     Adresse unique pour cette commande — non sauvegardée dans vos infos agence
                   </p>
-                  <input
-                    placeholder="ADRESSE DE LIVRAISON *"
-                    value={altAddress}
-                    onChange={(e) => setAltAddress(e.target.value)}
-                    className={`w-full bg-black/40 border rounded-2xl p-5 text-[10px] font-black outline-none uppercase transition-all ${!altAddress.trim() ? 'border-red-500/30 focus:border-red-500' : 'border-blue-500/20 focus:border-blue-500'}`}
-                  />
+                  <input placeholder="ADRESSE DE LIVRAISON *" value={altAddress} onChange={(e) => setAltAddress(e.target.value)} className={inpAlt(altAddress)} />
                   <div className="grid grid-cols-2 gap-6">
-                    <input
-                      placeholder="CODE POSTAL *"
-                      value={altZipCode}
-                      onChange={(e) => setAltZipCode(e.target.value)}
-                      className={`bg-black/40 border rounded-2xl p-5 text-[10px] font-black outline-none transition-all ${!altZipCode.trim() ? 'border-red-500/30 focus:border-red-500' : 'border-blue-500/20 focus:border-blue-500'}`}
-                    />
-                    <input
-                      placeholder="VILLE *"
-                      value={altCity}
-                      onChange={(e) => setAltCity(e.target.value)}
-                      className={`bg-black/40 border rounded-2xl p-5 text-[10px] font-black outline-none uppercase transition-all ${!altCity.trim() ? 'border-red-500/30 focus:border-red-500' : 'border-blue-500/20 focus:border-blue-500'}`}
-                    />
+                    <input placeholder="CODE POSTAL *" value={altZipCode} onChange={(e) => setAltZipCode(e.target.value)} className={inpAlt(altZipCode).replace('w-full ', '')} />
+                    <input placeholder="VILLE *" value={altCity} onChange={(e) => setAltCity(e.target.value)} className={inpAlt(altCity).replace('w-full ', '')} />
                   </div>
-                  <input
-                    placeholder="TÉLÉPHONE CONTACT *"
-                    value={altPhone}
-                    onChange={(e) => setAltPhone(e.target.value)}
-                    className={`w-full bg-black/40 border rounded-2xl p-5 text-[10px] font-black outline-none transition-all ${!altPhone.trim() ? 'border-red-500/30 focus:border-red-500' : 'border-blue-500/20 focus:border-blue-500'}`}
-                  />
+                  <input placeholder="TÉLÉPHONE MOBILE CONTACT *" value={altPhone} onChange={(e) => setAltPhone(e.target.value)} className={inpAlt(altPhone)} />
+                  <input placeholder="TÉLÉPHONE FIXE AGENCE *" value={altPhoneFix} onChange={(e) => setAltPhoneFix(e.target.value)} className={inpAlt(altPhoneFix)} />
                   <div className="space-y-1">
                     <label className="text-[8px] font-black uppercase tracking-[0.2em] text-blue-400/50 ml-2">
-                      Numéro SIRET *
-                      <span className="ml-2 normal-case italic font-bold text-blue-400/40">— non sauvegardé</span>
+                      Numéro SIRET * <span className="normal-case italic font-bold text-blue-400/40 ml-1">— non sauvegardé</span>
                     </label>
-                    <input
-                      placeholder="Ex: 123 456 789 00012"
-                      value={siret}
-                      onChange={(e) => setSiret(e.target.value)}
-                      maxLength={17}
-                      className={`w-full bg-black/40 border rounded-2xl p-5 text-[10px] font-black outline-none transition-all ${!siret.trim() ? 'border-red-500/30 focus:border-red-500' : 'border-blue-500/20 focus:border-blue-500'}`}
-                    />
+                    <input placeholder="Ex: 123 456 789 00012" value={siret} onChange={(e) => setSiret(e.target.value)}
+                      maxLength={17} className={inpAlt(siret)} />
                   </div>
                 </div>
               )}
             </div>
           </section>
 
-          {/* ── 04. INFORMATIONS FACTURATION & LÉGALES ─────────────── */}
+
+          {/* ── 04. INFORMATIONS FACTURATION & LÉGALES ──────────────────────── */}
           <section className="bg-white/[0.02] border border-white/10 rounded-[45px] p-10 space-y-8">
             <div>
               <h2 className="text-[11px] font-black uppercase text-white/60 italic">04. Informations Facturation & Légales</h2>
@@ -517,8 +488,30 @@ export default function CartPage() {
             </div>
 
             <div className="space-y-5">
+              {/* Ville sous logo — pré-rempli agence */}
+              <div className="space-y-1">
+                <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 flex items-center gap-2">
+                  Ville sous le logo <span className="text-red-400">*</span>
+                  {mentionsVilleAgence && agencyData?.ville && (
+                    <span className="text-blue-400/50 normal-case font-bold tracking-normal">· agence</span>
+                  )}
+                </label>
+                <input value={mentionsVilleAgence} onChange={(e) => setMentionsVilleAgence(e.target.value)}
+                  placeholder="Ex: ANGERS" className={inp(mentionsVilleAgence)} />
+              </div>
+
+              {/* URL QR Code */}
+              <div className="space-y-1">
+                <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">
+                  URL QR Code <span className="text-red-400">*</span>
+                </label>
+                <input value={mentionsUrlQrCode} onChange={(e) => setMentionsUrlQrCode(e.target.value)}
+                  placeholder="Ex: https://www.guy-hoquet.com/agence-angers" className={inp(mentionsUrlQrCode)} />
+              </div>
+
+              {/* Reste des champs légaux */}
               {([
-                { label: 'Nom Société',              val: mentionsNomSociete,            set: setMentionsNomSociete,            ph: 'Ex: GUY HOQUET PARIS 1' },
+                { label: 'Nom Société',              val: mentionsNomSociete,            set: setMentionsNomSociete,            ph: 'Ex: GUY HOQUET PARIS 1',                          prefilled: true },
                 { label: 'Statut Juridique',         val: mentionsStatut,                set: setMentionsStatut,                ph: 'Ex: SARL, SAS, EI...' },
                 { label: 'Capital Social (€)',       val: mentionsCapital,               set: setMentionsCapital,               ph: 'Ex: 10 000' },
                 { label: 'RCS',                      val: mentionsRcs,                   set: setMentionsRcs,                   ph: 'Ex: Paris 123 456 789' },
@@ -528,18 +521,16 @@ export default function CartPage() {
                 { label: 'Caisse de Garantie',       val: mentionsCaisseGarantie,        set: setMentionsCaisseGarantie,        ph: 'Ex: GALIAN Assurances' },
                 { label: 'Adresse Caisse',           val: mentionsCaisseGarantieAdresse, set: setMentionsCaisseGarantieAdresse, ph: 'Ex: 89 rue de la Boétie, 75008 Paris' },
                 { label: 'TVA Intracommunautaire',   val: mentionsTva,                   set: setMentionsTva,                   ph: 'Ex: FR 12 123456789' },
-                { label: 'Mail RGPD',                val: mentionsMailRgpd,              set: setMentionsMailRgpd,              ph: 'Ex: informatique-et-libertes-0000@guy-hoquet.com' },
-              ] as { label: string; val: string; set: (v: string) => void; ph: string }[]).map(({ label, val, set, ph }) => (
+                { label: 'Mail RGPD',                val: mentionsMailRgpd,              set: setMentionsMailRgpd,              ph: 'Ex: informatique-et-libertes@guy-hoquet.com' },
+              ] as { label: string; val: string; set: (v: string) => void; ph: string; prefilled?: boolean }[]).map(({ label, val, set, ph, prefilled }) => (
                 <div key={label} className="space-y-1">
-                  <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">
+                  <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 flex items-center gap-2">
                     {label} <span className="text-red-400">*</span>
+                    {prefilled && val && agencyData?.mentions_nom_societe && (
+                      <span className="text-blue-400/50 normal-case font-bold tracking-normal">· agence</span>
+                    )}
                   </label>
-                  <input
-                    value={val}
-                    onChange={(e) => set(e.target.value)}
-                    placeholder={ph}
-                    className={`w-full bg-black/40 border rounded-2xl p-5 text-[10px] font-black outline-none transition-all ${!val.trim() ? 'border-red-500/30 hover:border-red-500/50 focus:border-red-500' : 'border-white/10 hover:border-blue-500/50 focus:border-blue-500'}`}
-                  />
+                  <input value={val} onChange={(e) => set(e.target.value)} placeholder={ph} className={inp(val)} />
                 </div>
               ))}
             </div>
@@ -547,7 +538,8 @@ export default function CartPage() {
 
         </div>
 
-        {/* ── COLONNE DROITE : TOTAL ──────────────────────────────── */}
+
+        {/* ── COLONNE DROITE : TOTAL ───────────────────────────────────────── */}
         <div className="lg:col-span-1">
           <div className="bg-white p-12 rounded-[50px] text-[#0f092e] sticky top-12 text-center shadow-2xl">
             <h2 className="text-[10px] font-black uppercase opacity-30 italic mb-4">Total à régler</h2>
@@ -558,34 +550,26 @@ export default function CartPage() {
               <p className="text-[8px] font-black uppercase opacity-30 mt-0.5 tracking-widest">TTC (TVA 20%)</p>
             </div>
             {!formValid && cart.length > 0 && (
-              <p className="text-[8px] font-black uppercase text-red-400 mt-6 italic">
-                Tous les champs sont obligatoires
-              </p>
+              <p className="text-[8px] font-black uppercase text-red-400 mt-6 italic">Tous les champs sont obligatoires</p>
             )}
-            <button
-              onClick={() => setShowConfirm(true)}
-              disabled={cart.length === 0 || !formValid}
-              className="w-full mt-6 py-7 bg-blue-600 text-white rounded-3xl font-black uppercase text-[10px] hover:bg-[#0f092e] transition-all shadow-xl disabled:opacity-20 disabled:cursor-not-allowed"
-            >
+            <button onClick={() => setShowConfirm(true)} disabled={cart.length === 0 || !formValid}
+              className="w-full mt-6 py-7 bg-blue-600 text-white rounded-3xl font-black uppercase text-[10px] hover:bg-[#0f092e] transition-all shadow-xl disabled:opacity-20 disabled:cursor-not-allowed">
               {!formValid && cart.length > 0 ? 'Formulaire incomplet' : 'Vérifier la commande'}
             </button>
           </div>
         </div>
       </main>
 
-      {/* ── OVERLAY DE CONFIRMATION ─────────────────────────────────── */}
+
+      {/* ── OVERLAY DE CONFIRMATION ──────────────────────────────────────────── */}
       <AnimatePresence>
         {showConfirm && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="absolute inset-0 bg-[#0f092e]/95 backdrop-blur-2xl"
-              onClick={() => setShowConfirm(false)}
-            />
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-              className="relative bg-white text-[#0f092e] w-full max-w-2xl rounded-[60px] p-14 space-y-8 shadow-2xl overflow-y-auto max-h-[90vh] text-center"
-            >
+              onClick={() => setShowConfirm(false)} />
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              className="relative bg-white text-[#0f092e] w-full max-w-2xl rounded-[60px] p-14 space-y-8 shadow-2xl overflow-y-auto max-h-[90vh] text-center">
               <div className="absolute top-0 left-0 w-full h-2 bg-blue-600 rounded-t-[60px]" />
               <h3 className="text-3xl font-black uppercase italic text-blue-600 tracking-tighter">Confirmation Finale</h3>
               <p className="text-[10px] font-black opacity-40 uppercase italic">
@@ -600,6 +584,10 @@ export default function CartPage() {
                 <div className="flex justify-between text-[10px] font-black uppercase italic">
                   <span className="opacity-40">Collaborateur</span>
                   <span>{selectedCollaborateur}</span>
+                </div>
+                <div className="flex justify-between text-[10px] font-black uppercase italic">
+                  <span className="opacity-40">Tél. fixe agence</span>
+                  <span>{useAltAddress ? altPhoneFix : phoneFix}</span>
                 </div>
                 {useAltAddress && (
                   <div className="flex justify-between text-[10px] font-black uppercase italic">
@@ -636,17 +624,12 @@ export default function CartPage() {
                 </div>
               </div>
 
-              <button
-                onClick={handleFinalSubmit}
-                disabled={isSubmitting}
-                className="w-full py-7 bg-[#0f092e] text-white rounded-[25px] font-black uppercase text-[11px] shadow-xl hover:bg-blue-600 transition-all disabled:opacity-50"
-              >
-                {isSubmitting ? "Transmission en cours..." : "Confirmer la commande"}
+              <button onClick={handleFinalSubmit} disabled={isSubmitting}
+                className="w-full py-7 bg-[#0f092e] text-white rounded-[25px] font-black uppercase text-[11px] shadow-xl hover:bg-blue-600 transition-all disabled:opacity-50">
+                {isSubmitting ? 'Transmission en cours...' : 'Confirmer la commande'}
               </button>
-              <button
-                onClick={() => setShowConfirm(false)}
-                className="w-full text-[9px] font-black uppercase opacity-30 italic hover:opacity-100 transition-all"
-              >
+              <button onClick={() => setShowConfirm(false)}
+                className="w-full text-[9px] font-black uppercase opacity-30 italic hover:opacity-100 transition-all">
                 Retour aux modifications
               </button>
             </motion.div>
