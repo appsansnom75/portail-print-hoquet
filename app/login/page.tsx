@@ -41,7 +41,7 @@ export default function LoginPage() {
     }
   };
 
-  if (checkingSession) return <div className="min-h-screen bg-[#0f092e] flex items-center justify-center text-white font-black uppercase text-[10px] animate-pulse">Vérification de la session...</div>;
+  if (checkingSession) return <div className="min-h-screen bg-[#0f092e] flex items-center justify-center text-white font-black uppercase text-[13px] animate-pulse">Vérification de la session...</div>;
 
   return (
     <div className="min-h-screen bg-[#0f092e] text-white flex items-center justify-center p-6 selection:bg-blue-500/30">
@@ -50,7 +50,7 @@ export default function LoginPage() {
         
         <form onSubmit={handleLogin} className="space-y-6">
           <div>
-            <p className="text-[8px] font-black text-white/40 uppercase mb-2 tracking-widest ml-2">Email Professionnel</p>
+            <p className="text-[11px] font-black text-white/40 uppercase mb-2 tracking-widest ml-2">Email Professionnel</p>
             <input 
               type="email" 
               value={email}
@@ -62,7 +62,7 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <p className="text-[8px] font-black text-white/40 uppercase mb-2 tracking-widest ml-2">Mot de passe</p>
+            <p className="text-[11px] font-black text-white/40 uppercase mb-2 tracking-widest ml-2">Mot de passe</p>
             <input 
               type="password" 
               value={password}
@@ -84,20 +84,20 @@ export default function LoginPage() {
               />
               <div className="w-8 h-4 bg-white/10 rounded-full peer peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:after:translate-x-4"></div>
             </label>
-            <span className="text-[9px] font-black uppercase tracking-widest text-white/30">Rester connecté</span>
+            <span className="text-[12px] font-black uppercase tracking-widest text-white/30">Rester connecté</span>
           </div>
 
           <button 
             type="submit" 
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-500 transition-all shadow-xl shadow-blue-900/20 active:scale-95 disabled:opacity-50"
+            className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase text-[13px] tracking-widest hover:bg-blue-500 transition-all shadow-xl shadow-blue-900/20 active:scale-95 disabled:opacity-50"
           >
             {loading ? 'Connexion en cours...' : 'Se connecter'}
           </button>
         </form>
 
         <div className="mt-8 text-center">
-            <p className="text-[7px] font-black uppercase tracking-[0.3em] text-white/10 italic">Accès réservé aux agences Guy Hoquet</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/10 italic">Accès réservé aux agences Guy Hoquet</p>
         </div>
       </div>
     </div>

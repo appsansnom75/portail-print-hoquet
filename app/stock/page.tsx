@@ -32,7 +32,7 @@ function ImageModal({ isOpen, onClose, imageSrc, imageAlt }: { isOpen: boolean, 
             />
             <button 
               onClick={onClose}
-              className="absolute -top-12 right-0 text-white font-black uppercase text-[10px] tracking-widest hover:text-green-500 transition-colors"
+              className="absolute -top-12 right-0 text-white font-black uppercase text-[13px] tracking-widest hover:text-green-500 transition-colors"
             >
               Fermer ×
             </button>
@@ -140,8 +140,8 @@ export default function SignaletiquePage() {
       />
       
       <header className="py-6 px-6 border-b border-white/10 flex justify-between items-center sticky top-0 bg-[#0f092e]/80 backdrop-blur-md z-50">
-        <Link href="/" className="text-[10px] font-black uppercase text-white/40 hover:text-white transition-all">← Retour</Link>
-        <h1 className={`text-[10px] font-black uppercase tracking-[0.3em] ${THEME.color} italic`}>{THEME.label}</h1>
+        <Link href="/" className="text-[13px] font-black uppercase text-white/40 hover:text-white transition-all">← Retour</Link>
+        <h1 className={`text-[13px] font-black uppercase tracking-[0.3em] ${THEME.color} italic`}>{THEME.label}</h1>
         <div className="w-10"></div>
       </header>
 
@@ -177,7 +177,7 @@ export default function SignaletiquePage() {
                     }}
                     className="absolute right-0 bottom-4 z-30 bg-white text-black px-4 py-2 rounded-full shadow-xl hover:bg-green-500 hover:text-white transition-all active:scale-95 flex items-center gap-2 shadow-black/20"
                   >
-                    <span className="text-[9px] font-black uppercase tracking-wider">
+                    <span className="text-[12px] font-black uppercase tracking-wider">
                       {isFlipped ? 'Voir Recto' : 'Voir Verso'}
                     </span>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-500 ${isFlipped ? 'rotate-180' : ''}`}>
@@ -207,14 +207,14 @@ export default function SignaletiquePage() {
                 <div className="space-y-4">
                   {p.hasVariants && (
                     <div className="space-y-1">
-                      <p className="text-[7px] font-black text-white/20 uppercase tracking-widest ml-1">Modèle / Option</p>
+                      <p className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-1">Modèle / Option</p>
                       <select 
                         value={sel.variant} 
                         onChange={(e) => {
                           setSelections({...selections, [p.id]:{...sel, variant: e.target.value}});
                           setFlippedProducts(prev => ({ ...prev, [p.id]: false }));
                         }} 
-                        className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none focus:border-green-500 transition-all cursor-pointer"
+                        className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[13px] font-black uppercase text-white outline-none focus:border-green-500 transition-all cursor-pointer"
                       >
                         {p.variants.map((v:any)=><option key={v.id} value={v.id}>{v.name}</option>)}
                       </select>
@@ -222,11 +222,11 @@ export default function SignaletiquePage() {
                   )}
 
                   <div className="space-y-1">
-                    <p className="text-[7px] font-black text-white/20 uppercase tracking-widest ml-1">Quantité souhaitée</p>
+                    <p className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-1">Quantité souhaitée</p>
                     <select 
                       value={sel.qty} 
                       onChange={(e) => setSelections({...selections, [p.id]:{...sel, qty: Number(e.target.value)}})} 
-                      className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none focus:border-green-500 transition-all cursor-pointer"
+                      className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[13px] font-black uppercase text-white outline-none focus:border-green-500 transition-all cursor-pointer"
                     >
                       {p.quantities.map((q:any)=><option key={q} value={q}>{q} exemplaires</option>)}
                     </select>
@@ -237,11 +237,11 @@ export default function SignaletiquePage() {
                       <span className="text-2xl font-black text-white">
                         {currentPrice.toFixed(2)}€
                       </span>
-                      <span className="text-[7px] font-bold text-white/30 uppercase tracking-widest italic">Hors Taxes (HT)</span>
+                      <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest italic">Hors Taxes (HT)</span>
                     </div>
                     <button 
                       onClick={() => handleAddToCart(p)} 
-                      className="bg-white text-[#0f092e] px-8 py-3.5 rounded-2xl font-black uppercase text-[9px] tracking-widest hover:bg-green-500 hover:text-white transition-all active:scale-95 shadow-lg shadow-white/5"
+                      className="bg-white text-[#0f092e] px-8 py-3.5 rounded-2xl font-black uppercase text-[12px] tracking-widest hover:bg-green-500 hover:text-white transition-all active:scale-95 shadow-lg shadow-white/5"
                     >
                       Ajouter
                     </button>
@@ -262,7 +262,7 @@ export default function SignaletiquePage() {
             <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>
           </svg>
           {cart.length > 0 && (
-            <span className={`absolute -top-3 -right-3 ${THEME.bg} text-white text-[9px] font-black w-6 h-6 rounded-full flex items-center justify-center border-4 border-[#0f092e]`}>
+            <span className={`absolute -top-3 -right-3 ${THEME.bg} text-white text-[12px] font-black w-6 h-6 rounded-full flex items-center justify-center border-4 border-[#0f092e]`}>
               {cart.length}
             </span>
           )}
@@ -270,7 +270,7 @@ export default function SignaletiquePage() {
       </button>
 
       <footer className="py-10 border-t border-white/5 text-center">
-        <p className="text-[7px] font-black text-white/10 uppercase tracking-[0.5em]">Guy Hoquet Stock Portal — 2026</p>
+        <p className="text-[10px] font-black text-white/10 uppercase tracking-[0.5em]">Guy Hoquet Stock Portal — 2026</p>
       </footer>
     </div>
   );

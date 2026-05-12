@@ -140,7 +140,7 @@ export default function ProfilPage() {
     type = 'text'
   ) => (
     <div className="space-y-1">
-      <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 block">{label}</label>
+      <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 block">{label}</label>
       <input
         type={type}
         value={agenceData[key] as string}
@@ -168,7 +168,7 @@ export default function ProfilPage() {
           </h1>
           <button
             onClick={() => router.push('/')}
-            className="text-[9px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors"
+            className="text-[12px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors"
           >
             Retour
           </button>
@@ -181,7 +181,7 @@ export default function ProfilPage() {
 
             {/* VILLE — affiché en titre centré en haut du bloc */}
             <div className="flex flex-col items-center pb-6 border-b border-white/5 space-y-2">
-              <p className="text-[8px] font-black uppercase tracking-[0.3em] text-white/20">Guy Hoquet</p>
+              <p className="text-[11px] font-black uppercase tracking-[0.3em] text-white/20">Guy Hoquet</p>
               <input
                 type="text"
                 value={agenceData.ville}
@@ -189,7 +189,7 @@ export default function ProfilPage() {
                 placeholder="Ville de l'agence"
                 className="bg-transparent border-b border-white/10 focus:border-blue-500 outline-none text-center text-xl font-black uppercase tracking-tight text-white w-full transition-all placeholder:text-white/15 pb-1"
               />
-              <p className="text-[7px] font-bold text-white/15 uppercase tracking-widest">Nom affiché sous le logo Guy Hoquet</p>
+              <p className="text-[10px] font-bold text-white/15 uppercase tracking-widest">Nom affiché sous le logo Guy Hoquet</p>
             </div>
 
             {field('Adresse', 'adresse', 'Ex: 12 rue de la Paix')}
@@ -203,7 +203,7 @@ export default function ProfilPage() {
 
             {/* QR CODE URL */}
             <div className="space-y-1">
-              <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 block">QR Code (URL)</label>
+              <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 block">QR Code (URL)</label>
               <input
                 type="url"
                 value={agenceData.qr_code_url}
@@ -212,13 +212,13 @@ export default function ProfilPage() {
                 className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-medium text-sm text-white placeholder:text-white/20"
               />
               {agenceData.qr_code_url && (
-                <p className="text-[8px] text-blue-400/60 font-bold ml-2 mt-1 truncate">✓ {agenceData.qr_code_url}</p>
+                <p className="text-[11px] text-blue-400/60 font-bold ml-2 mt-1 truncate">✓ {agenceData.qr_code_url}</p>
               )}
             </div>
 
             {/* SIRET */}
             <div className="space-y-1">
-              <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 block">Numéro SIRET</label>
+              <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 block">Numéro SIRET</label>
               <input
                 type="text"
                 value={agenceData.siret}
@@ -234,7 +234,7 @@ export default function ProfilPage() {
           <div className="space-y-6 bg-white/5 p-8 rounded-[40px] border border-white/10 backdrop-blur-xl shadow-2xl">
             <div className="pb-4 border-b border-white/5">
               <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/60 italic">Mentions Légales</h2>
-              <p className="text-[8px] font-bold text-white/20 uppercase tracking-widest mt-1">
+              <p className="text-[11px] font-bold text-white/20 uppercase tracking-widest mt-1">
                 Utilisées sur les documents officiels
               </p>
             </div>
@@ -252,7 +252,7 @@ export default function ProfilPage() {
             {/* CAISSE DE GARANTIE */}
             <div className="space-y-3">
               <div className="space-y-1">
-                <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 block">
+                <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 block">
                   Caisse de Garantie
                 </label>
                 <select
@@ -275,7 +275,7 @@ export default function ProfilPage() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 block">
+                <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 block">
                   Adresse Caisse de Garantie
                   {agenceData.mentions_caisse_garantie && agenceData.mentions_caisse_garantie !== 'Néant' && (
                     <span className="ml-2 text-blue-400/60 normal-case font-bold tracking-normal">pré-rempli</span>
@@ -297,8 +297,8 @@ export default function ProfilPage() {
             {/* APERÇU MENTIONS */}
             {agenceData.mentions_nom_societe && (
               <div className="bg-black/30 border border-white/5 rounded-2xl p-5">
-                <p className="text-[7px] font-black uppercase tracking-widest text-white/20 mb-3">Aperçu</p>
-                <p className="text-[9px] text-white/50 font-medium leading-relaxed">
+                <p className="text-[10px] font-black uppercase tracking-widest text-white/20 mb-3">Aperçu</p>
+                <p className="text-[12px] text-white/50 font-medium leading-relaxed">
                   {agenceData.mentions_nom_societe}
                   {agenceData.adresse && ` — ${agenceData.adresse}`}
                   {agenceData.ville && ` ${agenceData.ville}`}
@@ -322,7 +322,7 @@ export default function ProfilPage() {
             <button
               type="submit"
               disabled={updating}
-              className="w-full bg-blue-600 hover:bg-blue-500 p-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] transition-all shadow-xl shadow-blue-900/20 active:scale-[0.98] disabled:opacity-50"
+              className="w-full bg-blue-600 hover:bg-blue-500 p-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[13px] transition-all shadow-xl shadow-blue-900/20 active:scale-[0.98] disabled:opacity-50"
             >
               {updating ? 'Enregistrement...' : 'Mettre à jour les infos agence'}
             </button>

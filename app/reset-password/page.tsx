@@ -70,14 +70,14 @@ export default function ResetPasswordPage() {
               </svg>
             </div>
             <h1 className="font-black text-sm uppercase tracking-widest text-white">Mot de passe mis à jour !</h1>
-            <p className="text-[10px] text-white/30 font-bold uppercase tracking-wider">Redirection en cours...</p>
+            <p className="text-[13px] text-white/30 font-bold uppercase tracking-wider">Redirection en cours...</p>
           </div>
 
         ) : !sessionReady ? (
           /* EN ATTENTE DU TOKEN */
           <div className="flex flex-col items-center gap-4 text-center py-4">
             <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-            <p className="text-[10px] text-white/30 font-bold uppercase tracking-wider">Vérification du lien...</p>
+            <p className="text-[13px] text-white/30 font-bold uppercase tracking-wider">Vérification du lien...</p>
           </div>
 
         ) : (
@@ -87,14 +87,14 @@ export default function ResetPasswordPage() {
               <h1 className="font-black text-sm uppercase tracking-widest text-white mb-1">
                 Nouveau mot de passe
               </h1>
-              <p className="text-[9px] font-bold text-white/20 uppercase tracking-wider">
+              <p className="text-[12px] font-bold text-white/20 uppercase tracking-wider">
                 Choisissez un mot de passe sécurisé
               </p>
             </div>
 
             <div className="flex flex-col gap-3">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[9px] font-black uppercase tracking-widest text-white/30">
+                <label className="text-[12px] font-black uppercase tracking-widest text-white/30">
                   Nouveau mot de passe
                 </label>
                 <input
@@ -108,7 +108,7 @@ export default function ResetPasswordPage() {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[9px] font-black uppercase tracking-widest text-white/30">
+                <label className="text-[12px] font-black uppercase tracking-widest text-white/30">
                   Confirmer le mot de passe
                 </label>
                 <input
@@ -124,7 +124,7 @@ export default function ResetPasswordPage() {
 
             {/* ERREUR */}
             {error && (
-              <p className="text-[9px] font-black uppercase tracking-wider text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+              <p className="text-[12px] font-black uppercase tracking-wider text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
                 {error}
               </p>
             )}
@@ -132,7 +132,7 @@ export default function ResetPasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="bg-white text-[#0f092e] hover:bg-blue-500 hover:text-white text-[9px] font-black uppercase tracking-widest px-6 py-3.5 rounded-xl transition-all shadow-xl active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="bg-white text-[#0f092e] hover:bg-blue-500 hover:text-white text-[12px] font-black uppercase tracking-widest px-6 py-3.5 rounded-xl transition-all shadow-xl active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {loading ? 'Mise à jour...' : 'Confirmer le nouveau mot de passe'}
             </button>

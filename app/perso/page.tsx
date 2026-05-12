@@ -17,7 +17,7 @@ function ModalField({
 }) {
   return (
     <div className={span2 ? 'md:col-span-2' : ''}>
-      <label className="flex items-center gap-1.5 text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1">
+      <label className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1">
         {label}
         {required && <span className="text-red-400">*</span>}
         {prefilled && value && <span className="text-blue-400/50 normal-case font-bold tracking-normal">· agence</span>}
@@ -49,7 +49,7 @@ function ImageModal({ isOpen, onClose, imageSrc, imageAlt }: {
             className="relative max-w-full max-h-full flex items-center justify-center">
             <img src={imageSrc} alt={imageAlt} className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl" />
             <button onClick={onClose}
-              className="absolute -top-12 right-0 text-white font-black uppercase text-[10px] tracking-widest hover:text-blue-500 transition-colors">
+              className="absolute -top-12 right-0 text-white font-black uppercase text-[13px] tracking-widest hover:text-blue-500 transition-colors">
               Fermer ×
             </button>
           </motion.div>
@@ -225,7 +225,7 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
             <div className="flex items-start justify-between mb-8">
               <div>
                 <h3 className="text-xl font-black uppercase text-blue-500 tracking-tighter italic">Nouveau Collaborateur</h3>
-                <p className="text-[8px] font-bold text-white/25 uppercase tracking-widest mt-1">La photo de profil est optionnelle</p>
+                <p className="text-[11px] font-bold text-white/25 uppercase tracking-widest mt-1">La photo de profil est optionnelle</p>
               </div>
               <button onClick={() => { resetForm(); onClose(); }}
                 className="text-white/30 hover:text-white transition-colors text-lg font-black">×</button>
@@ -235,7 +235,7 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
 
               {/* PHOTO — optionnelle */}
               <div>
-                <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 block">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 block">
                   Photo de profil <span className="text-white/20 normal-case font-medium">(optionnelle)</span>
                 </label>
                 <div className="flex items-center gap-5">
@@ -247,7 +247,7 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
                   </div>
                   <div>
                     <button type="button" onClick={() => fileInputRef.current?.click()}
-                      className="text-[9px] font-black uppercase text-blue-400 hover:text-blue-300 transition-colors">
+                      className="text-[12px] font-black uppercase text-blue-400 hover:text-blue-300 transition-colors">
                       Choisir une photo →
                     </button>
                   </div>
@@ -257,33 +257,33 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
 
               {/* IDENTITÉ */}
               <div className="space-y-3">
-                <p className="text-[7px] font-black uppercase tracking-[0.3em] text-white/20 flex items-center gap-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 flex items-center gap-2">
                   <span className="w-4 h-px bg-white/20 inline-block"></span> Identité
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">
                       Prénom <span className="text-red-400">*</span>
                     </label>
                     <input type="text" value={prenom} onChange={(e) => setPrenom(e.target.value)}
                       placeholder="Prénom" className={inputClass('prenom')} />
                   </div>
                   <div>
-                    <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">
                       Nom <span className="text-red-400">*</span>
                     </label>
                     <input type="text" value={nom} onChange={(e) => setNom(e.target.value)}
                       placeholder="Nom" className={inputClass('nom')} />
                   </div>
                   <div>
-                    <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">
                       Fonction <span className="text-red-400">*</span>
                     </label>
                     <input type="text" value={fonction} onChange={(e) => setFonction(e.target.value)}
                       placeholder="Négociateur, Directeur..." className={inputClass('fonction')} />
                   </div>
                   <div>
-                    <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">
                       RSAC <span className="text-red-400">*</span>
                     </label>
                     <input type="text" value={rsac} onChange={(e) => setRsac(e.target.value)}
@@ -294,26 +294,26 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
 
               {/* CONTACT */}
               <div className="space-y-3">
-                <p className="text-[7px] font-black uppercase tracking-[0.3em] text-white/20 flex items-center gap-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 flex items-center gap-2">
                   <span className="w-4 h-px bg-white/20 inline-block"></span> Contact
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">
                       Email professionnel <span className="text-red-400">*</span>
                     </label>
                     <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
                       placeholder="prenom@agence.com" className={inputClass('email')} />
                   </div>
                   <div>
-                    <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">
                       Téléphone mobile <span className="text-red-400">*</span>
                     </label>
                     <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
                       placeholder="06 00 00 00 00" className={inputClass('phone')} />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1.5">
                       Téléphone fixe agence <span className="text-red-400">*</span>
                       {phoneFix && agencyDefaults.phone_fix && <span className="text-blue-400/50 normal-case font-bold tracking-normal">· agence</span>}
                     </label>
@@ -325,12 +325,12 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
 
               {/* ADRESSE */}
               <div className="space-y-3">
-                <p className="text-[7px] font-black uppercase tracking-[0.3em] text-white/20 flex items-center gap-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 flex items-center gap-2">
                   <span className="w-4 h-px bg-white/20 inline-block"></span> Adresse
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="md:col-span-2">
-                    <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1.5">
                       Adresse <span className="text-red-400">*</span>
                       {adresse && agencyDefaults.adresse && <span className="text-blue-400/50 normal-case font-bold tracking-normal">· agence</span>}
                     </label>
@@ -338,7 +338,7 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
                       placeholder="12 rue de la Paix" className={inputClass('adresse')} />
                   </div>
                   <div>
-                    <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1.5">
                       Ville <span className="text-red-400">*</span>
                       {ville && agencyDefaults.ville && <span className="text-blue-400/50 normal-case font-bold tracking-normal">· agence</span>}
                     </label>
@@ -346,7 +346,7 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
                       placeholder="Angers" className={inputClass('ville')} />
                   </div>
                   <div>
-                    <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1.5">
                       Code postal <span className="text-red-400">*</span>
                       {codePostal && agencyDefaults.code_postal && <span className="text-blue-400/50 normal-case font-bold tracking-normal">· agence</span>}
                     </label>
@@ -357,24 +357,24 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
               </div>
 
               {errors.global && (
-                <p className="text-red-400 text-[10px] font-black uppercase bg-red-500/10 border border-red-500/20 px-4 py-3 rounded-xl">
+                <p className="text-red-400 text-[13px] font-black uppercase bg-red-500/10 border border-red-500/20 px-4 py-3 rounded-xl">
                   {errors.global}
                 </p>
               )}
 
               {Object.keys(errors).filter(k => k !== 'global').length > 0 && (
-                <p className="text-red-400 text-[9px] font-black uppercase bg-red-500/10 border border-red-500/20 px-4 py-3 rounded-xl">
+                <p className="text-red-400 text-[12px] font-black uppercase bg-red-500/10 border border-red-500/20 px-4 py-3 rounded-xl">
                   ⚠ Veuillez remplir tous les champs obligatoires
                 </p>
               )}
 
               <div className="flex gap-3 pt-2">
                 <button onClick={() => { resetForm(); onClose(); }}
-                  className="flex-1 py-4 rounded-2xl border border-white/10 text-[9px] font-black uppercase text-white/40 hover:text-white hover:border-white/30 transition-all">
+                  className="flex-1 py-4 rounded-2xl border border-white/10 text-[12px] font-black uppercase text-white/40 hover:text-white hover:border-white/30 transition-all">
                   Annuler
                 </button>
                 <button onClick={handleCreate} disabled={isLoading}
-                  className="flex-1 bg-blue-600 p-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/20 active:scale-95 disabled:opacity-50">
+                  className="flex-1 bg-blue-600 p-4 rounded-2xl font-black uppercase text-[13px] tracking-widest hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/20 active:scale-95 disabled:opacity-50">
                   {isLoading ? 'Ajout en cours...' : 'Ajouter au répertoire →'}
                 </button>
               </div>
@@ -566,8 +566,8 @@ export default function PersoPage() {
       />
 
       <header className="py-6 px-6 border-b border-white/10 flex justify-between items-center sticky top-0 bg-[#0f092e]/80 backdrop-blur-md z-50">
-        <Link href="/" className="text-[10px] font-black uppercase text-white/40 hover:text-white transition-all">← Retour</Link>
-        <h1 className={`text-[10px] font-black uppercase tracking-[0.3em] ${THEME.color} italic`}>{THEME.label}</h1>
+        <Link href="/" className="text-[13px] font-black uppercase text-white/40 hover:text-white transition-all">← Retour</Link>
+        <h1 className={`text-[13px] font-black uppercase tracking-[0.3em] ${THEME.color} italic`}>{THEME.label}</h1>
         <div className="w-10"></div>
       </header>
 
@@ -594,7 +594,7 @@ export default function PersoPage() {
                   {(p.image_verso || currentVariant?.image_verso) && (
                     <button onClick={(e) => { e.stopPropagation(); toggleFlip(p.id); }}
                       className="absolute right-0 bottom-4 z-30 bg-white text-black px-4 py-2 rounded-full shadow-xl hover:bg-blue-500 hover:text-white transition-all active:scale-95 flex items-center gap-2">
-                      <span className="text-[9px] font-black uppercase tracking-wider">{isFlipped ? 'Voir Recto' : 'Voir Verso'}</span>
+                      <span className="text-[12px] font-black uppercase tracking-wider">{isFlipped ? 'Voir Recto' : 'Voir Verso'}</span>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
                         className={`transition-transform duration-500 ${isFlipped ? 'rotate-180' : ''}`}>
                         <path d="m15 18 6-6-6-6"/><path d="M3 12h18"/>
@@ -621,33 +621,33 @@ export default function PersoPage() {
                   <div className="space-y-4">
                     {p.hasVariants && (
                       <div className="space-y-1">
-                        <label className="text-[8px] font-black text-white/30 uppercase ml-2 tracking-widest">Modèle / Option</label>
+                        <label className="text-[11px] font-black text-white/30 uppercase ml-2 tracking-widest">Modèle / Option</label>
                         <select value={sel.variant}
                           onChange={(e) => { setSelections({ ...selections, [p.id]: { ...sel, variant: e.target.value } }); setFlippedProducts(prev => ({ ...prev, [p.id]: false })); }}
-                          className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none cursor-pointer hover:border-blue-500 transition-all">
+                          className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[13px] font-black uppercase text-white outline-none cursor-pointer hover:border-blue-500 transition-all">
                           {p.variants.map((v: any) => <option key={v.id} value={v.id}>{v.name}</option>)}
                         </select>
                       </div>
                     )}
 
                     <div className="space-y-1">
-                      <label className="text-[8px] font-black text-white/30 uppercase ml-2 tracking-widest">Quantité souhaitée</label>
+                      <label className="text-[11px] font-black text-white/30 uppercase ml-2 tracking-widest">Quantité souhaitée</label>
                       <select value={sel.qty}
                         onChange={(e) => setSelections({ ...selections, [p.id]: { ...sel, qty: Number(e.target.value) } })}
-                        className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none cursor-pointer hover:border-blue-500 transition-all">
+                        className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[13px] font-black uppercase text-white outline-none cursor-pointer hover:border-blue-500 transition-all">
                         {p.quantities.map((q: any) => <option key={q} value={q}>{q} exemplaires</option>)}
                       </select>
                     </div>
 
                     {needsMember && (
                       <div className="space-y-1 border-t border-white/5 pt-4">
-                        <label className="text-[8px] font-black uppercase ml-2 tracking-widest flex items-center gap-1.5">
+                        <label className="text-[11px] font-black uppercase ml-2 tracking-widest flex items-center gap-1.5">
                           <span className={memberSelected ? 'text-white/30' : 'text-red-400/80'}>Nom du collaborateur</span>
-                          {!memberSelected && <span className="text-red-400 text-[7px] font-bold normal-case tracking-normal">— requis pour commander</span>}
+                          {!memberSelected && <span className="text-red-400 text-[10px] font-bold normal-case tracking-normal">— requis pour commander</span>}
                         </label>
                         <select value={orderedBy[p.id] || ''}
                           onChange={(e) => handleOrderedByChange(p.id, e.target.value)}
-                          className={`w-full bg-black/40 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none cursor-pointer transition-all border ${
+                          className={`w-full bg-black/40 rounded-2xl p-4 text-[13px] font-black uppercase text-white outline-none cursor-pointer transition-all border ${
                             memberSelected ? 'border-blue-500/30 hover:border-blue-500' : 'border-red-500/30 hover:border-red-400'
                           }`}>
                           <option value="">— Sélectionner un membre —</option>
@@ -660,11 +660,11 @@ export default function PersoPage() {
                     <div className="flex items-center justify-between pt-6 border-t border-white/5 mt-4">
                       <div className="flex flex-col">
                         <span className="text-2xl font-black">{currentPrice.toFixed(2)}€</span>
-                        <span className="text-[8px] text-white/30 font-bold uppercase tracking-widest italic">Hors Taxes (HT)</span>
+                        <span className="text-[11px] text-white/30 font-bold uppercase tracking-widest italic">Hors Taxes (HT)</span>
                       </div>
                       <button onClick={() => handleAddToCart(p)} disabled={!canOrder}
                         title={!canOrder ? 'Sélectionnez un collaborateur' : ''}
-                        className={`px-8 py-3.5 rounded-2xl font-black uppercase text-[9px] transition-all active:scale-95 shadow-lg ${
+                        className={`px-8 py-3.5 rounded-2xl font-black uppercase text-[12px] transition-all active:scale-95 shadow-lg ${
                           canOrder
                             ? 'bg-white text-[#0f092e] hover:bg-blue-500 hover:text-white shadow-white/5 cursor-pointer'
                             : 'bg-white/10 text-white/20 cursor-not-allowed border border-white/10'
@@ -689,7 +689,7 @@ export default function PersoPage() {
             <path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>
           </svg>
           {cart.length > 0 && (
-            <span className={`absolute -top-3 -right-3 ${THEME.bg} text-white text-[9px] font-black w-6 h-6 rounded-full flex items-center justify-center border-4 border-[#0f092e]`}>
+            <span className={`absolute -top-3 -right-3 ${THEME.bg} text-white text-[12px] font-black w-6 h-6 rounded-full flex items-center justify-center border-4 border-[#0f092e]`}>
               {cart.length}
             </span>
           )}
@@ -697,7 +697,7 @@ export default function PersoPage() {
       </button>
 
       <footer className="py-10 border-t border-white/5 text-center">
-        <p className="text-[7px] font-black text-white/10 uppercase tracking-[0.5em]">Guy Hoquet — 2026</p>
+        <p className="text-[10px] font-black text-white/10 uppercase tracking-[0.5em]">Guy Hoquet — 2026</p>
       </footer>
     </div>
   );

@@ -40,12 +40,12 @@ function SortableItem({ p, startEdit, handleDelete }: any) {
         <img src={p.image_recto || '/placeholder.png'} className="max-w-full max-h-full object-contain" alt="" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-black uppercase text-[10px] tracking-widest truncate">{p.name}</p>
-        <p className={`text-[7px] font-bold uppercase ${CATEGORY_COLOR[p.category] || 'text-white/20'}`}>
+        <p className="font-black uppercase text-[13px] tracking-widest truncate">{p.name}</p>
+        <p className={`text-[10px] font-bold uppercase ${CATEGORY_COLOR[p.category] || 'text-white/20'}`}>
           {p.has_variants ? `${p.config.variants?.length} modèles` : 'Modèle unique'}
         </p>
         {p.config?.show_ordered_by && (
-          <p className="text-[7px] text-blue-500/60 font-black uppercase tracking-widest mt-0.5">✓ Qui commande ?</p>
+          <p className="text-[10px] text-blue-500/60 font-black uppercase tracking-widest mt-0.5">✓ Qui commande ?</p>
         )}
       </div>
       <div className="flex gap-2">
@@ -229,7 +229,7 @@ export default function AdminPortal() {
               {editingId ? 'Édition' : 'Nouveau'}
             </h1>
             {editingId && (
-              <button onClick={resetForm} className="bg-red-500/10 text-red-500 px-4 py-2 rounded-full text-[9px] font-black uppercase">
+              <button onClick={resetForm} className="bg-red-500/10 text-red-500 px-4 py-2 rounded-full text-[12px] font-black uppercase">
                 Annuler
               </button>
             )}
@@ -244,7 +244,7 @@ export default function AdminPortal() {
 
             {/* SELECT CATÉGORIE */}
             <div className="space-y-1">
-              <label className="text-[9px] font-black uppercase text-white/30 ml-2">Emplacement</label>
+              <label className="text-[12px] font-black uppercase text-white/30 ml-2">Emplacement</label>
               <select
                 value={category}
                 onChange={e => setCategory(e.target.value)}
@@ -260,7 +260,7 @@ export default function AdminPortal() {
 
             {/* NOM */}
             <div className="space-y-1">
-              <label className="text-[9px] font-black uppercase text-white/30 ml-2">Nom du produit</label>
+              <label className="text-[12px] font-black uppercase text-white/30 ml-2">Nom du produit</label>
               <input
                 value={name}
                 onChange={e => setName(e.target.value)}
@@ -272,18 +272,18 @@ export default function AdminPortal() {
             {/* IMAGES */}
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                <p className="text-[8px] font-black text-white/30 uppercase mb-2">Image Recto</p>
-                <input type="file" onChange={e => setImageFile(e.target.files?.[0] || null)} className="text-[8px] w-full" />
+                <p className="text-[11px] font-black text-white/30 uppercase mb-2">Image Recto</p>
+                <input type="file" onChange={e => setImageFile(e.target.files?.[0] || null)} className="text-[11px] w-full" />
               </div>
               <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                <p className="text-[8px] font-black text-white/30 uppercase mb-2">Image Verso</p>
-                <input type="file" onChange={e => setImageFileVerso(e.target.files?.[0] || null)} className="text-[8px] w-full" />
+                <p className="text-[11px] font-black text-white/30 uppercase mb-2">Image Verso</p>
+                <input type="file" onChange={e => setImageFileVerso(e.target.files?.[0] || null)} className="text-[11px] w-full" />
               </div>
             </div>
 
             {/* QUANTITÉS */}
             <div className="space-y-1">
-              <label className="text-[9px] font-black uppercase text-white/30 ml-2">Paliers de quantités</label>
+              <label className="text-[12px] font-black uppercase text-white/30 ml-2">Paliers de quantités</label>
               <input
                 value={quantities}
                 onChange={e => setQuantities(e.target.value)}
@@ -295,7 +295,7 @@ export default function AdminPortal() {
             {/* PRIX DE BASE */}
             {!hasVariants && (
               <div className="space-y-1">
-                <label className="text-[9px] font-black uppercase text-white/30 ml-2">Prix par palier</label>
+                <label className="text-[12px] font-black uppercase text-white/30 ml-2">Prix par palier</label>
                 <input
                   value={basePrices}
                   onChange={e => setBasePrices(e.target.value)}
@@ -308,7 +308,7 @@ export default function AdminPortal() {
             {/* TOGGLE VARIANTES */}
             <button
               onClick={() => setHasVariants(!hasVariants)}
-              className={`w-full py-4 border-2 border-dashed rounded-2xl text-[9px] font-black uppercase transition-all ${hasVariants ? 'border-blue-500 text-blue-500 bg-blue-500/5' : 'border-white/10 text-white/30'}`}
+              className={`w-full py-4 border-2 border-dashed rounded-2xl text-[12px] font-black uppercase transition-all ${hasVariants ? 'border-blue-500 text-blue-500 bg-blue-500/5' : 'border-white/10 text-white/30'}`}
             >
               {hasVariants ? "✓ Plusieurs modèles configurés" : "+ Ajouter des options / tailles"}
             </button>
@@ -320,20 +320,20 @@ export default function AdminPortal() {
                   <div key={idx} className="bg-white/5 p-4 rounded-2xl space-y-3 relative group">
                     <button
                       onClick={() => setVariantsList(variantsList.filter((_, i) => i !== idx))}
-                      className="absolute top-2 right-2 text-red-500 text-[8px] font-black opacity-0 group-hover:opacity-100 transition-all uppercase"
+                      className="absolute top-2 right-2 text-red-500 text-[11px] font-black opacity-0 group-hover:opacity-100 transition-all uppercase"
                     >
                       Supprimer
                     </button>
-                    <p className="text-[10px] font-black text-blue-500 uppercase italic tracking-tighter">{v.name}</p>
+                    <p className="text-[13px] font-black text-blue-500 uppercase italic tracking-tighter">{v.name}</p>
                     <input
                       value={v.prices}
                       onChange={(e) => { const c = [...variantsList]; c[idx].prices = e.target.value; setVariantsList(c); }}
-                      className="w-full bg-black/40 border border-white/5 p-3 rounded-xl text-[10px] font-mono outline-none"
+                      className="w-full bg-black/40 border border-white/5 p-3 rounded-xl text-[13px] font-mono outline-none"
                       placeholder="Prix..."
                     />
                     <div className="grid grid-cols-2 gap-2">
-                      <input type="file" onChange={(e) => { const c = [...variantsList]; c[idx].fileRecto = e.target.files?.[0] || null; setVariantsList(c); }} className="text-[7px]" />
-                      <input type="file" onChange={(e) => { const c = [...variantsList]; c[idx].fileVerso = e.target.files?.[0] || null; setVariantsList(c); }} className="text-[7px]" />
+                      <input type="file" onChange={(e) => { const c = [...variantsList]; c[idx].fileRecto = e.target.files?.[0] || null; setVariantsList(c); }} className="text-[10px]" />
+                      <input type="file" onChange={(e) => { const c = [...variantsList]; c[idx].fileVerso = e.target.files?.[0] || null; setVariantsList(c); }} className="text-[10px]" />
                     </div>
                   </div>
                 ))}
@@ -342,7 +342,7 @@ export default function AdminPortal() {
                     const n = prompt("Nom de l'option :");
                     if (n) setVariantsList([...variantsList, { id: n.toLowerCase().replace(/\s/g, '-'), name: n, prices: basePrices }]);
                   }}
-                  className="w-full py-3 bg-blue-500/10 text-blue-500 rounded-xl text-[9px] font-black uppercase hover:bg-blue-500/20 transition-all"
+                  className="w-full py-3 bg-blue-500/10 text-blue-500 rounded-xl text-[12px] font-black uppercase hover:bg-blue-500/20 transition-all"
                 >
                   + Nouvelle variante
                 </button>
@@ -358,8 +358,8 @@ export default function AdminPortal() {
                 <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${showOrderedBy ? 'left-7' : 'left-1'}`}></div>
               </div>
               <div>
-                <p className="text-[9px] font-black uppercase tracking-widest text-white/70">Afficher "Nom du collaborateur"</p>
-                <p className="text-[8px] text-white/20 mt-0.5">Affiche la liste de l'équipe sur ce produit (admin agence uniquement)</p>
+                <p className="text-[12px] font-black uppercase tracking-widest text-white/70">Afficher "Nom du collaborateur"</p>
+                <p className="text-[11px] text-white/20 mt-0.5">Affiche la liste de l'équipe sur ce produit (admin agence uniquement)</p>
               </div>
             </div>
 
@@ -383,7 +383,7 @@ export default function AdminPortal() {
                   {section.label}
                 </h2>
                 <div className="h-[1px] flex-1 bg-white/5"></div>
-                <span className="text-[8px] font-black text-white/10 uppercase">
+                <span className="text-[11px] font-black text-white/10 uppercase">
                   {existingProducts.filter(p => p.category === section.id).length} produit(s)
                 </span>
               </div>
@@ -394,7 +394,7 @@ export default function AdminPortal() {
                 >
                   <div className="grid gap-2">
                     {existingProducts.filter(p => p.category === section.id).length === 0 ? (
-                      <p className="text-[8px] text-white/10 font-black uppercase tracking-widest text-center py-6 border border-dashed border-white/5 rounded-2xl">
+                      <p className="text-[11px] text-white/10 font-black uppercase tracking-widest text-center py-6 border border-dashed border-white/5 rounded-2xl">
                         Aucun produit
                       </p>
                     ) : (

@@ -32,7 +32,7 @@ function ImageModal({ isOpen, onClose, imageSrc, imageAlt }: { isOpen: boolean, 
             />
             <button 
               onClick={onClose}
-              className="absolute -top-12 right-0 text-white font-black uppercase text-[10px] tracking-widest hover:text-purple-500 transition-colors"
+              className="absolute -top-12 right-0 text-white font-black uppercase text-[13px] tracking-widest hover:text-purple-500 transition-colors"
             >
               Fermer ×
             </button>
@@ -123,7 +123,7 @@ export default function OperationsPage() {
   };
 
   if (loading) return (
-    <div className={`min-h-screen bg-[#0f092e] flex items-center justify-center font-black ${THEME.color} uppercase animate-pulse tracking-widest text-[10px]`}>
+    <div className={`min-h-screen bg-[#0f092e] flex items-center justify-center font-black ${THEME.color} uppercase animate-pulse tracking-widest text-[13px]`}>
       Chargement Opérations du moment...
     </div>
   );
@@ -141,8 +141,8 @@ export default function OperationsPage() {
       />
       
       <header className="py-6 px-6 border-b border-white/10 flex justify-between items-center sticky top-0 bg-[#0f092e]/80 backdrop-blur-md z-50">
-        <Link href="/" className="text-[10px] font-black uppercase text-white/40 hover:text-white transition-all">← Retour</Link>
-        <h1 className={`text-[10px] font-black uppercase tracking-[0.3em] ${THEME.color} italic`}>{THEME.label}</h1>
+        <Link href="/" className="text-[13px] font-black uppercase text-white/40 hover:text-white transition-all">← Retour</Link>
+        <h1 className={`text-[13px] font-black uppercase tracking-[0.3em] ${THEME.color} italic`}>{THEME.label}</h1>
         <div className="w-10"></div>
       </header>
 
@@ -150,7 +150,7 @@ export default function OperationsPage() {
         {products.length === 0 ? (
           <div className="h-[400px] w-full bg-white/[0.02] border border-dashed border-white/10 rounded-[40px] flex flex-col items-center justify-center p-12 text-center">
             <h3 className="text-xl font-black uppercase tracking-widest mb-2">Bientôt disponible</h3>
-            <p className="text-[10px] text-white/30 uppercase tracking-[0.2em]">De nouvelles offres arrivent prochainement.</p>
+            <p className="text-[13px] text-white/30 uppercase tracking-[0.2em]">De nouvelles offres arrivent prochainement.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
@@ -182,7 +182,7 @@ export default function OperationsPage() {
                         }}
                         className={`absolute right-0 bottom-4 z-30 bg-white text-black px-4 py-2 rounded-full shadow-xl hover:${THEME.bg} hover:text-white transition-all active:scale-95 flex items-center gap-2`}
                       >
-                        <span className="text-[9px] font-black uppercase tracking-wider">{isFlipped ? 'Recto' : 'Verso'}</span>
+                        <span className="text-[12px] font-black uppercase tracking-wider">{isFlipped ? 'Recto' : 'Verso'}</span>
                       </button>
                     )}
 
@@ -205,14 +205,14 @@ export default function OperationsPage() {
                     <div className="space-y-4">
                       {p.hasVariants && (
                         <div className="space-y-1">
-                          <p className="text-[7px] font-black text-white/20 uppercase tracking-widest ml-1">Variante</p>
+                          <p className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-1">Variante</p>
                           <select 
                             value={sel.variant} 
                             onChange={(e) => {
                               setSelections({...selections, [p.id]:{...sel, variant: e.target.value}});
                               setFlippedProducts(prev => ({ ...prev, [p.id]: false }));
                             }} 
-                            className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none focus:border-purple-500 transition-all cursor-pointer"
+                            className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[13px] font-black uppercase text-white outline-none focus:border-purple-500 transition-all cursor-pointer"
                           >
                             {p.variants.map((v:any)=><option key={v.id} value={v.id}>{v.name}</option>)}
                           </select>
@@ -220,11 +220,11 @@ export default function OperationsPage() {
                       )}
                       
                       <div className="space-y-1">
-                        <p className="text-[7px] font-black text-white/20 uppercase tracking-widest ml-1">Quantité</p>
+                        <p className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-1">Quantité</p>
                         <select 
                           value={sel.qty} 
                           onChange={(e) => setSelections({...selections, [p.id]:{...sel, qty: Number(e.target.value)}})} 
-                          className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] font-black uppercase text-white outline-none focus:border-purple-500 transition-all cursor-pointer"
+                          className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[13px] font-black uppercase text-white outline-none focus:border-purple-500 transition-all cursor-pointer"
                         >
                           {p.quantities.map((q:any)=><option key={q} value={q}>{q} ex.</option>)}
                         </select>
@@ -234,7 +234,7 @@ export default function OperationsPage() {
                         <span className="font-black text-2xl text-white">{currentPrice.toFixed(2)}€</span>
                         <button 
                           onClick={() => handleAddToCart(p)} 
-                          className={`bg-white text-[#0f092e] px-8 py-3.5 rounded-2xl font-black uppercase text-[9px] hover:${THEME.bg} hover:text-white transition-all shadow-lg active:scale-95`}
+                          className={`bg-white text-[#0f092e] px-8 py-3.5 rounded-2xl font-black uppercase text-[12px] hover:${THEME.bg} hover:text-white transition-all shadow-lg active:scale-95`}
                         >
                           Ajouter
                         </button>
@@ -258,7 +258,7 @@ export default function OperationsPage() {
             <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>
           </svg>
           {cart.length > 0 && (
-            <span className={`absolute -top-3 -right-3 ${THEME.bg} text-white text-[9px] font-black w-6 h-6 rounded-full flex items-center justify-center border-4 border-[#0f092e]`}>
+            <span className={`absolute -top-3 -right-3 ${THEME.bg} text-white text-[12px] font-black w-6 h-6 rounded-full flex items-center justify-center border-4 border-[#0f092e]`}>
               {cart.length}
             </span>
           )}
@@ -266,7 +266,7 @@ export default function OperationsPage() {
       </button>
 
       <footer className="py-10 border-t border-white/5 text-center mt-auto">
-        <p className="text-[7px] font-black text-white/10 uppercase tracking-[0.5em]">Guy Hoquet Operations — 2026</p>
+        <p className="text-[10px] font-black text-white/10 uppercase tracking-[0.5em]">Guy Hoquet Operations — 2026</p>
       </footer>
     </div>
   );

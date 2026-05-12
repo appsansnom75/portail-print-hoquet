@@ -281,7 +281,7 @@ export default function CartPage() {
 
   // ─── ÉTATS SPÉCIAUX ─────────────────────────────────────────────────────────
   if (loading) return (
-    <div className="min-h-screen bg-[#0f092e] flex items-center justify-center text-white uppercase text-[10px] animate-pulse italic font-black">
+    <div className="min-h-screen bg-[#0f092e] flex items-center justify-center text-white uppercase text-[13px] animate-pulse italic font-black">
       Initialisation du bon de commande...
     </div>
   );
@@ -290,8 +290,8 @@ export default function CartPage() {
     <div className="min-h-screen bg-[#0f092e] flex flex-col items-center justify-center text-center p-6 text-white font-black italic uppercase">
       <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
         <h2 className="text-6xl mb-6 text-blue-500 tracking-tighter">Transmission OK</h2>
-        <p className="text-[10px] mb-12 opacity-50">Ta commande est enregistrée et envoyée en production.</p>
-        <Link href="/" className="bg-white text-[#0f092e] px-12 py-6 rounded-full text-[10px] hover:bg-blue-500 hover:text-white transition-all shadow-2xl">
+        <p className="text-[13px] mb-12 opacity-50">Ta commande est enregistrée et envoyée en production.</p>
+        <Link href="/" className="bg-white text-[#0f092e] px-12 py-6 rounded-full text-[13px] hover:bg-blue-500 hover:text-white transition-all shadow-2xl">
           Retour Boutique
         </Link>
       </motion.div>
@@ -301,14 +301,14 @@ export default function CartPage() {
   const formValid = isFormValid();
 
   const inp = (val: string) =>
-    `w-full bg-black/40 border rounded-2xl p-5 text-[10px] font-black outline-none transition-all ${
+    `w-full bg-black/40 border rounded-2xl p-5 text-[13px] font-black outline-none transition-all ${
       !val.trim()
         ? 'border-red-500/30 hover:border-red-500/50 focus:border-red-500'
         : 'border-white/10 hover:border-blue-500/50 focus:border-blue-500'
     }`;
 
   const inpAlt = (val: string) =>
-    `w-full bg-black/40 border rounded-2xl p-5 text-[10px] font-black outline-none transition-all ${
+    `w-full bg-black/40 border rounded-2xl p-5 text-[13px] font-black outline-none transition-all ${
       !val.trim()
         ? 'border-red-500/30 focus:border-red-500'
         : 'border-blue-500/20 focus:border-blue-500'
@@ -319,7 +319,7 @@ export default function CartPage() {
     <div className="min-h-screen bg-[#0f092e] text-white pb-20">
 
       <header className="py-10 px-6 max-w-6xl mx-auto flex justify-between items-center border-b border-white/10 mb-12">
-        <Link href="/" className="text-[10px] font-black uppercase opacity-40 hover:opacity-100 italic transition-all">← Boutique</Link>
+        <Link href="/" className="text-[13px] font-black uppercase opacity-40 hover:opacity-100 italic transition-all">← Boutique</Link>
         <h1 className="text-[11px] font-black uppercase tracking-[0.4em] italic text-blue-500">Validation Commande</h1>
         <div className="w-24" />
       </header>
@@ -332,7 +332,7 @@ export default function CartPage() {
           <section className="bg-blue-600/5 border border-blue-500/20 rounded-[45px] p-10 space-y-4">
             <h2 className="text-[11px] font-black uppercase text-blue-400 italic">01. Identification</h2>
             <div className="space-y-2">
-              <label className="text-[9px] font-black opacity-30 italic ml-2 uppercase">Agence</label>
+              <label className="text-[12px] font-black opacity-30 italic ml-2 uppercase">Agence</label>
               <div className="bg-black/40 border border-white/10 rounded-2xl p-5 text-[11px] font-black text-blue-400">
                 {agencyData?.name || 'Non détectée'}
               </div>
@@ -345,21 +345,21 @@ export default function CartPage() {
             <h2 className="text-[11px] font-black uppercase text-white/60 italic mb-10">02. Récapitulatif</h2>
             <div className="space-y-6">
               {cart.length === 0 && (
-                <p className="text-[10px] font-black uppercase text-white/20 italic text-center py-8">Panier vide</p>
+                <p className="text-[13px] font-black uppercase text-white/20 italic text-center py-8">Panier vide</p>
               )}
               {cart.map((item) => (
                 <div key={item.cartLineId} className="flex justify-between items-start border-b border-white/5 pb-6 gap-4">
                   <div className="flex flex-col gap-1 flex-grow">
                     <span className="text-[13px] font-black uppercase tracking-tight italic">{item.name}</span>
-                    <span className="text-[9px] text-white/30 font-black italic">Quantité : {item.qty}</span>
+                    <span className="text-[12px] text-white/30 font-black italic">Quantité : {item.qty}</span>
                     {item.orderedBy && (
-                      <span className="text-[9px] text-blue-400 font-black uppercase mt-1">👤 {item.orderedBy}</span>
+                      <span className="text-[12px] text-blue-400 font-black uppercase mt-1">👤 {item.orderedBy}</span>
                     )}
                   </div>
                   <div className="flex items-center gap-4 shrink-0">
                     <div className="text-right">
                       <p className="text-[14px] font-black italic">{fmt(item.price * item.qty)}€</p>
-                      <p className="text-[8px] font-black opacity-30 uppercase">HT</p>
+                      <p className="text-[11px] font-black opacity-30 uppercase">HT</p>
                     </div>
                     <button type="button" onClick={() => removeFromCart(item.cartLineId)}
                       className="w-8 h-8 rounded-full bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white flex items-center justify-center transition-all text-sm font-black">
@@ -370,10 +370,10 @@ export default function CartPage() {
               ))}
               {cart.length > 0 && (
                 <div className="pt-4 space-y-2">
-                  <div className="flex justify-between text-[10px] font-black uppercase italic opacity-50">
+                  <div className="flex justify-between text-[13px] font-black uppercase italic opacity-50">
                     <span>Sous-total HT</span><span>{fmt(totalHT)}€</span>
                   </div>
-                  <div className="flex justify-between text-[10px] font-black uppercase italic opacity-30">
+                  <div className="flex justify-between text-[13px] font-black uppercase italic opacity-30">
                     <span>TVA (20%)</span><span>{fmt(totalTTC - totalHT)}€</span>
                   </div>
                   <div className="flex justify-between text-[13px] font-black uppercase italic border-t border-white/10 pt-3">
@@ -392,13 +392,13 @@ export default function CartPage() {
               <div>
                 <h2 className="text-[11px] font-black uppercase text-white/60 italic">03. Informations de Livraison</h2>
                 {!useAltAddress && (
-                  <p className="text-[8px] font-black text-white/20 uppercase tracking-widest mt-1">
+                  <p className="text-[11px] font-black text-white/20 uppercase tracking-widest mt-1">
                     Modifications sauvegardées dans vos infos agence
                   </p>
                 )}
               </div>
               <button type="button" onClick={() => setUseAltAddress(!useAltAddress)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full border text-[8px] font-black uppercase tracking-widest transition-all ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-full border text-[11px] font-black uppercase tracking-widest transition-all ${
                   useAltAddress
                     ? 'border-blue-500 bg-blue-500/10 text-blue-400'
                     : 'border-white/10 bg-white/5 text-white/30 hover:text-white/60 hover:border-white/20'
@@ -419,14 +419,14 @@ export default function CartPage() {
                   <input placeholder="TÉLÉPHONE MOBILE *"      value={phone}    onChange={(e) => setPhone(e.target.value)}     className={inp(phone)} />
                   <input placeholder="TÉLÉPHONE FIXE AGENCE *" value={phoneFix} onChange={(e) => setPhoneFix(e.target.value)} className={inp(phoneFix)} />
                   <div className="space-y-1">
-                    <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">Numéro SIRET *</label>
+                    <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">Numéro SIRET *</label>
                     <input placeholder="Ex: 123 456 789 00012" value={siret} onChange={(e) => setSiret(e.target.value)}
                       maxLength={17} className={inp(siret)} />
                   </div>
                 </>
               ) : (
                 <div className="space-y-6 border border-blue-500/20 bg-blue-600/5 rounded-[30px] p-6">
-                  <p className="text-[8px] font-black uppercase text-blue-400/60 tracking-widest">
+                  <p className="text-[11px] font-black uppercase text-blue-400/60 tracking-widest">
                     Adresse unique pour cette commande — non sauvegardée dans vos infos agence
                   </p>
                   <input placeholder="ADRESSE DE LIVRAISON *"  value={altAddress}  onChange={(e) => setAltAddress(e.target.value)}   className={inpAlt(altAddress)} />
@@ -437,7 +437,7 @@ export default function CartPage() {
                   <input placeholder="TÉLÉPHONE MOBILE *"       value={altPhone}    onChange={(e) => setAltPhone(e.target.value)}    className={inpAlt(altPhone)} />
                   <input placeholder="TÉLÉPHONE FIXE AGENCE *"  value={altPhoneFix} onChange={(e) => setAltPhoneFix(e.target.value)} className={inpAlt(altPhoneFix)} />
                   <div className="space-y-1">
-                    <label className="text-[8px] font-black uppercase tracking-[0.2em] text-blue-400/50 ml-2">
+                    <label className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-400/50 ml-2">
                       Numéro SIRET * <span className="normal-case italic font-bold text-blue-400/40 ml-1">— non sauvegardé</span>
                     </label>
                     <input placeholder="Ex: 123 456 789 00012" value={siret} onChange={(e) => setSiret(e.target.value)}
@@ -453,7 +453,7 @@ export default function CartPage() {
           <section className="bg-white/[0.02] border border-white/10 rounded-[45px] p-10 space-y-8">
             <div>
               <h2 className="text-[11px] font-black uppercase text-white/60 italic">04. Informations Facturation & Légales</h2>
-              <p className="text-[8px] font-black text-white/20 uppercase tracking-widest mt-1">
+              <p className="text-[11px] font-black text-white/20 uppercase tracking-widest mt-1">
                 Modifications sauvegardées dans vos infos agence
               </p>
             </div>
@@ -462,7 +462,7 @@ export default function CartPage() {
 
               {/* ── Mail de facturation — EN PREMIER ── */}
               <div className="space-y-1">
-                <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 flex items-center gap-2">
+                <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 flex items-center gap-2">
                   Mail de facturation <span className="text-red-400">*</span>
                   {mentionsMailFacturation && <span className="text-blue-400/50 normal-case font-bold tracking-normal">· agence</span>}
                 </label>
@@ -472,7 +472,7 @@ export default function CartPage() {
 
               {/* Ville sous logo */}
               <div className="space-y-1">
-                <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 flex items-center gap-2">
+                <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 flex items-center gap-2">
                   Ville sous le logo <span className="text-red-400">*</span>
                   {mentionsVilleAgence && <span className="text-blue-400/50 normal-case font-bold tracking-normal">· agence</span>}
                 </label>
@@ -482,7 +482,7 @@ export default function CartPage() {
 
               {/* URL QR Code */}
               <div className="space-y-1">
-                <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">
+                <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">
                   URL QR Code <span className="text-red-400">*</span>
                 </label>
                 <input value={mentionsUrlQrCode} onChange={(e) => setMentionsUrlQrCode(e.target.value)}
@@ -504,7 +504,7 @@ export default function CartPage() {
                 { label: 'Mail RGPD',                val: mentionsMailRgpd,              set: setMentionsMailRgpd,              ph: 'Ex: informatique-et-libertes@guy-hoquet.com' },
               ] as { label: string; val: string; set: (v: string) => void; ph: string; prefilled?: boolean }[]).map(({ label, val, set, ph, prefilled }) => (
                 <div key={label} className="space-y-1">
-                  <label className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 flex items-center gap-2">
+                  <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 flex items-center gap-2">
                     {label} <span className="text-red-400">*</span>
                     {prefilled && val && <span className="text-blue-400/50 normal-case font-bold tracking-normal">· agence</span>}
                   </label>
@@ -520,18 +520,18 @@ export default function CartPage() {
         {/* ── COLONNE DROITE : TOTAL ───────────────────────────────────────── */}
         <div className="lg:col-span-1">
           <div className="bg-white p-12 rounded-[50px] text-[#0f092e] sticky top-12 text-center shadow-2xl">
-            <h2 className="text-[10px] font-black uppercase opacity-30 italic mb-4">Total à régler</h2>
+            <h2 className="text-[13px] font-black uppercase opacity-30 italic mb-4">Total à régler</h2>
             <span className="text-6xl font-black italic tracking-tighter">{fmt(totalHT)}€</span>
-            <p className="text-[8px] font-black uppercase opacity-30 mt-1 tracking-widest">Hors Taxes (HT)</p>
+            <p className="text-[11px] font-black uppercase opacity-30 mt-1 tracking-widest">Hors Taxes (HT)</p>
             <div className="mt-4 bg-black/5 rounded-2xl px-6 py-4">
               <span className="text-2xl font-black italic tracking-tighter opacity-60">{fmt(totalTTC)}€</span>
-              <p className="text-[8px] font-black uppercase opacity-30 mt-0.5 tracking-widest">TTC (TVA 20%)</p>
+              <p className="text-[11px] font-black uppercase opacity-30 mt-0.5 tracking-widest">TTC (TVA 20%)</p>
             </div>
             {!formValid && cart.length > 0 && (
-              <p className="text-[8px] font-black uppercase text-red-400 mt-6 italic">Tous les champs sont obligatoires</p>
+              <p className="text-[11px] font-black uppercase text-red-400 mt-6 italic">Tous les champs sont obligatoires</p>
             )}
             <button onClick={() => setShowConfirm(true)} disabled={cart.length === 0 || !formValid}
-              className="w-full mt-6 py-7 bg-blue-600 text-white rounded-3xl font-black uppercase text-[10px] hover:bg-[#0f092e] transition-all shadow-xl disabled:opacity-20 disabled:cursor-not-allowed">
+              className="w-full mt-6 py-7 bg-blue-600 text-white rounded-3xl font-black uppercase text-[13px] hover:bg-[#0f092e] transition-all shadow-xl disabled:opacity-20 disabled:cursor-not-allowed">
               {!formValid && cart.length > 0 ? 'Formulaire incomplet' : 'Vérifier la commande'}
             </button>
           </div>
@@ -550,49 +550,49 @@ export default function CartPage() {
               className="relative bg-white text-[#0f092e] w-full max-w-2xl rounded-[60px] p-14 space-y-8 shadow-2xl overflow-y-auto max-h-[90vh] text-center">
               <div className="absolute top-0 left-0 w-full h-2 bg-blue-600 rounded-t-[60px]" />
               <h3 className="text-3xl font-black uppercase italic text-blue-600 tracking-tighter">Confirmation Finale</h3>
-              <p className="text-[10px] font-black opacity-40 uppercase italic">
+              <p className="text-[13px] font-black opacity-40 uppercase italic">
                 Toute commande validée part directement en production.
               </p>
 
               <div className="bg-gray-50 rounded-[35px] p-8 space-y-4 text-left">
-                <div className="flex justify-between text-[10px] font-black uppercase italic">
+                <div className="flex justify-between text-[13px] font-black uppercase italic">
                   <span className="opacity-40">Agence</span>
                   <span className="text-blue-600">{agencyData?.name}</span>
                 </div>
-                <div className="flex justify-between text-[10px] font-black uppercase italic">
+                <div className="flex justify-between text-[13px] font-black uppercase italic">
                   <span className="opacity-40">Livraison</span>
                   <span className="text-right">
                     {useAltAddress ? `${altAddress}, ${altZipCode} ${altCity}` : `${address}, ${zipCode} ${city}`}
                   </span>
                 </div>
-                <div className="flex justify-between text-[10px] font-black uppercase italic">
+                <div className="flex justify-between text-[13px] font-black uppercase italic">
                   <span className="opacity-40">Tél. fixe agence</span>
                   <span>{useAltAddress ? altPhoneFix : phoneFix}</span>
                 </div>
 
                 <div className="border-t border-gray-200 pt-4 space-y-3">
-                  <span className="text-[8px] font-black uppercase opacity-30 tracking-widest block">Produits</span>
+                  <span className="text-[11px] font-black uppercase opacity-30 tracking-widest block">Produits</span>
                   {cart.map((item) => (
                     <div key={item.cartLineId} className="flex justify-between items-start gap-4">
                       <div>
-                        <p className="text-[10px] font-black uppercase italic leading-tight">{item.name}</p>
-                        <p className="text-[8px] font-bold opacity-30 mt-0.5">
+                        <p className="text-[13px] font-black uppercase italic leading-tight">{item.name}</p>
+                        <p className="text-[11px] font-bold opacity-30 mt-0.5">
                           x{item.qty}
                           {item.orderedBy && <span className="text-blue-500 ml-2">— {item.orderedBy}</span>}
                         </p>
                       </div>
-                      <span className="text-[10px] font-black shrink-0 tabular-nums">
+                      <span className="text-[13px] font-black shrink-0 tabular-nums">
                         {fmt(item.price * item.qty)}€
                       </span>
                     </div>
                   ))}
                 </div>
 
-                <div className="flex justify-between text-[10px] font-black uppercase italic border-t border-gray-200 pt-4">
+                <div className="flex justify-between text-[13px] font-black uppercase italic border-t border-gray-200 pt-4">
                   <span className="opacity-40">Total HT</span>
                   <span className="text-2xl text-blue-600">{fmt(totalHT)}€</span>
                 </div>
-                <div className="flex justify-between text-[10px] font-black uppercase italic">
+                <div className="flex justify-between text-[13px] font-black uppercase italic">
                   <span className="opacity-40">Total TTC (20%)</span>
                   <span className="text-lg text-gray-400">{fmt(totalTTC)}€</span>
                 </div>
@@ -603,7 +603,7 @@ export default function CartPage() {
                 {isSubmitting ? 'Transmission en cours...' : 'Confirmer la commande'}
               </button>
               <button onClick={() => setShowConfirm(false)}
-                className="w-full text-[9px] font-black uppercase opacity-30 italic hover:opacity-100 transition-all">
+                className="w-full text-[12px] font-black uppercase opacity-30 italic hover:opacity-100 transition-all">
                 Retour aux modifications
               </button>
             </motion.div>

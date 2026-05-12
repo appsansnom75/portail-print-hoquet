@@ -169,20 +169,20 @@ export default function HistoriqueCommandes() {
         <div className="flex flex-col md:flex-row justify-between items-center md:items-end border-b border-white/10 pb-8 gap-6">
           <div>
             <h1 className="text-5xl font-black uppercase italic tracking-tighter text-blue-500">Historique</h1>
-            <p className="text-[10px] font-bold opacity-30 uppercase tracking-[0.3em] mt-2 italic">
+            <p className="text-[13px] font-bold opacity-30 uppercase tracking-[0.3em] mt-2 italic">
               Agence : {agencyName} — {orders.length} commande{orders.length > 1 ? 's' : ''}
             </p>
           </div>
           <div className="flex gap-3">
             <button
               onClick={exportAllToCSV}
-              className="text-[9px] font-black uppercase bg-blue-500/10 text-blue-400 border border-blue-500/20 px-6 py-4 rounded-2xl hover:bg-blue-500 hover:text-white transition-all"
+              className="text-[12px] font-black uppercase bg-blue-500/10 text-blue-400 border border-blue-500/20 px-6 py-4 rounded-2xl hover:bg-blue-500 hover:text-white transition-all"
             >
               Exporter Tout (.CSV)
             </button>
             <Link
               href="/"
-              className="text-[9px] font-black uppercase bg-white/5 border border-white/10 px-6 py-4 rounded-2xl hover:bg-white/10 transition-all text-center"
+              className="text-[12px] font-black uppercase bg-white/5 border border-white/10 px-6 py-4 rounded-2xl hover:bg-white/10 transition-all text-center"
             >
               Boutique
             </Link>
@@ -192,7 +192,7 @@ export default function HistoriqueCommandes() {
         {/* ── LISTE DES COMMANDES ──────────────────────────────────── */}
         <div className="space-y-4">
           {orders.length === 0 && (
-            <p className="text-center text-[10px] font-black uppercase text-white/20 italic py-20">
+            <p className="text-center text-[13px] font-black uppercase text-white/20 italic py-20">
               Aucune commande pour le moment
             </p>
           )}
@@ -214,18 +214,18 @@ export default function HistoriqueCommandes() {
 
                     {/* Passée par */}
                     <div className="w-full lg:w-1/4 lg:border-r border-white/5 lg:pr-8 shrink-0">
-                      <span className="text-[8px] font-black uppercase text-blue-500/60 block mb-1">Passée par</span>
+                      <span className="text-[11px] font-black uppercase text-blue-500/60 block mb-1">Passée par</span>
                       <h2 className="text-xl font-black uppercase truncate">
                         {order.profiles?.full_name || 'Système'}
                       </h2>
-                      <p className="text-[10px] font-bold opacity-30 mt-2">
+                      <p className="text-[13px] font-bold opacity-30 mt-2">
                         {new Date(order.created_at).toLocaleDateString('fr-FR')}
                       </p>
                     </div>
 
                     {/* Produits */}
                     <div className="flex-1 w-full bg-white/5 rounded-2xl p-5 border border-white/5 group-hover:bg-white/10 transition-colors">
-                      <span className="text-[8px] font-black uppercase text-white/20 tracking-widest mb-3 block italic">
+                      <span className="text-[11px] font-black uppercase text-white/20 tracking-widest mb-3 block italic">
                         Cliquez pour CSV ↓
                       </span>
                       <div className="space-y-3">
@@ -240,16 +240,16 @@ export default function HistoriqueCommandes() {
                                 <div key={idx} className="flex justify-between items-start gap-4 border-b border-white/5 pb-3 last:border-0 last:pb-0">
                                   <div>
                                     <p className="text-[11px] font-black uppercase leading-tight">{nom}</p>
-                                    <p className="text-[8px] font-bold opacity-30 mt-0.5">
+                                    <p className="text-[11px] font-bold opacity-30 mt-0.5">
                                       x{qte}
                                       {membre && <span className="text-blue-400 ml-2">— {membre}</span>}
                                     </p>
                                   </div>
                                   <div className="text-right shrink-0">
-                                    <p className="text-[10px] font-black tabular-nums">
-                                      {ht.toFixed(2)}€ <span className="text-[8px] opacity-30">HT</span>
+                                    <p className="text-[13px] font-black tabular-nums">
+                                      {ht.toFixed(2)}€ <span className="text-[11px] opacity-30">HT</span>
                                     </p>
-                                    <p className="text-[9px] font-bold text-blue-400 tabular-nums">
+                                    <p className="text-[12px] font-bold text-blue-400 tabular-nums">
                                       {ttc.toFixed(2)}€ <span className="opacity-60">TTC</span>
                                     </p>
                                   </div>
@@ -263,18 +263,18 @@ export default function HistoriqueCommandes() {
                           )
                         }
                       </div>
-                      <p className="mt-4 text-[10px] text-white/40 truncate">📍 {order.delivery_address}</p>
+                      <p className="mt-4 text-[13px] text-white/40 truncate">📍 {order.delivery_address}</p>
                     </div>
 
                     {/* Prix + boutons */}
                     <div className="flex items-center gap-6 w-full lg:w-auto justify-between lg:justify-end shrink-0">
                       <div className="text-right border-r border-white/5 pr-6">
                         <div className="flex items-center justify-end gap-2 opacity-30">
-                          <span className="text-[8px] font-black uppercase">HT</span>
+                          <span className="text-[11px] font-black uppercase">HT</span>
                           <span className="text-sm font-bold">{order.total_ht?.toFixed(2)}€</span>
                         </div>
                         <div className="flex items-center justify-end gap-2">
-                          <span className="text-[9px] font-black text-blue-500 uppercase italic">TTC</span>
+                          <span className="text-[12px] font-black text-blue-500 uppercase italic">TTC</span>
                           <span className="text-3xl font-black italic tabular-nums leading-none">
                             {totalTTC.toFixed(2)}€
                           </span>
@@ -283,7 +283,7 @@ export default function HistoriqueCommandes() {
                       <div className="flex items-center gap-3">
                         <button
                           onClick={(e) => { e.stopPropagation(); handleReorder(order); }}
-                          className="bg-white text-[#0f092e] hover:bg-blue-600 hover:text-white text-[9px] font-black uppercase px-8 py-5 rounded-2xl transition-all active:scale-95 shadow-xl"
+                          className="bg-white text-[#0f092e] hover:bg-blue-600 hover:text-white text-[12px] font-black uppercase px-8 py-5 rounded-2xl transition-all active:scale-95 shadow-xl"
                         >
                           Recommander
                         </button>
@@ -312,7 +312,7 @@ export default function HistoriqueCommandes() {
             <button
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 font-black text-[10px] hover:bg-white/10 transition-all disabled:opacity-20 disabled:cursor-not-allowed"
+              className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 font-black text-[13px] hover:bg-white/10 transition-all disabled:opacity-20 disabled:cursor-not-allowed"
             >
               ←
             </button>
@@ -322,7 +322,7 @@ export default function HistoriqueCommandes() {
               <button
                 key={page}
                 onClick={() => setCurrentPage(page)}
-                className={`w-10 h-10 rounded-2xl font-black text-[10px] transition-all ${
+                className={`w-10 h-10 rounded-2xl font-black text-[13px] transition-all ${
                   page === currentPage
                     ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/30'
                     : 'bg-white/5 border border-white/10 hover:bg-white/10 opacity-50 hover:opacity-100'
@@ -336,7 +336,7 @@ export default function HistoriqueCommandes() {
             <button
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 font-black text-[10px] hover:bg-white/10 transition-all disabled:opacity-20 disabled:cursor-not-allowed"
+              className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 font-black text-[13px] hover:bg-white/10 transition-all disabled:opacity-20 disabled:cursor-not-allowed"
             >
               →
             </button>
@@ -345,7 +345,7 @@ export default function HistoriqueCommandes() {
 
         {/* Indicateur page */}
         {totalPages > 1 && (
-          <p className="text-center text-[8px] font-black uppercase opacity-20 tracking-widest -mt-4">
+          <p className="text-center text-[11px] font-black uppercase opacity-20 tracking-widest -mt-4">
             Page {currentPage} / {totalPages} — {orders.length} commandes
           </p>
         )}

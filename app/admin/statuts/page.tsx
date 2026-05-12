@@ -80,10 +80,10 @@ export default function StatusPage() {
     <div className="min-h-screen bg-[#0f092e] text-white font-sans p-8 md:p-20">
       <header className="max-w-4xl mx-auto mb-16 flex justify-between items-center">
         <div>
-          <h1 className="text-[10px] font-black uppercase tracking-[0.5em] text-blue-500 mb-2">System Monitor v1.0</h1>
+          <h1 className="text-[13px] font-black uppercase tracking-[0.5em] text-blue-500 mb-2">System Monitor v1.0</h1>
           <p className="text-2xl font-black italic uppercase tracking-tighter">État des services</p>
         </div>
-        <Link href="/" className="text-[9px] font-black uppercase border border-white/20 px-6 py-3 rounded-full hover:bg-white hover:text-[#0f092e] transition-all">
+        <Link href="/" className="text-[12px] font-black uppercase border border-white/20 px-6 py-3 rounded-full hover:bg-white hover:text-[#0f092e] transition-all">
           Retour Site
         </Link>
       </header>
@@ -124,7 +124,7 @@ export default function StatusPage() {
 
         {/* LOGS RAPIDES */}
         <div className="pt-10 text-center">
-          <button onClick={checkHealth} className="text-[8px] font-black uppercase opacity-30 hover:opacity-100 transition-all tracking-[0.3em]">
+          <button onClick={checkHealth} className="text-[11px] font-black uppercase opacity-30 hover:opacity-100 transition-all tracking-[0.3em]">
             🔄 Rafraîchir les diagnostics
           </button>
         </div>
@@ -137,7 +137,7 @@ export default function StatusPage() {
 function StatusCard({ title, value }: { title: string, value: string }) {
   return (
     <div className="bg-white/[0.02] border border-white/10 p-8 rounded-[40px] hover:border-blue-500/30 transition-colors">
-      <p className="text-[8px] font-black uppercase opacity-30 mb-3 tracking-widest">{title}</p>
+      <p className="text-[11px] font-black uppercase opacity-30 mb-3 tracking-widest">{title}</p>
       <p className="text-sm font-black uppercase italic tracking-tight">{value}</p>
     </div>
   );

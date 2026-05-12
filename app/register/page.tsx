@@ -106,14 +106,14 @@ export default function RegisterPage() {
             <div className="text-center mb-10">
               <Link
                 href="/login"
-                className="inline-block text-[9px] font-black uppercase opacity-30 hover:opacity-60 italic mb-8 tracking-widest transition-all"
+                className="inline-block text-[12px] font-black uppercase opacity-30 hover:opacity-60 italic mb-8 tracking-widest transition-all"
               >
                 ← Retour connexion
               </Link>
               <h1 className="text-4xl font-black italic tracking-tighter text-white">
                 Créer une agence
               </h1>
-              <p className="text-[10px] font-black uppercase opacity-30 mt-3 tracking-[0.3em]">
+              <p className="text-[13px] font-black uppercase opacity-30 mt-3 tracking-[0.3em]">
                 Ouverture d'un nouveau compte
               </p>
             </div>
@@ -121,7 +121,7 @@ export default function RegisterPage() {
             <div className="bg-white/[0.03] border border-white/10 rounded-[45px] p-10 space-y-6">
 
               <div className="space-y-2">
-                <label className="text-[9px] font-black uppercase opacity-30 ml-3 tracking-widest block">
+                <label className="text-[12px] font-black uppercase opacity-30 ml-3 tracking-widest block">
                   Nom de l'agence <span className="text-red-400">*</span>
                 </label>
                 <input
@@ -138,7 +138,7 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[9px] font-black uppercase opacity-30 ml-3 tracking-widest block">
+                <label className="text-[12px] font-black uppercase opacity-30 ml-3 tracking-widest block">
                   Email de l'agence <span className="text-red-400">*</span>
                 </label>
                 <input
@@ -155,7 +155,7 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[9px] font-black uppercase opacity-30 ml-3 tracking-widest block">
+                <label className="text-[12px] font-black uppercase opacity-30 ml-3 tracking-widest block">
                   Confirmer l'email <span className="text-red-400">*</span>
                 </label>
                 <input
@@ -172,14 +172,14 @@ export default function RegisterPage() {
                   }`}
                 />
                 {emailMismatch && (
-                  <p className="text-[9px] font-black text-red-400 ml-3 italic">
+                  <p className="text-[12px] font-black text-red-400 ml-3 italic">
                     Les emails ne correspondent pas
                   </p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <label className="text-[9px] font-black uppercase opacity-30 ml-3 tracking-widest block">
+                <label className="text-[12px] font-black uppercase opacity-30 ml-3 tracking-widest block">
                   Mot de passe <span className="text-red-400">*</span>
                 </label>
                 <div className="relative">
@@ -197,7 +197,7 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={() => setShowPass(!showPass)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[8px] font-black uppercase opacity-30 hover:opacity-70 transition-all"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-black uppercase opacity-30 hover:opacity-70 transition-all"
                   >
                     {showPass ? 'CACHER' : 'VOIR'}
                   </button>
@@ -216,7 +216,7 @@ export default function RegisterPage() {
                         }`}
                       />
                     ))}
-                    <span className="text-[8px] font-black uppercase ml-1 opacity-40 whitespace-nowrap">
+                    <span className="text-[11px] font-black uppercase ml-1 opacity-40 whitespace-nowrap">
                       {passStrength === 1 ? 'Trop court' : passStrength === 2 ? 'Bon' : 'Fort'}
                     </span>
                   </div>
@@ -224,7 +224,7 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[9px] font-black uppercase opacity-30 ml-3 tracking-widest block">
+                <label className="text-[12px] font-black uppercase opacity-30 ml-3 tracking-widest block">
                   Confirmer le mot de passe <span className="text-red-400">*</span>
                 </label>
                 <div className="relative">
@@ -244,18 +244,18 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassConfirm(!showPassConfirm)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[8px] font-black uppercase opacity-30 hover:opacity-70 transition-all"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-black uppercase opacity-30 hover:opacity-70 transition-all"
                   >
                     {showPassConfirm ? 'CACHER' : 'VOIR'}
                   </button>
                 </div>
                 {passMismatch && (
-                  <p className="text-[9px] font-black text-red-400 ml-3 italic">
+                  <p className="text-[12px] font-black text-red-400 ml-3 italic">
                     Les mots de passe ne correspondent pas
                   </p>
                 )}
                 {passMatch && (
-                  <p className="text-[9px] font-black text-blue-400 ml-3 italic">
+                  <p className="text-[12px] font-black text-blue-400 ml-3 italic">
                     ✓ Mots de passe identiques
                   </p>
                 )}
@@ -263,7 +263,7 @@ export default function RegisterPage() {
 
               {error && (
                 <div className="bg-red-500/10 border border-red-500/20 rounded-2xl px-5 py-4">
-                  <p className="text-[10px] font-black text-red-400 italic">{error}</p>
+                  <p className="text-[13px] font-black text-red-400 italic">{error}</p>
                 </div>
               )}
 
@@ -271,12 +271,12 @@ export default function RegisterPage() {
                 type="button"
                 onClick={() => formValid && setStep('confirm')}
                 disabled={!formValid}
-                className="w-full mt-2 py-6 bg-blue-600 text-white rounded-3xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-500 transition-all shadow-xl shadow-blue-900/30 disabled:opacity-20 disabled:cursor-not-allowed"
+                className="w-full mt-2 py-6 bg-blue-600 text-white rounded-3xl font-black uppercase text-[13px] tracking-widest hover:bg-blue-500 transition-all shadow-xl shadow-blue-900/30 disabled:opacity-20 disabled:cursor-not-allowed"
               >
                 Vérifier les informations →
               </button>
 
-              <p className="text-center text-[9px] font-black uppercase opacity-20 pt-2">
+              <p className="text-center text-[12px] font-black uppercase opacity-20 pt-2">
                 Déjà un compte ?{' '}
                 <Link href="/login" className="text-blue-400 opacity-100 hover:underline">
                   Se connecter
@@ -300,7 +300,7 @@ export default function RegisterPage() {
               <h1 className="text-4xl font-black italic tracking-tighter text-white">
                 Tout est correct ?
               </h1>
-              <p className="text-[10px] font-black uppercase opacity-30 mt-3 tracking-[0.3em]">
+              <p className="text-[13px] font-black uppercase opacity-30 mt-3 tracking-[0.3em]">
                 Vérification finale avant création
               </p>
             </div>
@@ -315,7 +315,7 @@ export default function RegisterPage() {
               </div>
 
               <div className="bg-blue-50 rounded-2xl px-6 py-4">
-                <p className="text-[9px] font-black uppercase text-blue-600 italic leading-relaxed">
+                <p className="text-[12px] font-black uppercase text-blue-600 italic leading-relaxed">
                   Un compte administrateur sera créé avec ces informations.
                   Tu pourras compléter le profil de l'agence et ajouter des collaborateurs après connexion.
                 </p>
@@ -323,7 +323,7 @@ export default function RegisterPage() {
 
               {error && (
                 <div className="bg-red-50 border border-red-200 rounded-2xl px-5 py-4">
-                  <p className="text-[10px] font-black text-red-500 italic">{error}</p>
+                  <p className="text-[13px] font-black text-red-500 italic">{error}</p>
                 </div>
               )}
 
@@ -331,7 +331,7 @@ export default function RegisterPage() {
                 type="button"
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="w-full py-6 bg-[#0f092e] text-white rounded-3xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-600 transition-all shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-6 bg-[#0f092e] text-white rounded-3xl font-black uppercase text-[13px] tracking-widest hover:bg-blue-600 transition-all shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? 'Création en cours...' : '✓ Créer le compte'}
               </button>
@@ -339,7 +339,7 @@ export default function RegisterPage() {
               <button
                 type="button"
                 onClick={() => { setStep('form'); setError(''); }}
-                className="w-full text-[9px] font-black uppercase opacity-30 hover:opacity-70 italic transition-all"
+                className="w-full text-[12px] font-black uppercase opacity-30 hover:opacity-70 italic transition-all"
               >
                 ← Modifier les informations
               </button>
@@ -368,13 +368,13 @@ export default function RegisterPage() {
             <h2 className="text-5xl font-black italic tracking-tighter text-white mb-4">
               Compte créé !
             </h2>
-            <p className="text-[10px] font-black uppercase opacity-40 tracking-[0.3em] mb-10">
+            <p className="text-[13px] font-black uppercase opacity-40 tracking-[0.3em] mb-10">
               {agencyName} est maintenant enregistrée
             </p>
 
             <Link
               href="/login"
-              className="inline-block bg-blue-600 text-white px-12 py-6 rounded-full font-black uppercase text-[10px] tracking-widest hover:bg-blue-500 transition-all shadow-2xl shadow-blue-900/30"
+              className="inline-block bg-blue-600 text-white px-12 py-6 rounded-full font-black uppercase text-[13px] tracking-widest hover:bg-blue-500 transition-all shadow-2xl shadow-blue-900/30"
             >
               Se connecter →
             </Link>
@@ -397,7 +397,7 @@ function ConfirmRow({
 }) {
   return (
     <div className="flex justify-between items-center border-b border-gray-100 pb-4 last:border-0 last:pb-0 gap-4">
-      <span className="text-[9px] font-black uppercase opacity-40 tracking-widest shrink-0">
+      <span className="text-[12px] font-black uppercase opacity-40 tracking-widest shrink-0">
         {label}
       </span>
       <span className={`text-[12px] font-black italic text-right truncate ${highlight ? 'text-blue-600' : 'text-[#0f092e]'}`}>

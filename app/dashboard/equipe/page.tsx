@@ -13,10 +13,10 @@ const Field = ({
   placeholder: string; type?: string; span2?: boolean; prefilled?: boolean;
 }) => (
   <div className={span2 ? 'md:col-span-2' : ''}>
-    <label className="flex items-center gap-2 text-[8px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1">
+    <label className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1">
       {label}
       {prefilled && value && (
-        <span className="text-blue-400/50 normal-case font-bold tracking-normal text-[7px]">· agence</span>
+        <span className="text-blue-400/50 normal-case font-bold tracking-normal text-[10px]">· agence</span>
       )}
     </label>
     <input
@@ -247,7 +247,7 @@ export default function GestionEquipe() {
 
   // ─────────────────────────────────────────
   if (loading) return (
-    <div className="p-20 text-white font-black uppercase text-[10px] tracking-widest animate-pulse">
+    <div className="p-20 text-white font-black uppercase text-[13px] tracking-widest animate-pulse">
       Chargement de l'agence...
     </div>
   );
@@ -258,16 +258,16 @@ export default function GestionEquipe() {
 
         {/* EN-TÊTE */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <button onClick={() => router.back()} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-blue-400 transition-all group w-fit">
+          <button onClick={() => router.back()} className="flex items-center gap-2 text-[13px] font-black uppercase tracking-widest text-white/40 hover:text-blue-400 transition-all group w-fit">
             <span className="text-lg group-hover:-translate-x-1 transition-transform">←</span> Retour
           </button>
           <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10">
-            <button className="bg-blue-600 px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-tighter shadow-lg shadow-blue-900/40">Équipe</button>
-            <Link href="/dashboard/commandes" className="px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-tighter text-white/40 hover:text-white transition-colors">Historique Achats</Link>
+            <button className="bg-blue-600 px-6 py-2 rounded-xl text-[12px] font-black uppercase tracking-tighter shadow-lg shadow-blue-900/40">Équipe</button>
+            <Link href="/dashboard/commandes" className="px-6 py-2 rounded-xl text-[12px] font-black uppercase tracking-tighter text-white/40 hover:text-white transition-colors">Historique Achats</Link>
           </div>
           <div className="text-right">
             <h1 className="text-2xl font-black uppercase italic tracking-tighter">Espace Agence</h1>
-            <p className="text-[9px] font-bold text-blue-500 uppercase tracking-[0.3em]">Équipe & Collaborateurs</p>
+            <p className="text-[12px] font-bold text-blue-500 uppercase tracking-[0.3em]">Équipe & Collaborateurs</p>
           </div>
         </div>
 
@@ -287,9 +287,9 @@ export default function GestionEquipe() {
                   : <span className="text-2xl">📷</span>}
               </div>
               <div>
-                <p className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-1">Photo de profil <span className="text-white/20 normal-case font-medium">(optionnelle)</span></p>
+                <p className="text-[12px] font-black uppercase tracking-widest text-white/40 mb-1">Photo de profil <span className="text-white/20 normal-case font-medium">(optionnelle)</span></p>
                 <button type="button" onClick={() => fileInputRef.current?.click()}
-                  className="text-[9px] font-black uppercase text-blue-400 hover:text-blue-300 transition-colors">
+                  className="text-[12px] font-black uppercase text-blue-400 hover:text-blue-300 transition-colors">
                   Choisir une photo →
                 </button>
               </div>
@@ -298,7 +298,7 @@ export default function GestionEquipe() {
 
             {/* SECTION IDENTITÉ */}
             <div className="space-y-4">
-              <p className="text-[8px] font-black uppercase tracking-[0.3em] text-white/20 flex items-center gap-2">
+              <p className="text-[11px] font-black uppercase tracking-[0.3em] text-white/20 flex items-center gap-2">
                 <span className="w-4 h-px bg-white/20"></span> Identité
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -311,7 +311,7 @@ export default function GestionEquipe() {
 
             {/* SECTION CONTACT */}
             <div className="space-y-4">
-              <p className="text-[8px] font-black uppercase tracking-[0.3em] text-white/20 flex items-center gap-2">
+              <p className="text-[11px] font-black uppercase tracking-[0.3em] text-white/20 flex items-center gap-2">
                 <span className="w-4 h-px bg-white/20"></span> Contact
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -324,7 +324,7 @@ export default function GestionEquipe() {
 
             {/* SECTION ADRESSE */}
             <div className="space-y-4">
-              <p className="text-[8px] font-black uppercase tracking-[0.3em] text-white/20 flex items-center gap-2">
+              <p className="text-[11px] font-black uppercase tracking-[0.3em] text-white/20 flex items-center gap-2">
                 <span className="w-4 h-px bg-white/20"></span> Adresse
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -335,7 +335,7 @@ export default function GestionEquipe() {
             </div>
 
             <button type="submit" disabled={submitting}
-              className="w-full bg-blue-600 p-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/20 active:scale-95 disabled:opacity-50">
+              className="w-full bg-blue-600 p-4 rounded-2xl font-black uppercase text-[13px] tracking-widest hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/20 active:scale-95 disabled:opacity-50">
               {submitting ? 'Compression & ajout en cours...' : 'Ajouter au répertoire →'}
             </button>
           </form>
@@ -346,14 +346,14 @@ export default function GestionEquipe() {
         <div className="space-y-6">
           <div className="flex items-center justify-between px-4">
             <h2 className="text-sm font-black uppercase tracking-[0.2em] text-white/30 italic">Répertoire de l'agence</h2>
-            <span className="text-[10px] font-bold text-blue-400 bg-blue-400/10 px-3 py-1 rounded-full border border-blue-400/20">
+            <span className="text-[13px] font-bold text-blue-400 bg-blue-400/10 px-3 py-1 rounded-full border border-blue-400/20">
               {membres.length} Membres
             </span>
           </div>
 
           <div className="grid grid-cols-1 gap-4">
             {membres.length === 0 && (
-              <div className="text-center py-16 text-white/20 font-black uppercase text-[10px] tracking-widest">
+              <div className="text-center py-16 text-white/20 font-black uppercase text-[13px] tracking-widest">
                 Aucun collaborateur — ajoutez-en un ci-dessus
               </div>
             )}
@@ -373,8 +373,8 @@ export default function GestionEquipe() {
                       </div>
                       <div>
                         <div className="text-sm font-black uppercase tracking-tight">{m.first_name} {m.last_name}</div>
-                        <div className="text-[9px] font-bold text-blue-400/60 uppercase tracking-widest mt-0.5">{m.fonction || '—'}</div>
-                        {m.rsac && <div className="text-[8px] text-white/20 font-bold mt-0.5">RSAC {m.rsac}</div>}
+                        <div className="text-[12px] font-bold text-blue-400/60 uppercase tracking-widest mt-0.5">{m.fonction || '—'}</div>
+                        {m.rsac && <div className="text-[11px] text-white/20 font-bold mt-0.5">RSAC {m.rsac}</div>}
                       </div>
                     </div>
 
@@ -386,19 +386,19 @@ export default function GestionEquipe() {
                         { label: 'Ville',  val: m.ville },
                       ].map(({ label, val }) => (
                         <div key={label} className="flex flex-col gap-0.5">
-                          <span className="text-[7px] font-black text-white/20 uppercase tracking-widest">{label}</span>
-                          <span className="text-[10px] font-medium text-white/60 truncate max-w-[140px]">{val || '—'}</span>
+                          <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">{label}</span>
+                          <span className="text-[13px] font-medium text-white/60 truncate max-w-[140px]">{val || '—'}</span>
                         </div>
                       ))}
                     </div>
 
                     <div className="flex items-center gap-3 shrink-0">
                       <button onClick={() => ouvrirEdition(m)}
-                        className="bg-white/5 hover:bg-blue-600 text-white/50 hover:text-white text-[8px] font-black uppercase px-5 py-3 rounded-xl transition-all border border-white/10 hover:border-blue-500">
+                        className="bg-white/5 hover:bg-blue-600 text-white/50 hover:text-white text-[11px] font-black uppercase px-5 py-3 rounded-xl transition-all border border-white/10 hover:border-blue-500">
                         Modifier
                       </button>
                       <button onClick={() => supprimerMembre(m.id)}
-                        className="bg-red-500/10 hover:bg-red-600 text-red-400 hover:text-white text-[8px] font-black uppercase px-5 py-3 rounded-xl transition-all border border-red-500/20">
+                        className="bg-red-500/10 hover:bg-red-600 text-red-400 hover:text-white text-[11px] font-black uppercase px-5 py-3 rounded-xl transition-all border border-red-500/20">
                         Supprimer
                       </button>
                     </div>
@@ -408,7 +408,7 @@ export default function GestionEquipe() {
                 {/* FORMULAIRE ÉDITION INLINE */}
                 {editId === m.id && (
                   <div className="p-6 space-y-6 bg-white/[0.03]">
-                    <p className="text-[9px] font-black uppercase tracking-widest text-blue-400">Modifier le collaborateur</p>
+                    <p className="text-[12px] font-black uppercase tracking-widest text-blue-400">Modifier le collaborateur</p>
 
                     {/* Photo */}
                     <div className="flex items-center gap-4">
@@ -420,9 +420,9 @@ export default function GestionEquipe() {
                           : <span className="text-xl">📷</span>}
                       </div>
                       <div>
-                        <p className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-1">Photo de profil <span className="text-white/20 normal-case font-medium">(optionnelle)</span></p>
+                        <p className="text-[12px] font-black uppercase tracking-widest text-white/40 mb-1">Photo de profil <span className="text-white/20 normal-case font-medium">(optionnelle)</span></p>
                         <button type="button" onClick={() => editFileInputRef.current?.click()}
-                          className="text-[9px] font-black uppercase text-blue-400 hover:text-blue-300 transition-colors">
+                          className="text-[12px] font-black uppercase text-blue-400 hover:text-blue-300 transition-colors">
                           Changer la photo →
                         </button>
                       </div>
@@ -431,13 +431,13 @@ export default function GestionEquipe() {
 
                     {/* Identité */}
                     <div className="space-y-3">
-                      <p className="text-[7px] font-black uppercase tracking-[0.3em] text-white/20 flex items-center gap-2">
+                      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 flex items-center gap-2">
                         <span className="w-3 h-px bg-white/20"></span> Identité
                       </p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {(['first_name','last_name','fonction','rsac'] as const).map((k) => (
                           <div key={k}>
-                            <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/25 mb-1 block ml-1">
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/25 mb-1 block ml-1">
                               {k === 'first_name' ? 'Prénom' : k === 'last_name' ? 'Nom' : k === 'fonction' ? 'Fonction' : 'RSAC'}
                             </label>
                             <input type="text" value={editData[k] || ''}
@@ -450,7 +450,7 @@ export default function GestionEquipe() {
 
                     {/* Contact */}
                     <div className="space-y-3">
-                      <p className="text-[7px] font-black uppercase tracking-[0.3em] text-white/20 flex items-center gap-2">
+                      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 flex items-center gap-2">
                         <span className="w-3 h-px bg-white/20"></span> Contact
                       </p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -460,7 +460,7 @@ export default function GestionEquipe() {
                           { k: 'phone_fix', label: 'Téléphone fixe',   type: 'tel' },
                         ].map(({ k, label, type }) => (
                           <div key={k} className={k === 'phone_fix' ? 'md:col-span-2' : ''}>
-                            <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/25 mb-1 block ml-1">{label}</label>
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/25 mb-1 block ml-1">{label}</label>
                             <input type={type} value={editData[k] || ''}
                               onChange={(e) => setEditData({ ...editData, [k]: e.target.value })}
                               className="w-full bg-white/[0.06] border border-white/10 px-4 py-3 rounded-2xl outline-none focus:border-blue-500 text-sm text-white font-medium transition-all" />
@@ -471,7 +471,7 @@ export default function GestionEquipe() {
 
                     {/* Adresse */}
                     <div className="space-y-3">
-                      <p className="text-[7px] font-black uppercase tracking-[0.3em] text-white/20 flex items-center gap-2">
+                      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 flex items-center gap-2">
                         <span className="w-3 h-px bg-white/20"></span> Adresse
                       </p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -481,7 +481,7 @@ export default function GestionEquipe() {
                           { k: 'code_postal', label: 'Code postal',  span2: false },
                         ].map(({ k, label, span2 }) => (
                           <div key={k} className={span2 ? 'md:col-span-2' : ''}>
-                            <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/25 mb-1 block ml-1">{label}</label>
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/25 mb-1 block ml-1">{label}</label>
                             <input type="text" value={editData[k] || ''}
                               onChange={(e) => setEditData({ ...editData, [k]: e.target.value })}
                               className="w-full bg-white/[0.06] border border-white/10 px-4 py-3 rounded-2xl outline-none focus:border-blue-500 text-sm text-white font-medium transition-all" />
@@ -492,11 +492,11 @@ export default function GestionEquipe() {
 
                     <div className="flex gap-3">
                       <button onClick={() => sauvegarderEdition(m.id)}
-                        className="bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all">
+                        className="bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-2xl text-[12px] font-black uppercase tracking-widest transition-all">
                         Sauvegarder
                       </button>
                       <button onClick={() => setEditId(null)}
-                        className="bg-white/5 hover:bg-white/10 px-6 py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest text-white/50 transition-all">
+                        className="bg-white/5 hover:bg-white/10 px-6 py-3 rounded-2xl text-[12px] font-black uppercase tracking-widest text-white/50 transition-all">
                         Annuler
                       </button>
                     </div>

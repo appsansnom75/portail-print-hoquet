@@ -17,12 +17,12 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean, onClo
       <div className="relative w-full max-w-md bg-[#0f092e] h-full shadow-2xl flex flex-col border-l border-white/10">
         <div className="p-8 flex justify-between items-center border-b border-white/5">
           <h2 className="text-xl font-black italic uppercase text-white">Votre <span className="text-blue-500">Panier</span></h2>
-          <button onClick={onClose} className="text-[10px] font-black uppercase opacity-40 hover:opacity-100 transition-opacity">Fermer</button>
+          <button onClick={onClose} className="text-[13px] font-black uppercase opacity-40 hover:opacity-100 transition-opacity">Fermer</button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {cart.length === 0 ? (
-            <p className="text-center opacity-20 py-10 uppercase font-black text-[10px] tracking-widest">Le panier est vide</p>
+            <p className="text-center opacity-20 py-10 uppercase font-black text-[13px] tracking-widest">Le panier est vide</p>
           ) : (
             cart.map((item) => (
               <div key={item.cartLineId} className="bg-white/5 rounded-[30px] p-6 border border-white/5 flex justify-between items-center">
@@ -30,11 +30,11 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean, onClo
                   <p className={`text-[11px] font-black uppercase leading-tight ${item.color || 'text-white'}`}>
                     {item.name}
                   </p>
-                  <p className="text-[9px] opacity-40 font-bold uppercase tracking-tight">
+                  <p className="text-[12px] opacity-40 font-bold uppercase tracking-tight">
                     {item.qty} ex. — {(item.price).toFixed(2)}€/u
                   </p>
                   {item.orderedBy && (
-                    <p className="text-[9px] text-blue-400 font-black uppercase mt-1">👤 {item.orderedBy}</p>
+                    <p className="text-[12px] text-blue-400 font-black uppercase mt-1">👤 {item.orderedBy}</p>
                   )}
                 </div>
                 <div className="text-right flex flex-col items-end">
@@ -43,7 +43,7 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean, onClo
                   </p>
                   <button
                     onClick={() => removeFromCart(item.cartLineId)}
-                    className="text-[8px] font-black text-red-500 uppercase tracking-tighter hover:underline"
+                    className="text-[11px] font-black text-red-500 uppercase tracking-tighter hover:underline"
                   >
                     Supprimer
                   </button>
@@ -55,7 +55,7 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean, onClo
 
         <div className="p-8 border-t border-white/10 bg-black/20">
           <div className="flex justify-between items-end mb-8">
-            <span className="text-[10px] font-black uppercase opacity-40">Total HT</span>
+            <span className="text-[13px] font-black uppercase opacity-40">Total HT</span>
             <span className="text-4xl font-black italic tracking-tighter text-white">{totalHT.toFixed(2)}€</span>
           </div>
           <button 

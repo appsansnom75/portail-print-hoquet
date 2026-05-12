@@ -38,7 +38,7 @@ export default function ImageModal({ isOpen, onClose, imageSrc, imageAlt }: Imag
             {/* Bouton fermer */}
             <button 
               onClick={onClose}
-              className="absolute -top-12 right-0 text-white font-black uppercase text-[10px] tracking-widest hover:text-blue-500 transition-colors"
+              className="absolute -top-12 right-0 text-white font-black uppercase text-[13px] tracking-widest hover:text-blue-500 transition-colors"
             >
               Fermer ×
             </button>

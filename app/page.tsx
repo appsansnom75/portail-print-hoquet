@@ -67,7 +67,7 @@ export default function HomePage() {
             <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter text-white">
               Catalogue <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-400">Print</span>
             </h2>
-            <p className="text-[10px] md:text-xs font-black uppercase tracking-[0.5em] text-white/20 mt-2">Édition 2026</p>
+            <p className="text-[13px] md:text-xs font-black uppercase tracking-[0.5em] text-white/20 mt-2">Édition 2026</p>
           </div>
         </div>
       </section>
@@ -80,11 +80,11 @@ export default function HomePage() {
             <div className="flex items-center gap-4 bg-white/[0.03] px-5 py-2.5 rounded-full border border-white/5">
               <span className={`h-2 w-2 rounded-full ${loading ? 'bg-white/20' : 'bg-green-500 shadow-[0_0_10px_#22c55e]'}`}></span>
               <div className="flex items-center gap-3">
-                <span className="text-[9px] font-black uppercase tracking-widest text-white/30 italic">Session :</span>
+                <span className="text-[12px] font-black uppercase tracking-widest text-white/30 italic">Session :</span>
                 {loading ? (
-                  <span className="text-[10px] font-black uppercase text-white/20 animate-pulse italic">Initialisation...</span>
+                  <span className="text-[13px] font-black uppercase text-white/20 animate-pulse italic">Initialisation...</span>
                 ) : (
-                  <span className="text-[10px] font-black uppercase text-white/90 tracking-tight">
+                  <span className="text-[13px] font-black uppercase text-white/90 tracking-tight">
                     {userName} <span className="text-blue-500/50 mx-1">@</span> <span className="text-blue-400">{agencyName}</span>
                   </span>
                 )}
@@ -95,32 +95,32 @@ export default function HomePage() {
               {!loading && (
                 <>
                   {role === 'super_admin' && (
-                    <Link href="/admin-portal" className="bg-white text-[#0f092e] hover:bg-blue-500 hover:text-white text-[9px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all shadow-xl active:scale-95 border border-white">
+                    <Link href="/admin-portal" className="bg-white text-[#0f092e] hover:bg-blue-500 hover:text-white text-[12px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all shadow-xl active:scale-95 border border-white">
                       Dashboard Produits
                     </Link>
                   )}
                   {role === 'super_admin' && (
-                    <Link href="/profil" className="bg-white/5 border border-white/10 hover:border-blue-500/50 text-white/70 hover:text-white text-[9px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all active:scale-95">
+                    <Link href="/profil" className="bg-white/5 border border-white/10 hover:border-blue-500/50 text-white/70 hover:text-white text-[12px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all active:scale-95">
                       Mon Profil Admin
                     </Link>
                   )}
                   {role === 'admin_agence' && (
-                    <Link href="/profil" className="bg-white/5 border border-white/10 hover:border-blue-500/50 text-white/70 hover:text-white text-[9px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all active:scale-95">
+                    <Link href="/profil" className="bg-white/5 border border-white/10 hover:border-blue-500/50 text-white/70 hover:text-white text-[12px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all active:scale-95">
                       Infos Agence
                     </Link>
                   )}
                   {role !== 'super_admin' && (
-                    <Link href="/dashboard/equipe" className="bg-blue-600/10 border border-blue-500/20 hover:bg-blue-600/20 text-blue-400 text-[9px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all">
+                    <Link href="/dashboard/equipe" className="bg-blue-600/10 border border-blue-500/20 hover:bg-blue-600/20 text-blue-400 text-[12px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all">
                       Équipe
                     </Link>
                   )}
                 </>
               )}
-              <Link href="/panier" className="relative bg-white/5 border border-white/10 hover:bg-white/10 text-white text-[9px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all">
+              <Link href="/panier" className="relative bg-white/5 border border-white/10 hover:bg-white/10 text-white text-[12px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all">
                 Panier ({cart.length})
                 {hasItems && <span className="absolute -top-1.5 -right-1.5 h-3 w-3 bg-green-500 rounded-full border-2 border-[#0f092e] animate-bounce"></span>}
               </Link>
-              <button onClick={handleLogout} className="text-[9px] font-black uppercase tracking-widest text-red-500/40 hover:text-red-500 px-2 py-3 transition-colors">
+              <button onClick={handleLogout} className="text-[12px] font-black uppercase tracking-widest text-red-500/40 hover:text-red-500 px-2 py-3 transition-colors">
                 Quitter
               </button>
             </div>
@@ -139,7 +139,7 @@ export default function HomePage() {
             <div className="h-44 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-blue-600/10 group-hover:border-blue-500/40 group-hover:-translate-y-1 shadow-2xl">
               <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-blue-400 transition-colors">Produits personnalisables</span>
               <div className="h-[2px] w-6 bg-blue-500 my-4 group-hover:w-20 transition-all duration-700"></div>
-              <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.3em] group-hover:text-blue-500/50">Sur-Mesure</span>
+              <span className="text-[11px] font-black text-white/20 uppercase tracking-[0.3em] group-hover:text-blue-500/50">Sur-Mesure</span>
             </div>
           </Link>
 
@@ -147,7 +147,7 @@ export default function HomePage() {
             <div className="h-44 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-green-600/10 group-hover:border-green-500/40 group-hover:-translate-y-1 shadow-2xl">
               <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-green-400 transition-colors">Produits non personnalisés</span>
               <div className="h-[2px] w-6 bg-green-500 my-4 group-hover:w-20 transition-all duration-700"></div>
-              <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.3em] group-hover:text-green-500/50">Catalogue Direct</span>
+              <span className="text-[11px] font-black text-white/20 uppercase tracking-[0.3em] group-hover:text-green-500/50">Catalogue Direct</span>
             </div>
           </Link>
 
@@ -160,7 +160,7 @@ export default function HomePage() {
             <div className="h-44 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-orange-600/10 group-hover:border-orange-500/40 group-hover:-translate-y-1 shadow-2xl">
               <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-orange-400 transition-colors">Gamme Business</span>
               <div className="h-[2px] w-6 bg-orange-500 my-4 group-hover:w-20 transition-all duration-700"></div>
-              <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.3em] group-hover:text-orange-500/50">Guy Hoquet Exclusive</span>
+              <span className="text-[11px] font-black text-white/20 uppercase tracking-[0.3em] group-hover:text-orange-500/50">Guy Hoquet Exclusive</span>
             </div>
           </Link>
 
@@ -168,7 +168,7 @@ export default function HomePage() {
             <div className="h-44 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-cyan-600/10 group-hover:border-cyan-400/40 group-hover:-translate-y-1 shadow-2xl">
               <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-cyan-400 transition-colors">Signalétique</span>
               <div className="h-[2px] w-6 bg-cyan-400 my-4 group-hover:w-20 transition-all duration-700"></div>
-              <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.3em] group-hover:text-cyan-400/50">Supports & Affichage</span>
+              <span className="text-[11px] font-black text-white/20 uppercase tracking-[0.3em] group-hover:text-cyan-400/50">Supports & Affichage</span>
             </div>
           </Link>
 
@@ -176,7 +176,7 @@ export default function HomePage() {
             <div className="h-44 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-purple-600/15 group-hover:border-purple-500/50 group-hover:-translate-y-1 shadow-2xl">
               <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-purple-400 transition-colors">Opérations du moment</span>
               <div className="h-[2px] w-6 bg-purple-500 my-4 group-hover:w-20 transition-all duration-700"></div>
-              <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.3em] group-hover:text-purple-500/50">Offres Ephémères</span>
+              <span className="text-[11px] font-black text-white/20 uppercase tracking-[0.3em] group-hover:text-purple-500/50">Offres Ephémères</span>
             </div>
           </Link>
 
@@ -222,7 +222,7 @@ export default function HomePage() {
             <path d="M16 10a4 4 0 0 1-8 0"/>
           </svg>
           {cart.length > 0 && (
-            <span className="absolute -top-3 -right-3 bg-blue-500 text-white text-[9px] font-black w-6 h-6 rounded-full flex items-center justify-center border-4 border-[#0f092e]">
+            <span className="absolute -top-3 -right-3 bg-blue-500 text-white text-[12px] font-black w-6 h-6 rounded-full flex items-center justify-center border-4 border-[#0f092e]">
               {cart.length}
             </span>
           )}
