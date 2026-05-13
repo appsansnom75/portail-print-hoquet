@@ -44,7 +44,7 @@ function ImageModal({ isOpen, onClose, imageSrc, imageAlt }: { isOpen: boolean, 
 }
 
 const THEME = { 
-  category: 'Signaletique', 
+  category: 'Stock', 
   label: 'Produits non personnalisés', 
   color: 'text-green-500', 
   bg: 'bg-green-500' 
