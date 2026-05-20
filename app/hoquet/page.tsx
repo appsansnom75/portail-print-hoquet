@@ -6,8 +6,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import CartDrawer from '@/components/CartDrawer';
 
-
-// --- COMPOSANT MODAL ZOOM ---
 function ImageModal({ isOpen, onClose, imageSrc, imageAlt }: { isOpen: boolean, onClose: () => void, imageSrc: string, imageAlt: string }) {
   return (
     <AnimatePresence>
@@ -28,8 +26,6 @@ function ImageModal({ isOpen, onClose, imageSrc, imageAlt }: { isOpen: boolean, 
   );
 }
 
-
-// --- MODAL CRÉER UN PROFIL ---
 function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaults }: {
   isOpen: boolean; onClose: () => void; agencyId: string;
   onCreated: (member: any) => void;
@@ -38,10 +34,10 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
   const [prenom, setPrenom]         = useState('');
   const [nom, setNom]               = useState('');
   const [email, setEmail]           = useState('');
-  const [phone, setPhone]           = useState('');       // optionnel
-  const [phoneFix, setPhoneFix]     = useState('');       // optionnel
+  const [phone, setPhone]           = useState('');
+  const [phoneFix, setPhoneFix]     = useState('');
   const [fonction, setFonction]     = useState('');
-  const [rsac, setRsac]             = useState('');       // optionnel
+  const [rsac, setRsac]             = useState('');
   const [adresse, setAdresse]       = useState('');
   const [ville, setVille]           = useState('');
   const [codePostal, setCodePostal] = useState('');
@@ -104,7 +100,6 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
     if (!adresse.trim())    e.adresse    = 'Requis';
     if (!ville.trim())      e.ville      = 'Requis';
     if (!codePostal.trim()) e.codePostal = 'Requis';
-    // phone, phoneFix, rsac → optionnels
     return e;
   };
 
@@ -154,8 +149,6 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
             </div>
 
             <div className="space-y-6">
-
-              {/* ── PHOTO — en premier, optionnelle visible sur le bouton ── */}
               <div className="flex items-center gap-5">
                 <div onClick={() => fileInputRef.current?.click()}
                   className="h-16 w-16 rounded-full border-2 border-dashed border-white/20 hover:border-orange-500 bg-white/5 flex items-center justify-center cursor-pointer transition-all overflow-hidden shrink-0">
@@ -170,7 +163,6 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
                   className="hidden" />
               </div>
 
-              {/* ── IDENTITÉ ── */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">Prénom <span className="text-red-400">*</span></label>
@@ -185,40 +177,32 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
                   <input type="text" value={fonction} onChange={(e) => setFonction(e.target.value)} className={inputClass('fonction')} />
                 </div>
                 <div>
-                  {/* ✅ RSAC Ville — optionnel */}
                   <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">
                     RSAC Ville <span className="text-white/20 normal-case font-medium text-[7px]">(optionnel)</span>
                   </label>
-                  <input type="text" value={rsac} onChange={(e) => setRsac(e.target.value)}
-                    placeholder="Ex: 123 456 789" className={inputClass('rsac')} />
+                  <input type="text" value={rsac} onChange={(e) => setRsac(e.target.value)} placeholder="Ex: 123 456 789" className={inputClass('rsac')} />
                 </div>
               </div>
 
-              {/* ── CONTACT ── */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">Email <span className="text-red-400">*</span></label>
                   <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass('email')} />
                 </div>
                 <div>
-                  {/* ✅ Mobile — optionnel */}
                   <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">
                     Mobile <span className="text-white/20 normal-case font-medium text-[7px]">(optionnel)</span>
                   </label>
-                  <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
-                    placeholder="06 00 00 00 00" className={inputClass('phone')} />
+                  <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="06 00 00 00 00" className={inputClass('phone')} />
                 </div>
                 <div className="md:col-span-2">
-                  {/* ✅ Téléphone fixe — optionnel */}
                   <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">
                     Téléphone fixe <span className="text-white/20 normal-case font-medium text-[7px]">(optionnel)</span>
                   </label>
-                  <input type="tel" value={phoneFix} onChange={(e) => setPhoneFix(e.target.value)}
-                    placeholder="02 00 00 00 00" className={inputClass('phoneFix')} />
+                  <input type="tel" value={phoneFix} onChange={(e) => setPhoneFix(e.target.value)} placeholder="02 00 00 00 00" className={inputClass('phoneFix')} />
                 </div>
               </div>
 
-              {/* ── ADRESSE ── */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="md:col-span-2">
                   <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">Adresse <span className="text-red-400">*</span></label>
@@ -253,14 +237,12 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
   );
 }
 
-
 const THEME = {
   category: 'Vetements',
   label: 'Gamme Business',
   color: 'text-orange-500',
   bg: 'bg-orange-500'
 };
-
 
 export default function BusinessPage() {
   const { cart, addToCart }           = useCart();
@@ -375,9 +357,7 @@ export default function BusinessPage() {
   return (
     <div className="min-h-screen bg-[#0f092e] text-white flex flex-col relative overflow-x-hidden">
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
-
       <ImageModal isOpen={!!selectedImage} onClose={() => setSelectedImage(null)} imageSrc={selectedImage || ''} imageAlt="Aperçu produit" />
-
       <CreateProfileModal
         isOpen={isCreateModalOpen}
         onClose={() => { setIsCreateModalOpen(false); setPendingProductId(null); }}
@@ -455,11 +435,13 @@ export default function BusinessPage() {
                     <select value={sel.qty}
                       onChange={(e) => setSelections({...selections, [p.id]:{...sel, qty: Number(e.target.value)}})}
                       className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[13px] font-black uppercase text-white outline-none focus:border-orange-500 transition-all cursor-pointer">
-                      {p.quantities.map((q:any) => <option key={q} value={q}>{q} exemplaires</option>)}
+                      {/* ✅ FIX singulier/pluriel */}
+                      {p.quantities.map((q:any) => (
+                        <option key={q} value={q}>{q} exemplaire{q > 1 ? 's' : ''}</option>
+                      ))}
                     </select>
                   </div>
 
-                  {/* ── QUI COMMANDE ? ── */}
                   {needsMember && (
                     <div className="space-y-1 border-t border-white/5 pt-4">
                       <label className="text-[10px] font-black uppercase ml-2 tracking-widest flex items-center gap-1.5">

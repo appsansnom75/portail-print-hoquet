@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import CartDrawer from '@/components/CartDrawer';
 
+
 // --- COMPOSANT MODAL ZOOM ---
 function ImageModal({ isOpen, onClose, imageSrc, imageAlt }: { isOpen: boolean, onClose: () => void, imageSrc: string, imageAlt: string }) {
   return (
@@ -43,12 +44,14 @@ function ImageModal({ isOpen, onClose, imageSrc, imageAlt }: { isOpen: boolean, 
   );
 }
 
+
 const THEME = { 
   category: 'Stock', 
   label: 'Produits non personnalisés', 
   color: 'text-green-500', 
   bg: 'bg-green-500' 
 };
+
 
 export default function SignaletiquePage() {
   const { cart, addToCart } = useCart();
@@ -58,8 +61,8 @@ export default function SignaletiquePage() {
   const [selections, setSelections] = useState<any>({});
   const [flippedProducts, setFlippedProducts] = useState<Record<string, boolean>>({});
   
-  // État pour le zoom
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -100,9 +103,11 @@ export default function SignaletiquePage() {
     fetchProducts();
   }, []);
 
+
   const toggleFlip = (id: string) => {
     setFlippedProducts(prev => ({ ...prev, [id]: !prev[id] }));
   };
+
 
   const handleAddToCart = (p: any) => {
     const s = selections[p.id];
@@ -121,17 +126,18 @@ export default function SignaletiquePage() {
     setIsCartOpen(true);
   };
 
+
   if (loading) return (
     <div className="min-h-screen bg-[#0f092e] flex items-center justify-center font-black text-green-500 uppercase animate-pulse tracking-widest">
       Chargement Produits non personnalisés...
     </div>
   );
 
+
   return (
     <div className="min-h-screen bg-[#0f092e] text-white flex flex-col relative overflow-x-hidden">
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
       
-      {/* MODAL DE ZOOM */}
       <ImageModal 
         isOpen={!!selectedImage} 
         onClose={() => setSelectedImage(null)} 
@@ -144,6 +150,7 @@ export default function SignaletiquePage() {
         <h1 className={`text-[13px] font-black uppercase tracking-[0.3em] ${THEME.color} italic`}>{THEME.label}</h1>
         <div className="w-10"></div>
       </header>
+
 
       <main className="max-w-7xl mx-auto w-full py-16 px-6 pb-40 grid grid-cols-1 md:grid-cols-3 gap-12">
         {products.map((p) => {
@@ -165,14 +172,14 @@ export default function SignaletiquePage() {
 
           return (
             <div key={p.id} className="pt-10 relative group">
+
               {/* ZONE IMAGE */}
               <div className="h-48 w-full flex items-center justify-center relative -mb-10 z-20">
                 
-                {/* BOUTON DYNAMIQUE VOIR VERSO / RECTO */}
                 {(p.image_verso || currentVariant?.image_verso) && (
                   <button 
                     onClick={(e) => {
-                      e.stopPropagation(); // Empêche l'ouverture du zoom lors du flip
+                      e.stopPropagation();
                       toggleFlip(p.id);
                     }}
                     className="absolute right-0 bottom-4 z-30 bg-white text-black px-4 py-2 rounded-full shadow-xl hover:bg-green-500 hover:text-white transition-all active:scale-95 flex items-center gap-2 shadow-black/20"
@@ -194,7 +201,7 @@ export default function SignaletiquePage() {
                     exit={{ opacity: 0, x: isFlipped ? -20 : 20 }}
                     transition={{ duration: 0.3, ease: "easeOut" }}
                     src={currentImg} 
-                    onClick={() => setSelectedImage(currentImg)} // Ouvre le zoom au clic
+                    onClick={() => setSelectedImage(currentImg)}
                     className="max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] cursor-zoom-in transition-transform duration-500 group-hover:scale-110" 
                     alt={p.name}
                   />
@@ -216,7 +223,7 @@ export default function SignaletiquePage() {
                         }} 
                         className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[13px] font-black uppercase text-white outline-none focus:border-green-500 transition-all cursor-pointer"
                       >
-                        {p.variants.map((v:any)=><option key={v.id} value={v.id}>{v.name}</option>)}
+                        {p.variants.map((v:any) => <option key={v.id} value={v.id}>{v.name}</option>)}
                       </select>
                     </div>
                   )}
@@ -228,7 +235,12 @@ export default function SignaletiquePage() {
                       onChange={(e) => setSelections({...selections, [p.id]:{...sel, qty: Number(e.target.value)}})} 
                       className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[13px] font-black uppercase text-white outline-none focus:border-green-500 transition-all cursor-pointer"
                     >
-                      {p.quantities.map((q:any)=><option key={q} value={q}>{q} exemplaires</option>)}
+                      {/* ✅ FIX singulier/pluriel */}
+                      {p.quantities.map((q: any) => (
+                        <option key={q} value={q}>
+                          {q} exemplaire{q > 1 ? 's' : ''}
+                        </option>
+                      ))}
                     </select>
                   </div>
 

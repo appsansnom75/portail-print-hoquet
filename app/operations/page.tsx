@@ -6,34 +6,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import CartDrawer from '@/components/CartDrawer';
 
-// --- COMPOSANT MODAL ZOOM ---
 function ImageModal({ isOpen, onClose, imageSrc, imageAlt }: { isOpen: boolean, onClose: () => void, imageSrc: string, imageAlt: string }) {
   return (
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 md:p-10">
-          <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="absolute inset-0 bg-black/95 backdrop-blur-sm cursor-zoom-out"
-          />
-          <motion.div 
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.8, opacity: 0 }}
-            className="relative max-w-full max-h-full flex items-center justify-center"
-          >
-            <img 
-              src={imageSrc} 
-              alt={imageAlt} 
-              className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl"
-            />
-            <button 
-              onClick={onClose}
-              className="absolute -top-12 right-0 text-white font-black uppercase text-[13px] tracking-widest hover:text-purple-500 transition-colors"
-            >
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={onClose} className="absolute inset-0 bg-black/95 backdrop-blur-sm cursor-zoom-out" />
+          <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }}
+            className="relative max-w-full max-h-full flex items-center justify-center">
+            <img src={imageSrc} alt={imageAlt} className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl" />
+            <button onClick={onClose} className="absolute -top-12 right-0 text-white font-black uppercase text-[13px] tracking-widest hover:text-purple-500 transition-colors">
               Fermer ×
             </button>
           </motion.div>
@@ -43,7 +26,6 @@ function ImageModal({ isOpen, onClose, imageSrc, imageAlt }: { isOpen: boolean, 
   );
 }
 
-// THÈME ADAPTÉ : Couleur Violette pour les opérations
 const THEME = { 
   category: 'Operations', 
   label: 'Opérations du moment', 
@@ -58,8 +40,6 @@ export default function OperationsPage() {
   const [loading, setLoading] = useState(true);
   const [selections, setSelections] = useState<any>({});
   const [flippedProducts, setFlippedProducts] = useState<Record<string, boolean>>({});
-  
-  // État pour le zoom
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -84,7 +64,6 @@ export default function OperationsPage() {
             prices: p.config?.prices || { default: [] }
           }));
           setProducts(formatted);
-          
           setSelections(formatted.reduce((acc, p) => ({ 
             ...acc, [p.id]: { 
               qty: p.quantities[0] || 0, 
@@ -110,7 +89,6 @@ export default function OperationsPage() {
     const pList = p.prices[s.variant] || p.prices.default || [];
     const priceIndex = p.quantities.indexOf(Number(s.qty));
     const totalHT = pList[priceIndex] || 0;
-
     addToCart({ 
       id: `${p.id}-${s.variant}`, 
       name: `${p.name}${p.hasVariants ? ' - ' + (p.variants.find((v:any)=>v.id===s.variant)?.name || '') : ''}`, 
@@ -132,7 +110,6 @@ export default function OperationsPage() {
     <div className="min-h-screen bg-[#0f092e] text-white flex flex-col relative overflow-x-hidden">
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
       
-      {/* MODAL DE ZOOM */}
       <ImageModal 
         isOpen={!!selectedImage} 
         onClose={() => setSelectedImage(null)} 
@@ -172,26 +149,34 @@ export default function OperationsPage() {
 
               return (
                 <div key={p.id} className="pt-10 relative group">
-                  {/* ZONE IMAGE */}
                   <div className="h-48 w-full flex items-center justify-center relative -mb-10 z-20">
+
+                    {/* ✅ BOUTON VOIR VERSO / VOIR RECTO — identique aux autres pages */}
                     {(p.image_verso || currentVariant?.image_verso) && (
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
                           toggleFlip(p.id);
                         }}
-                        className={`absolute right-0 bottom-4 z-30 bg-white text-black px-4 py-2 rounded-full shadow-xl hover:${THEME.bg} hover:text-white transition-all active:scale-95 flex items-center gap-2`}
+                        className="absolute right-0 bottom-4 z-30 bg-white text-black px-4 py-2 rounded-full shadow-xl hover:bg-purple-500 hover:text-white transition-all active:scale-95 flex items-center gap-2 shadow-black/20"
                       >
-                        <span className="text-[12px] font-black uppercase tracking-wider">{isFlipped ? 'Recto' : 'Verso'}</span>
+                        <span className="text-[12px] font-black uppercase tracking-wider">
+                          {isFlipped ? 'Voir Recto' : 'Voir Verso'}
+                        </span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
+                          className={`transition-transform duration-500 ${isFlipped ? 'rotate-180' : ''}`}>
+                          <path d="m15 18 6-6-6-6"/><path d="M3 12h18"/>
+                        </svg>
                       </button>
                     )}
 
                     <AnimatePresence mode="wait">
                       <motion.img 
                         key={currentImg}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.9 }}
+                        initial={{ opacity: 0, x: isFlipped ? 20 : -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: isFlipped ? -20 : 20 }}
+                        transition={{ duration: 0.3, ease: "easeOut" }}
                         src={currentImg} 
                         onClick={() => setSelectedImage(currentImg)}
                         className="max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] cursor-zoom-in transition-transform duration-500 group-hover:scale-110" 
@@ -200,7 +185,7 @@ export default function OperationsPage() {
                     </AnimatePresence>
                   </div>
 
-                  <div className={`bg-white/[0.03] border border-white/10 rounded-[40px] p-8 pt-16 hover:bg-white/[0.05] hover:border-purple-500/30 transition-all duration-500 shadow-xl`}>
+                  <div className="bg-white/[0.03] border border-white/10 rounded-[40px] p-8 pt-16 hover:bg-white/[0.05] hover:border-purple-500/30 transition-all duration-500 shadow-xl">
                     <h3 className={`font-black text-base uppercase mb-6 ${THEME.color} tracking-tight`}>{p.name}</h3>
                     <div className="space-y-4">
                       {p.hasVariants && (
@@ -214,27 +199,33 @@ export default function OperationsPage() {
                             }} 
                             className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[13px] font-black uppercase text-white outline-none focus:border-purple-500 transition-all cursor-pointer"
                           >
-                            {p.variants.map((v:any)=><option key={v.id} value={v.id}>{v.name}</option>)}
+                            {p.variants.map((v:any) => <option key={v.id} value={v.id}>{v.name}</option>)}
                           </select>
                         </div>
                       )}
                       
                       <div className="space-y-1">
-                        <p className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-1">Quantité</p>
+                        <p className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-1">Quantité souhaitée</p>
                         <select 
                           value={sel.qty} 
                           onChange={(e) => setSelections({...selections, [p.id]:{...sel, qty: Number(e.target.value)}})} 
                           className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[13px] font-black uppercase text-white outline-none focus:border-purple-500 transition-all cursor-pointer"
                         >
-                          {p.quantities.map((q:any)=><option key={q} value={q}>{q} ex.</option>)}
+                          {/* ✅ FIX singulier/pluriel */}
+                          {p.quantities.map((q:any) => (
+                            <option key={q} value={q}>{q} exemplaire{q > 1 ? 's' : ''}</option>
+                          ))}
                         </select>
                       </div>
 
                       <div className="flex items-center justify-between pt-6 border-t border-white/5 mt-4">
-                        <span className="font-black text-2xl text-white">{currentPrice.toFixed(2)}€</span>
+                        <div className="flex flex-col">
+                          <span className="font-black text-2xl text-white">{currentPrice.toFixed(2)}€</span>
+                          <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest italic">Hors Taxes (HT)</span>
+                        </div>
                         <button 
                           onClick={() => handleAddToCart(p)} 
-                          className={`bg-white text-[#0f092e] px-8 py-3.5 rounded-2xl font-black uppercase text-[12px] hover:${THEME.bg} hover:text-white transition-all shadow-lg active:scale-95`}
+                          className="bg-white text-[#0f092e] px-8 py-3.5 rounded-2xl font-black uppercase text-[12px] tracking-widest hover:bg-purple-500 hover:text-white transition-all shadow-lg active:scale-95"
                         >
                           Ajouter
                         </button>
@@ -248,7 +239,6 @@ export default function OperationsPage() {
         )}
       </main>
 
-      {/* BOUTON PANIER FLOTTANT */}
       <button 
         onClick={() => setIsCartOpen(true)} 
         className="fixed bottom-8 right-8 w-16 h-16 bg-white rounded-full shadow-2xl flex items-center justify-center z-[100] hover:scale-110 active:scale-95 transition-all group"
