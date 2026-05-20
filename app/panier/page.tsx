@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 
 
-
 export default function CartPage() {
   const { cart, removeFromCart, clearCart } = useCart();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -46,11 +45,12 @@ export default function CartPage() {
   const [mentionsApe, setMentionsApe]                                       = useState('');
   const [mentionsCartePro, setMentionsCartePro]                             = useState('');
   const [mentionsCarteProDelivree, setMentionsCarteProDelivree]             = useState('');
-  const [mentionsCarteProDelivreeType, setMentionsCarteProDelivreeType]     = useState('la CCI de'); // ✅ NOUVEAU
+  const [mentionsCarteProDelivreeType, setMentionsCarteProDelivreeType]     = useState('la CCI de');
   const [mentionsCaisseGarantie, setMentionsCaisseGarantie]                 = useState('');
   const [mentionsCaisseGarantieAdresse, setMentionsCaisseGarantieAdresse]   = useState('');
   const [mentionsTva, setMentionsTva]                                       = useState('');
-  const [mentionsMailRgpd, setMentionsMailRgpd]                             = useState('');
+  // ✅ Code RGPD uniquement
+  const [mentionsMailRgpdCode, setMentionsMailRgpdCode]                     = useState('');
 
   const totalHT  = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
   const totalTTC = totalHT * 1.2;
@@ -90,11 +90,16 @@ export default function CartPage() {
           setMentionsApe(agency.mentions_ape                                || '');
           setMentionsCartePro(agency.mentions_carte_pro                     || '');
           setMentionsCarteProDelivree(agency.mentions_carte_pro_delivree    || '');
-          setMentionsCarteProDelivreeType(agency.mentions_carte_pro_delivree_type || 'la CCI de'); // ✅ NOUVEAU
+          setMentionsCarteProDelivreeType(agency.mentions_carte_pro_delivree_type || 'la CCI de');
           setMentionsCaisseGarantie(agency.mentions_caisse_garantie         || '');
           setMentionsCaisseGarantieAdresse(agency.mentions_caisse_garantie_adresse || '');
           setMentionsTva(agency.mentions_tva                                || '');
-          setMentionsMailRgpd(agency.mentions_mail_rgpd                     || '');
+          // ✅ Extraire uniquement le code
+          const rgpdStored = agency.mentions_mail_rgpd || '';
+          const rgpdCode = rgpdStored
+            .replace('informatique-et-libertes-', '')
+            .replace('@guyhoquet.com', '');
+          setMentionsMailRgpdCode(rgpdCode);
         }
 
         const { data: collabs } = await supabase
@@ -131,11 +136,12 @@ export default function CartPage() {
       mentions_ape:                     mentionsApe,
       mentions_carte_pro:               mentionsCartePro,
       mentions_carte_pro_delivree:      mentionsCarteProDelivree,
-      mentions_carte_pro_delivree_type: mentionsCarteProDelivreeType, // ✅ NOUVEAU
+      mentions_carte_pro_delivree_type: mentionsCarteProDelivreeType,
       mentions_caisse_garantie:         mentionsCaisseGarantie,
       mentions_caisse_garantie_adresse: mentionsCaisseGarantieAdresse,
       mentions_tva:                     mentionsTva,
-      mentions_mail_rgpd:               mentionsMailRgpd,
+      // ✅ Sauvegarde le mail complet
+      mentions_mail_rgpd: `informatique-et-libertes-${mentionsMailRgpdCode}@guyhoquet.com`,
     }).eq('id', agenceId);
   };
 
@@ -156,11 +162,11 @@ export default function CartPage() {
       mentionsRcs.trim() &&
       mentionsApe.trim() &&
       mentionsCartePro.trim() &&
-      mentionsCarteProDelivree.trim() && // la valeur texte suffit pour valider
+      mentionsCarteProDelivree.trim() &&
       mentionsCaisseGarantie.trim() &&
       mentionsCaisseGarantieAdresse.trim() &&
       mentionsTva.trim() &&
-      mentionsMailRgpd.trim();
+      mentionsMailRgpdCode.trim(); // ✅ valide sur le code uniquement
 
     return !!(siret.trim() && livraisonOk && mentionsOk);
   };
@@ -259,12 +265,13 @@ export default function CartPage() {
           mentions_rcs:                     mentionsRcs,
           mentions_ape:                     mentionsApe,
           mentions_carte_pro:               mentionsCartePro,
-          // ✅ Make reçoit une string complète : "la préfecture de Paname"
+          // ✅ String complète pour Make
           mentions_carte_pro_delivree: `${mentionsCarteProDelivreeType} ${mentionsCarteProDelivree}`.trim(),
           mentions_caisse_garantie:         mentionsCaisseGarantie,
           mentions_caisse_garantie_adresse: mentionsCaisseGarantieAdresse,
           mentions_tva:                     mentionsTva,
-          mentions_mail_rgpd:               mentionsMailRgpd,
+          // ✅ Mail complet pour Make
+          mentions_mail_rgpd: `informatique-et-libertes-${mentionsMailRgpdCode}@guyhoquet.com`,
         }),
       });
 
@@ -320,7 +327,7 @@ export default function CartPage() {
         : 'border-blue-500/20 focus:border-blue-500'
     }`;
 
-  // Champs mentions légales dans l'accordéon (hors "Délivrée par" qui est traité séparément)
+  // ✅ "Mail RGPD" retiré du tableau — géré séparément
   const mentionsLegalesFields = [
     { label: 'Ville sous le logo',        val: mentionsVilleAgence,            set: setMentionsVilleAgence,            ph: 'Ex: ANGERS' },
     { label: 'URL QR Code',               val: mentionsUrlQrCode,              set: setMentionsUrlQrCode,              ph: 'Ex: https://www.guy-hoquet.com/agence-angers' },
@@ -329,17 +336,16 @@ export default function CartPage() {
     { label: 'RCS',                       val: mentionsRcs,                    set: setMentionsRcs,                    ph: 'Ex: Paris 123 456 789' },
     { label: 'Code APE',                  val: mentionsApe,                    set: setMentionsApe,                    ph: 'Ex: 6831Z' },
     { label: 'N° Carte Professionnelle',  val: mentionsCartePro,               set: setMentionsCartePro,               ph: 'Ex: CPI 7501 2016 000 012 345' },
-    // ✅ "Délivrée par" est retiré du tableau — géré séparément en dessous
     { label: 'Caisse de Garantie',        val: mentionsCaisseGarantie,         set: setMentionsCaisseGarantie,         ph: 'Ex: GALIAN Assurances' },
     { label: 'Adresse Caisse',            val: mentionsCaisseGarantieAdresse,  set: setMentionsCaisseGarantieAdresse,  ph: 'Ex: 89 rue de la Boétie, 75008 Paris' },
     { label: 'TVA Intracommunautaire',    val: mentionsTva,                    set: setMentionsTva,                    ph: 'Ex: FR 12 123456789' },
-    { label: 'Mail RGPD',                 val: mentionsMailRgpd,               set: setMentionsMailRgpd,               ph: 'Ex: informatique-et-libertes@guy-hoquet.com' },
   ] as { label: string; val: string; set: (v: string) => void; ph: string }[];
 
-  // Badge : compte aussi mentionsCarteProDelivree pour l'alerte
+  // ✅ Badge compte : champs du tableau + délivrée par + mail rgpd
   const mentionsIncomplets =
     mentionsLegalesFields.filter(f => !f.val.trim()).length +
-    (mentionsCarteProDelivree.trim() ? 0 : 1);
+    (mentionsCarteProDelivree.trim() ? 0 : 1) +
+    (mentionsMailRgpdCode.trim() ? 0 : 1);
 
 
   return (
@@ -354,7 +360,6 @@ export default function CartPage() {
       <main className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-3 gap-16">
         <div className="lg:col-span-2 space-y-12">
 
-
           {/* ── 01. IDENTIFICATION ──────────────────────────────────────────── */}
           <section className="bg-blue-600/5 border border-blue-500/20 rounded-[45px] p-10 space-y-4">
             <h2 className="text-[11px] font-black uppercase text-blue-400 italic">01. Identification</h2>
@@ -365,7 +370,6 @@ export default function CartPage() {
               </div>
             </div>
           </section>
-
 
           {/* ── 02. RÉCAPITULATIF ───────────────────────────────────────────── */}
           <section className="bg-white/[0.02] border border-white/10 rounded-[45px] p-10">
@@ -411,7 +415,6 @@ export default function CartPage() {
               )}
             </div>
           </section>
-
 
           {/* ── 03. INFORMATIONS DE LIVRAISON ───────────────────────────────── */}
           <section className="bg-white/[0.02] border border-white/10 rounded-[45px] p-10 space-y-8">
@@ -475,7 +478,6 @@ export default function CartPage() {
             </div>
           </section>
 
-
           {/* ── 04. INFORMATIONS FACTURATION & LÉGALES ──────────────────────── */}
           <section className="bg-white/[0.02] border border-white/10 rounded-[45px] p-10 space-y-8">
             <div>
@@ -507,7 +509,7 @@ export default function CartPage() {
                   placeholder="Ex: GUY HOQUET PARIS 1" className={inp(mentionsNomSociete)} />
               </div>
 
-              {/* Accordéon mentions légales complètes */}
+              {/* Accordéon mentions légales */}
               <div className="border border-white/10 rounded-[28px] overflow-hidden">
 
                 <button type="button" onClick={() => setMentionsOpen(!mentionsOpen)}
@@ -546,7 +548,7 @@ export default function CartPage() {
                     >
                       <div className="px-6 pb-6 space-y-5 border-t border-white/5 pt-5">
 
-                        {/* Champs génériques via map */}
+                        {/* Champs génériques */}
                         {mentionsLegalesFields.map(({ label, val, set, ph }) => (
                           <div key={label} className="space-y-1">
                             <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 flex items-center gap-2">
@@ -557,7 +559,7 @@ export default function CartPage() {
                           </div>
                         ))}
 
-                        {/* ✅ DÉLIVRÉE PAR — inséré après "N° Carte Pro" (index 6) */}
+                        {/* ✅ DÉLIVRÉE PAR — select + input */}
                         <div className="space-y-1">
                           <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 flex items-center gap-2">
                             Délivrée par <span className="text-red-400">*</span>
@@ -580,6 +582,37 @@ export default function CartPage() {
                           </div>
                         </div>
 
+                        {/* ✅ MAIL RGPD — champ splitté */}
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 flex items-center gap-2">
+                            Mail Informatique &amp; Libertés <span className="text-red-400">*</span>
+                          </label>
+                          <div className={`flex items-center bg-black/40 border rounded-2xl overflow-hidden transition-all ${
+                            !mentionsMailRgpdCode.trim()
+                              ? 'border-red-500/30 hover:border-red-500/50'
+                              : 'border-white/10 focus-within:border-blue-500'
+                          }`}>
+                            <span className="text-[11px] font-mono text-white/30 pl-4 pr-1 shrink-0 select-none whitespace-nowrap">
+                              informatique-et-libertes-
+                            </span>
+                            <input
+                              value={mentionsMailRgpdCode}
+                              onChange={(e) => setMentionsMailRgpdCode(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
+                              placeholder="XXXX"
+                              maxLength={20}
+                              className="flex-1 bg-transparent py-5 text-[13px] font-black outline-none text-white min-w-0 placeholder:text-white/20"
+                            />
+                            <span className="text-[11px] font-mono text-white/30 pr-4 pl-1 shrink-0 select-none whitespace-nowrap">
+                              @guyhoquet.com
+                            </span>
+                          </div>
+                          {mentionsMailRgpdCode.trim() && (
+                            <p className="text-[11px] text-blue-400/60 font-bold ml-2 mt-1">
+                              ✓ informatique-et-libertes-{mentionsMailRgpdCode}@guyhoquet.com
+                            </p>
+                          )}
+                        </div>
+
                       </div>
                     </motion.div>
                   )}
@@ -589,7 +622,6 @@ export default function CartPage() {
           </section>
 
         </div>
-
 
         {/* ── COLONNE DROITE : TOTAL ───────────────────────────────────────── */}
         <div className="lg:col-span-1">
@@ -611,7 +643,6 @@ export default function CartPage() {
           </div>
         </div>
       </main>
-
 
       {/* ── OVERLAY DE CONFIRMATION ──────────────────────────────────────────── */}
       <AnimatePresence>

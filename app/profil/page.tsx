@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
 
+
 const CAISSES_GARANTIE = [
   { nom: 'ASCO', adresse: '6 Boulevard Malesherbes - 75008 PARIS' },
   { nom: 'AXA FRANCE I.A.R.D.', adresse: "313 Terrasses de l'Arche - 92727 NANTERRE Cedex" },
@@ -20,7 +21,6 @@ const CAISSES_GARANTIE = [
 ];
 
 const STATUTS_JURIDIQUES = ['SARL', 'EURL', 'SELARL', 'SA', 'SASU', 'SNC', 'SCP', 'SAS'];
-
 const DELIVREE_PAR_OPTIONS = ['la CCI de', 'la préfecture de'];
 
 const selectStyle = {
@@ -37,7 +37,7 @@ export default function ProfilPage() {
 
   const [agenceId, setAgenceId] = useState<string | null>(null);
   const [agenceData, setAgenceData] = useState({
-    nom_affiche:                      '',   // nouveau champ séparé
+    nom_affiche:                      '',
     ville:                            '',
     adresse:                          '',
     code_postal:                      '',
@@ -52,13 +52,15 @@ export default function ProfilPage() {
     mentions_rcs:                     '',
     mentions_ape:                     '',
     mentions_carte_pro:               '',
-    mentions_carte_pro_delivree_type: 'la CCI de',   // nouveau : type (CCI / préfecture)
-    mentions_carte_pro_delivree:      '',             // valeur saisie
+    mentions_carte_pro_delivree_type: 'la CCI de',
+    mentions_carte_pro_delivree:      '',
     mentions_caisse_garantie:         '',
     mentions_caisse_garantie_adresse: '',
     mentions_tva:                     '',
-    mentions_mail_rgpd:               '',
   });
+
+  // ✅ State séparé pour le code RGPD uniquement
+  const [mentionsMailRgpdCode, setMentionsMailRgpdCode] = useState('');
 
 
   useEffect(() => {
@@ -102,8 +104,14 @@ export default function ProfilPage() {
             mentions_caisse_garantie:         agence.mentions_caisse_garantie || '',
             mentions_caisse_garantie_adresse: agence.mentions_caisse_garantie_adresse || '',
             mentions_tva:                     agence.mentions_tva || '',
-            mentions_mail_rgpd:               agence.mentions_mail_rgpd || '',
           });
+
+          // ✅ Extraire uniquement le code depuis la valeur stockée
+          const rgpdStored = agence.mentions_mail_rgpd || '';
+          const rgpdCode = rgpdStored
+            .replace('informatique-et-libertes-', '')
+            .replace('@guyhoquet.com', '');
+          setMentionsMailRgpdCode(rgpdCode);
         }
       }
       setLoading(false);
@@ -121,7 +129,7 @@ export default function ProfilPage() {
     }));
   };
 
-  // Validation : tous les champs obligatoires
+
   const validate = (): string | null => {
     const required: [keyof typeof agenceData, string][] = [
       ['nom_affiche',             'Nom affiché sous le logo'],
@@ -141,13 +149,14 @@ export default function ProfilPage() {
       ['mentions_carte_pro_delivree', 'Délivrée par'],
       ['mentions_caisse_garantie','Caisse de garantie'],
       ['mentions_tva',            'N° TVA intracommunautaire'],
-      ['mentions_mail_rgpd',      'Mail Informatique & Libertés'],
     ];
     for (const [key, label] of required) {
       if (!agenceData[key]?.trim()) return `Le champ « ${label} » est obligatoire.`;
     }
+    if (!mentionsMailRgpdCode.trim()) return `Le champ « Mail Informatique & Libertés » est obligatoire.`;
     return null;
   };
+
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -176,14 +185,15 @@ export default function ProfilPage() {
       mentions_caisse_garantie:         agenceData.mentions_caisse_garantie,
       mentions_caisse_garantie_adresse: agenceData.mentions_caisse_garantie_adresse,
       mentions_tva:                     agenceData.mentions_tva,
-      mentions_mail_rgpd:               agenceData.mentions_mail_rgpd,
+      // ✅ Sauvegarde le mail complet
+      mentions_mail_rgpd: `informatique-et-libertes-${mentionsMailRgpdCode}@guyhoquet.com`,
     }).eq('id', agenceId);
     if (error) alert('Erreur : ' + error.message);
     else alert('Infos agence mises à jour !');
     setUpdating(false);
   };
 
-  // Champ texte générique obligatoire
+
   const field = (
     label: string,
     key: keyof typeof agenceData,
@@ -217,7 +227,6 @@ export default function ProfilPage() {
     <div className="min-h-screen bg-[#0f092e] text-white p-6 md:p-12 selection:bg-blue-500/30">
       <div className="max-w-xl mx-auto">
 
-        {/* EN-TÊTE */}
         <div className="flex items-center justify-between mb-10">
           <h1 className="text-2xl font-black uppercase tracking-tighter italic text-blue-500">
             Infos Agence
@@ -235,7 +244,6 @@ export default function ProfilPage() {
           {/* ── BLOC 1 : INFOS PRINCIPALES ── */}
           <div className="space-y-6 bg-white/5 p-8 rounded-[40px] border border-white/10 backdrop-blur-xl shadow-2xl">
 
-            {/* NOM AFFICHÉ SOUS LOGO — champ dédié, séparé de la ville */}
             <div className="flex flex-col items-center pb-6 border-b border-white/5 space-y-2">
               <p className="text-[11px] font-black uppercase tracking-[0.3em] text-white/20">Guy Hoquet</p>
               <input
@@ -260,7 +268,6 @@ export default function ProfilPage() {
             {field('Téléphone Fixe Agence', 'phone_fix', 'Ex: 02 41 87 00 78', 'tel')}
             {field('Email Agence', 'agence_email', 'Ex: contact@agence.com', 'email')}
 
-            {/* QR CODE URL */}
             <div className="space-y-1">
               <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 block">QR Code (URL)</label>
               <input
@@ -275,7 +282,6 @@ export default function ProfilPage() {
               )}
             </div>
 
-            {/* SIRET */}
             <div className="space-y-1">
               <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 block flex items-center gap-1">
                 Numéro SIRET <span className="text-red-400">*</span>
@@ -303,7 +309,6 @@ export default function ProfilPage() {
 
             {field('Nom Société', 'mentions_nom_societe', 'Ex: GUY HOQUET ANGERS')}
 
-            {/* STATUT JURIDIQUE — liste déroulante */}
             <div className="space-y-1">
               <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 block flex items-center gap-1">
                 Statut Juridique <span className="text-red-400">*</span>
@@ -326,11 +331,8 @@ export default function ProfilPage() {
             {field('RCS', 'mentions_rcs', 'Ex: Angers 123 456 789')}
             {field('Code APE', 'mentions_ape', 'Ex: 6831Z')}
 
-            {/* CARTE PRO + DÉLIVRÉE PAR */}
             <div className="space-y-4">
               {field('N° Carte Professionnelle', 'mentions_carte_pro', 'Ex: CPI 7501 2016 000 012 345')}
-
-              {/* DÉLIVRÉE PAR — split type + valeur */}
               <div className="space-y-1">
                 <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 block flex items-center gap-1">
                   Délivrée par <span className="text-red-400">*</span>
@@ -358,7 +360,6 @@ export default function ProfilPage() {
               </div>
             </div>
 
-            {/* CAISSE DE GARANTIE */}
             <div className="space-y-3">
               <div className="space-y-1">
                 <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 block flex items-center gap-1">
@@ -377,7 +378,6 @@ export default function ProfilPage() {
                   ))}
                 </select>
               </div>
-
               <div className="space-y-1">
                 <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 block">
                   Adresse Caisse de Garantie
@@ -397,25 +397,36 @@ export default function ProfilPage() {
 
             {field('N° TVA Intracommunautaire', 'mentions_tva', 'Ex: FR 12 123456789')}
 
-            {/* MAIL RGPD — placeholder explicatif, pas de valeur par défaut */}
+            {/* ✅ MAIL RGPD — champ splitté */}
             <div className="space-y-1">
               <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 block flex items-center gap-1">
                 Mail Informatique &amp; Libertés <span className="text-red-400">*</span>
               </label>
-              <input
-                required
-                type="email"
-                value={agenceData.mentions_mail_rgpd}
-                onChange={(e) => setAgenceData({ ...agenceData, mentions_mail_rgpd: e.target.value })}
-                placeholder="informatique-et-libertes-XXXX@guyhoquet.com"
-                className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 transition-all font-medium text-sm text-white placeholder:text-white/20"
-              />
-              <p className="text-[10px] text-white/20 font-bold ml-2 mt-1">
-                Remplacez XXXX par le code de votre agence
-              </p>
+              <div className={`flex items-center bg-white/5 border rounded-2xl overflow-hidden transition-all ${
+                !mentionsMailRgpdCode.trim() ? 'border-red-500/30' : 'border-white/10 focus-within:border-blue-500'
+              }`}>
+                <span className="text-[11px] font-mono text-white/30 pl-4 pr-1 shrink-0 select-none whitespace-nowrap">
+                  informatique-et-libertes-
+                </span>
+                <input
+                  value={mentionsMailRgpdCode}
+                  onChange={(e) => setMentionsMailRgpdCode(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
+                  placeholder="XXXX"
+                  maxLength={20}
+                  className="flex-1 bg-transparent py-4 text-[13px] font-black outline-none text-white min-w-0 placeholder:text-white/20"
+                />
+                <span className="text-[11px] font-mono text-white/30 pr-4 pl-1 shrink-0 select-none whitespace-nowrap">
+                  @guyhoquet.com
+                </span>
+              </div>
+              {mentionsMailRgpdCode.trim() && (
+                <p className="text-[11px] text-blue-400/60 font-bold ml-2 mt-1">
+                  ✓ informatique-et-libertes-{mentionsMailRgpdCode}@guyhoquet.com
+                </p>
+              )}
             </div>
 
-            {/* APERÇU MENTIONS — avec code postal */}
+            {/* APERÇU MENTIONS */}
             {agenceData.mentions_nom_societe && (
               <div className="bg-black/30 border border-white/5 rounded-2xl p-5">
                 <p className="text-[10px] font-black uppercase tracking-widest text-white/20 mb-3">Aperçu</p>
@@ -432,13 +443,12 @@ export default function ProfilPage() {
                   {agenceData.mentions_caisse_garantie && agenceData.mentions_caisse_garantie !== 'Néant' && ` — Caisse de garantie ${agenceData.mentions_caisse_garantie}`}
                   {agenceData.mentions_caisse_garantie_adresse && ` — ${agenceData.mentions_caisse_garantie_adresse}`}
                   {agenceData.mentions_tva && ` — TVA intracommunautaire n° ${agenceData.mentions_tva}`}
-                  {agenceData.mentions_mail_rgpd && ` — Informatique & Libertés : ${agenceData.mentions_mail_rgpd}`}
+                  {mentionsMailRgpdCode && ` — Informatique & Libertés : informatique-et-libertes-${mentionsMailRgpdCode}@guyhoquet.com`}
                 </p>
               </div>
             )}
           </div>
 
-          {/* ── BOUTON SAVE ── */}
           <div className="pt-2">
             <button
               type="submit"
