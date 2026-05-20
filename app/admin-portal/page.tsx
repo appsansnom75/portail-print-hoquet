@@ -13,28 +13,115 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
+
 interface VariantItem {
   id: string; name: string; prices: string;
   fileRecto?: File | null; fileVerso?: File | null;
   image_recto?: string; image_verso?: string;
 }
 
-function SortableItem({ p, startEdit, handleDelete }: any) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: p.id });
-  const style = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 100 : 1, opacity: isDragging ? 0.6 : 1 };
 
-  const CATEGORY_COLOR: Record<string, string> = {
-    Perso: 'text-blue-500',
-    Stock: 'text-green-500',
-    Vetements: 'text-orange-500',
-    Signaletique: 'text-cyan-400',
-    Operations: 'text-purple-500',
+// ── Composant variante sortable ──────────────────────────────────────────────
+function SortableVariant({
+  v, idx, variantsList, setVariantsList
+}: {
+  v: VariantItem; idx: number;
+  variantsList: VariantItem[]; setVariantsList: (list: VariantItem[]) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: v.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 100 : 1,
+    opacity: isDragging ? 0.5 : 1,
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="flex items-center gap-4 bg-white/[0.02] p-4 rounded-[24px] border border-white/5 hover:border-blue-500/30 transition-all group">
-      <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-2 text-white/10 hover:text-blue-500 transition-colors">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M7 11h10M7 15h10M7 19h10M7 7h10"/></svg>
+    <div ref={setNodeRef} style={style}
+      className="bg-white/5 p-4 rounded-2xl space-y-3 relative group border border-white/5 hover:border-blue-500/20 transition-all">
+
+      {/* Header : grip + nom + supprimer */}
+      <div className="flex items-center gap-3">
+        {/* Poignée drag */}
+        <div {...attributes} {...listeners}
+          className="cursor-grab active:cursor-grabbing p-1.5 text-white/10 hover:text-blue-400 transition-colors shrink-0">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+            <path d="M7 11h10M7 15h10M7 19h10M7 7h10"/>
+          </svg>
+        </div>
+
+        <p className="text-[13px] font-black text-blue-500 uppercase italic tracking-tighter flex-1 truncate">
+          {v.name}
+        </p>
+
+        <button
+          onClick={() => setVariantsList(variantsList.filter((_, i) => i !== idx))}
+          className="text-red-500 text-[11px] font-black opacity-0 group-hover:opacity-100 transition-all uppercase shrink-0"
+        >
+          Supprimer
+        </button>
+      </div>
+
+      {/* Prix */}
+      <input
+        value={v.prices}
+        onChange={(e) => {
+          const c = [...variantsList]; c[idx].prices = e.target.value; setVariantsList(c);
+        }}
+        className="w-full bg-black/40 border border-white/5 p-3 rounded-xl text-[13px] font-mono outline-none focus:border-blue-500 transition-all"
+        placeholder="Prix par palier..."
+      />
+
+      {/* Images */}
+      <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-1">
+          <p className="text-[10px] font-black text-white/20 uppercase ml-1">Recto</p>
+          <input type="file" onChange={(e) => {
+            const c = [...variantsList]; c[idx].fileRecto = e.target.files?.[0] || null; setVariantsList(c);
+          }} className="text-[10px] w-full" />
+          {v.image_recto && !v.fileRecto && (
+            <img src={v.image_recto} className="h-8 w-8 object-contain rounded mt-1 opacity-50" alt="" />
+          )}
+        </div>
+        <div className="space-y-1">
+          <p className="text-[10px] font-black text-white/20 uppercase ml-1">Verso</p>
+          <input type="file" onChange={(e) => {
+            const c = [...variantsList]; c[idx].fileVerso = e.target.files?.[0] || null; setVariantsList(c);
+          }} className="text-[10px] w-full" />
+          {v.image_verso && !v.fileVerso && (
+            <img src={v.image_verso} className="h-8 w-8 object-contain rounded mt-1 opacity-50" alt="" />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+// ── Composant produit sortable (listing) ─────────────────────────────────────
+function SortableItem({ p, startEdit, handleDelete }: any) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: p.id });
+  const style = {
+    transform: CSS.Transform.toString(transform), transition,
+    zIndex: isDragging ? 100 : 1, opacity: isDragging ? 0.6 : 1,
+  };
+
+  const CATEGORY_COLOR: Record<string, string> = {
+    Perso: 'text-blue-500', Stock: 'text-green-500',
+    Vetements: 'text-orange-500', Signaletique: 'text-cyan-400', Operations: 'text-purple-500',
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}
+      className="flex items-center gap-4 bg-white/[0.02] p-4 rounded-[24px] border border-white/5 hover:border-blue-500/30 transition-all group">
+      <div {...attributes} {...listeners}
+        className="cursor-grab active:cursor-grabbing p-2 text-white/10 hover:text-blue-500 transition-colors">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+          <path d="M7 11h10M7 15h10M7 19h10M7 7h10"/>
+        </svg>
       </div>
       <div className="w-12 h-12 bg-black rounded-xl overflow-hidden border border-white/10 flex items-center justify-center shrink-0">
         <img src={p.image_recto || '/placeholder.png'} className="max-w-full max-h-full object-contain" alt="" />
@@ -50,16 +137,23 @@ function SortableItem({ p, startEdit, handleDelete }: any) {
       </div>
       <div className="flex gap-2">
         <button onClick={() => startEdit(p)} className="p-2.5 bg-white/5 hover:bg-blue-500 rounded-xl transition-all">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+          </svg>
         </button>
-        <button onClick={() => handleDelete(p.id)} className="p-2.5 bg-white/5 hover:bg-red-500 rounded-xl transition-all text-white/40 hover:text-white">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+        <button onClick={() => handleDelete(p.id)}
+          className="p-2.5 bg-white/5 hover:bg-red-500 rounded-xl transition-all text-white/40 hover:text-white">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+            <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+          </svg>
         </button>
       </div>
     </div>
   );
 }
 
+
+// ── Page principale ──────────────────────────────────────────────────────────
 export default function AdminPortal() {
   const [authStatus, setAuthStatus] = useState<'loading' | 'authorized' | 'unauthorized'>('loading');
   const router = useRouter();
@@ -76,16 +170,19 @@ export default function AdminPortal() {
   const [existingProducts, setExistingProducts] = useState<any[]>([]);
   const [showOrderedBy, setShowOrderedBy] = useState(false);
 
+  // ── Sensors pour les deux DnD contexts ──
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
+
   useEffect(() => {
     const checkAccess = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.replace('/login'); return; }
-      const { data: profile, error } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
+      const { data: profile, error } = await supabase
+        .from('profiles').select('role').eq('id', session.user.id).single();
       if (error || profile?.role !== 'super_admin') { setAuthStatus('unauthorized'); return; }
       setAuthStatus('authorized');
       fetchProducts();
@@ -93,12 +190,16 @@ export default function AdminPortal() {
     checkAccess();
   }, []);
 
+
   const fetchProducts = async () => {
-    const { data, error } = await supabase.from('products').select('*').order('sort_order', { ascending: true });
+    const { data, error } = await supabase
+      .from('products').select('*').order('sort_order', { ascending: true });
     if (error) console.error("Erreur fetch:", error.message);
     if (data) setExistingProducts(data);
   };
 
+
+  // ── Drag produits (listing) ──
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -107,8 +208,20 @@ export default function AdminPortal() {
     const newArray = arrayMove(existingProducts, oldIndex, newIndex);
     setExistingProducts(newArray);
     const updates = newArray.map((p, idx) => ({ id: p.id, sort_order: idx + 1 }));
-    await Promise.all(updates.map(u => supabase.from('products').update({ sort_order: u.sort_order }).eq('id', u.id)));
+    await Promise.all(updates.map(u =>
+      supabase.from('products').update({ sort_order: u.sort_order }).eq('id', u.id)
+    ));
   };
+
+  // ── Drag variantes (formulaire) ──
+  const handleVariantDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = variantsList.findIndex(v => v.id === active.id);
+    const newIndex = variantsList.findIndex(v => v.id === over.id);
+    setVariantsList(arrayMove(variantsList, oldIndex, newIndex));
+  };
+
 
   const compressAndUpload = async (file: File, suffix: string) => {
     const options = { maxSizeMB: 0.8, maxWidthOrHeight: 1200, useWebWorker: true };
@@ -119,6 +232,7 @@ export default function AdminPortal() {
     const { data } = supabase.storage.from('product-images').getPublicUrl(fileName);
     return data.publicUrl;
   };
+
 
   const handleSaveProduct = async () => {
     if (!name) return alert("Nom requis");
@@ -135,6 +249,7 @@ export default function AdminPortal() {
       const finalVariants: any[] = [];
 
       if (hasVariants) {
+        // ✅ L'ordre de variantsList est conservé tel quel (après drag)
         for (const v of variantsList) {
           let vImgRecto = v.image_recto || mainUrl;
           let vImgVerso = v.image_verso || versoUrl;
@@ -153,8 +268,8 @@ export default function AdminPortal() {
         config: {
           quantities: qtyArray,
           prices: finalPrices,
-          variants: finalVariants,
-          show_ordered_by: showOrderedBy
+          variants: finalVariants, // ✅ ordre respecté
+          show_ordered_by: showOrderedBy,
         }
       };
 
@@ -163,14 +278,18 @@ export default function AdminPortal() {
         ? await supabase.from('products').update(payload).eq('id', editingId)
         : await supabase.from('products').insert([payload]);
       if (!error) { resetForm(); fetchProducts(); }
-    } catch (err: any) { alert(err.message); } finally { setIsUploading(false); }
+    } catch (err: any) { alert(err.message); }
+    finally { setIsUploading(false); }
   };
 
+
   const resetForm = () => {
-    setEditingId(null); setName(''); setCategory('Perso'); setImageFile(null); setImageFileVerso(null);
-    setQuantities('500, 1000, 5000'); setBasePrices('100, 180, 500'); setHasVariants(false);
-    setVariantsList([]); setShowOrderedBy(false);
+    setEditingId(null); setName(''); setCategory('Perso');
+    setImageFile(null); setImageFileVerso(null);
+    setQuantities('500, 1000, 5000'); setBasePrices('100, 180, 500');
+    setHasVariants(false); setVariantsList([]); setShowOrderedBy(false);
   };
+
 
   const startEdit = (p: any) => {
     setEditingId(p.id); setName(p.name); setCategory(p.category);
@@ -180,15 +299,22 @@ export default function AdminPortal() {
     if (p.has_variants) {
       setVariantsList(p.config.variants.map((v: any) => ({
         id: v.id, name: v.name, image_recto: v.image_recto, image_verso: v.image_verso,
-        prices: p.config.prices[v.id]?.join(', ') || ""
+        prices: p.config.prices[v.id]?.join(', ') || "",
       })));
-    } else { setBasePrices(p.config.prices.default?.join(', ') || ""); }
+    } else {
+      setBasePrices(p.config.prices.default?.join(', ') || "");
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+
   const handleDelete = async (id: string) => {
-    if (confirm('Supprimer ?')) { await supabase.from('products').delete().eq('id', id); fetchProducts(); }
+    if (confirm('Supprimer ?')) {
+      await supabase.from('products').delete().eq('id', id);
+      fetchProducts();
+    }
   };
+
 
   if (authStatus === 'loading') return (
     <div className="min-h-screen bg-[#0f092e] flex items-center justify-center">
@@ -202,14 +328,15 @@ export default function AdminPortal() {
         <div className="text-5xl">🚫</div>
         <h2 className="font-black text-red-500 uppercase tracking-[0.3em] italic text-xl">Accès refusé</h2>
         <p className="text-white/40 text-sm">Vous n'avez pas les droits pour accéder à cette page.</p>
-        <button onClick={() => router.replace('/')} className="w-full bg-white/5 hover:bg-white/10 py-4 rounded-2xl font-black uppercase tracking-widest text-sm transition-all">
+        <button onClick={() => router.replace('/')}
+          className="w-full bg-white/5 hover:bg-white/10 py-4 rounded-2xl font-black uppercase tracking-widest text-sm transition-all">
           Retour à l'accueil
         </button>
       </div>
     </div>
   );
 
-  // Sections du listing avec leurs configs
+
   const SECTIONS = [
     { id: 'Perso',        label: 'Produits personnalisables',  color: 'text-blue-500'   },
     { id: 'Stock',        label: 'Produits non personnalisés', color: 'text-green-500'  },
@@ -218,18 +345,21 @@ export default function AdminPortal() {
     { id: 'Operations',   label: 'Opérations du moment',       color: 'text-purple-500' },
   ];
 
+
   return (
     <div className="min-h-screen bg-[#0f092e] text-white p-10 font-sans relative">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-16">
 
-        {/* FORMULAIRE GAUCHE */}
+
+        {/* ── FORMULAIRE GAUCHE ── */}
         <div className="lg:col-span-5 space-y-8">
           <div className="flex justify-between items-center sticky top-0 z-40 bg-[#0f092e]/90 py-4 backdrop-blur-md">
             <h1 className="text-3xl font-black uppercase text-blue-500 italic tracking-tighter">
               {editingId ? 'Édition' : 'Nouveau'}
             </h1>
             {editingId && (
-              <button onClick={resetForm} className="bg-red-500/10 text-red-500 px-4 py-2 rounded-full text-[12px] font-black uppercase">
+              <button onClick={resetForm}
+                className="bg-red-500/10 text-red-500 px-4 py-2 rounded-full text-[12px] font-black uppercase">
                 Annuler
               </button>
             )}
@@ -245,11 +375,8 @@ export default function AdminPortal() {
             {/* SELECT CATÉGORIE */}
             <div className="space-y-1">
               <label className="text-[12px] font-black uppercase text-white/30 ml-2">Emplacement</label>
-              <select
-                value={category}
-                onChange={e => setCategory(e.target.value)}
-                className="w-full bg-[#16103a] border border-white/10 p-4 rounded-2xl text-[11px] font-black uppercase outline-none focus:border-blue-500"
-              >
+              <select value={category} onChange={e => setCategory(e.target.value)}
+                className="w-full bg-[#16103a] border border-white/10 p-4 rounded-2xl text-[11px] font-black uppercase outline-none focus:border-blue-500">
                 <option value="Perso">Produits personnalisables</option>
                 <option value="Stock">Produits non personnalisés</option>
                 <option value="Vetements">Gamme Business</option>
@@ -261,12 +388,9 @@ export default function AdminPortal() {
             {/* NOM */}
             <div className="space-y-1">
               <label className="text-[12px] font-black uppercase text-white/30 ml-2">Nom du produit</label>
-              <input
-                value={name}
-                onChange={e => setName(e.target.value)}
+              <input value={name} onChange={e => setName(e.target.value)}
                 className="w-full bg-black/40 border border-white/10 p-4 rounded-2xl text-sm font-bold outline-none"
-                placeholder="Ex: Panneau de chantier"
-              />
+                placeholder="Ex: Panneau de chantier" />
             </div>
 
             {/* IMAGES */}
@@ -284,63 +408,75 @@ export default function AdminPortal() {
             {/* QUANTITÉS */}
             <div className="space-y-1">
               <label className="text-[12px] font-black uppercase text-white/30 ml-2">Paliers de quantités</label>
-              <input
-                value={quantities}
-                onChange={e => setQuantities(e.target.value)}
+              <input value={quantities} onChange={e => setQuantities(e.target.value)}
                 className="w-full bg-black/40 border border-white/10 p-4 rounded-2xl text-sm font-mono"
-                placeholder="500, 1000, 2000"
-              />
+                placeholder="500, 1000, 2000" />
             </div>
 
             {/* PRIX DE BASE */}
             {!hasVariants && (
               <div className="space-y-1">
                 <label className="text-[12px] font-black uppercase text-white/30 ml-2">Prix par palier</label>
-                <input
-                  value={basePrices}
-                  onChange={e => setBasePrices(e.target.value)}
+                <input value={basePrices} onChange={e => setBasePrices(e.target.value)}
                   className="w-full bg-black/40 border border-white/10 p-4 rounded-2xl text-sm font-mono text-blue-400"
-                  placeholder="100, 180, 300"
-                />
+                  placeholder="100, 180, 300" />
               </div>
             )}
 
             {/* TOGGLE VARIANTES */}
-            <button
-              onClick={() => setHasVariants(!hasVariants)}
-              className={`w-full py-4 border-2 border-dashed rounded-2xl text-[12px] font-black uppercase transition-all ${hasVariants ? 'border-blue-500 text-blue-500 bg-blue-500/5' : 'border-white/10 text-white/30'}`}
-            >
+            <button onClick={() => setHasVariants(!hasVariants)}
+              className={`w-full py-4 border-2 border-dashed rounded-2xl text-[12px] font-black uppercase transition-all ${
+                hasVariants ? 'border-blue-500 text-blue-500 bg-blue-500/5' : 'border-white/10 text-white/30'
+              }`}>
               {hasVariants ? "✓ Plusieurs modèles configurés" : "+ Ajouter des options / tailles"}
             </button>
 
-            {/* LISTE VARIANTES */}
+            {/* ── LISTE VARIANTES avec DnD ── */}
             {hasVariants && (
               <div className="space-y-4 border-l-2 border-blue-500 pl-4 py-2">
-                {variantsList.map((v, idx) => (
-                  <div key={idx} className="bg-white/5 p-4 rounded-2xl space-y-3 relative group">
-                    <button
-                      onClick={() => setVariantsList(variantsList.filter((_, i) => i !== idx))}
-                      className="absolute top-2 right-2 text-red-500 text-[11px] font-black opacity-0 group-hover:opacity-100 transition-all uppercase"
-                    >
-                      Supprimer
-                    </button>
-                    <p className="text-[13px] font-black text-blue-500 uppercase italic tracking-tighter">{v.name}</p>
-                    <input
-                      value={v.prices}
-                      onChange={(e) => { const c = [...variantsList]; c[idx].prices = e.target.value; setVariantsList(c); }}
-                      className="w-full bg-black/40 border border-white/5 p-3 rounded-xl text-[13px] font-mono outline-none"
-                      placeholder="Prix..."
-                    />
-                    <div className="grid grid-cols-2 gap-2">
-                      <input type="file" onChange={(e) => { const c = [...variantsList]; c[idx].fileRecto = e.target.files?.[0] || null; setVariantsList(c); }} className="text-[10px]" />
-                      <input type="file" onChange={(e) => { const c = [...variantsList]; c[idx].fileVerso = e.target.files?.[0] || null; setVariantsList(c); }} className="text-[10px]" />
+
+                {/* Indicateur d'ordre */}
+                {variantsList.length > 1 && (
+                  <p className="text-[10px] font-black uppercase tracking-widest text-blue-400/40 flex items-center gap-2">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <path d="M7 11h10M7 15h10M7 19h10M7 7h10"/>
+                    </svg>
+                    Glisser pour réordonner · affiché dans cet ordre dans le menu
+                  </p>
+                )}
+
+                {/* DndContext dédié aux variantes */}
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleVariantDragEnd}
+                >
+                  <SortableContext
+                    items={variantsList.map(v => v.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="space-y-3">
+                      {variantsList.map((v, idx) => (
+                        <SortableVariant
+                          key={v.id}
+                          v={v}
+                          idx={idx}
+                          variantsList={variantsList}
+                          setVariantsList={setVariantsList}
+                        />
+                      ))}
                     </div>
-                  </div>
-                ))}
+                  </SortableContext>
+                </DndContext>
+
                 <button
                   onClick={() => {
                     const n = prompt("Nom de l'option :");
-                    if (n) setVariantsList([...variantsList, { id: n.toLowerCase().replace(/\s/g, '-'), name: n, prices: basePrices }]);
+                    if (n) setVariantsList([...variantsList, {
+                      id: n.toLowerCase().replace(/\s/g, '-'),
+                      name: n,
+                      prices: basePrices,
+                    }]);
                   }}
                   className="w-full py-3 bg-blue-500/10 text-blue-500 rounded-xl text-[12px] font-black uppercase hover:bg-blue-500/20 transition-all"
                 >
@@ -350,10 +486,10 @@ export default function AdminPortal() {
             )}
 
             {/* TOGGLE "QUI COMMANDE ?" */}
-            <div
-              onClick={() => setShowOrderedBy(!showOrderedBy)}
-              className={`flex items-center gap-4 p-4 rounded-2xl border cursor-pointer transition-all ${showOrderedBy ? 'border-blue-500/40 bg-blue-500/5' : 'border-white/5 bg-white/[0.02] hover:border-white/10'}`}
-            >
+            <div onClick={() => setShowOrderedBy(!showOrderedBy)}
+              className={`flex items-center gap-4 p-4 rounded-2xl border cursor-pointer transition-all ${
+                showOrderedBy ? 'border-blue-500/40 bg-blue-500/5' : 'border-white/5 bg-white/[0.02] hover:border-white/10'
+              }`}>
               <div className={`w-12 h-6 rounded-full transition-all relative shrink-0 ${showOrderedBy ? 'bg-blue-500' : 'bg-white/10'}`}>
                 <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${showOrderedBy ? 'left-7' : 'left-1'}`}></div>
               </div>
@@ -364,17 +500,15 @@ export default function AdminPortal() {
             </div>
 
             {/* BOUTON SAVE */}
-            <button
-              onClick={handleSaveProduct}
-              disabled={isUploading}
-              className="w-full py-5 rounded-2xl font-black uppercase bg-blue-600 hover:bg-blue-500 shadow-xl shadow-blue-500/20 active:scale-95 transition-all tracking-[0.2em]"
-            >
+            <button onClick={handleSaveProduct} disabled={isUploading}
+              className="w-full py-5 rounded-2xl font-black uppercase bg-blue-600 hover:bg-blue-500 shadow-xl shadow-blue-500/20 active:scale-95 transition-all tracking-[0.2em]">
               {editingId ? 'Sauvegarder' : 'Publier'}
             </button>
           </div>
         </div>
 
-        {/* LISTING DRAG & DROP DROITE */}
+
+        {/* ── LISTING DRAG & DROP DROITE ── */}
         <div className="lg:col-span-7 space-y-12 pb-20">
           {SECTIONS.map(section => (
             <div key={section.id} className="space-y-6">
@@ -408,6 +542,7 @@ export default function AdminPortal() {
             </div>
           ))}
         </div>
+
 
       </div>
     </div>
