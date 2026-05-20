@@ -13,15 +13,10 @@ function ImageModal({ isOpen, onClose, imageSrc, imageAlt }: { isOpen: boolean, 
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 md:p-10">
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="absolute inset-0 bg-black/95 backdrop-blur-sm cursor-zoom-out"
-          />
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }}
-            className="relative max-w-full max-h-full flex items-center justify-center"
-          >
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={onClose} className="absolute inset-0 bg-black/95 backdrop-blur-sm cursor-zoom-out" />
+          <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }}
+            className="relative max-w-full max-h-full flex items-center justify-center">
             <img src={imageSrc} alt={imageAlt} className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl" />
             <button onClick={onClose} className="absolute -top-12 right-0 text-white font-black uppercase text-[13px] tracking-widest hover:text-orange-500 transition-colors">
               Fermer ×
@@ -43,10 +38,10 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
   const [prenom, setPrenom]         = useState('');
   const [nom, setNom]               = useState('');
   const [email, setEmail]           = useState('');
-  const [phone, setPhone]           = useState('');
-  const [phoneFix, setPhoneFix]     = useState('');
+  const [phone, setPhone]           = useState('');       // optionnel
+  const [phoneFix, setPhoneFix]     = useState('');       // optionnel
   const [fonction, setFonction]     = useState('');
-  const [rsac, setRsac]             = useState('');
+  const [rsac, setRsac]             = useState('');       // optionnel
   const [adresse, setAdresse]       = useState('');
   const [ville, setVille]           = useState('');
   const [codePostal, setCodePostal] = useState('');
@@ -105,13 +100,11 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
     if (!prenom.trim())     e.prenom     = 'Requis';
     if (!nom.trim())        e.nom        = 'Requis';
     if (!email.trim())      e.email      = 'Requis';
-    if (!phone.trim())      e.phone      = 'Requis';
-    if (!phoneFix.trim())   e.phoneFix   = 'Requis';
     if (!fonction.trim())   e.fonction   = 'Requis';
-    if (!rsac.trim())       e.rsac       = 'Requis';
     if (!adresse.trim())    e.adresse    = 'Requis';
     if (!ville.trim())      e.ville      = 'Requis';
     if (!codePostal.trim()) e.codePostal = 'Requis';
+    // phone, phoneFix, rsac → optionnels
     return e;
   };
 
@@ -124,9 +117,12 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
       const { data, error: err } = await supabase.from('collaborateurs').insert([{
         first_name: prenom.trim(), last_name: nom.trim(),
         full_name: `${prenom.trim()} ${nom.trim()}`,
-        email: email.trim(), phone: phone.trim(), phone_fix: phoneFix.trim(),
-        fonction: fonction.trim(), rsac: rsac.trim(), adresse: adresse.trim(),
-        ville: ville.trim(), code_postal: codePostal.trim(),
+        email: email.trim(),
+        phone:     phone.trim()    || null,
+        phone_fix: phoneFix.trim() || null,
+        fonction: fonction.trim(),
+        rsac:     rsac.trim()      || null,
+        adresse: adresse.trim(), ville: ville.trim(), code_postal: codePostal.trim(),
         avatar_url: avatarUrl || null, agency_id: agencyId,
       }]).select().single();
       if (err) throw err;
@@ -153,53 +149,76 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
             className="relative bg-[#16103a] border border-white/10 rounded-[32px] p-8 w-full max-w-2xl shadow-2xl z-10 max-h-[90vh] overflow-y-auto"
           >
             <div className="flex items-start justify-between mb-8">
-              <div>
-                <h3 className="text-xl font-black uppercase text-orange-500 tracking-tighter italic">Nouveau Collaborateur</h3>
-                <p className="text-[8px] font-bold text-white/25 uppercase tracking-widest mt-1">La photo de profil est optionnelle</p>
-              </div>
+              <h3 className="text-xl font-black uppercase text-orange-500 tracking-tighter italic">Nouveau Collaborateur</h3>
               <button onClick={() => { resetForm(); onClose(); }} className="text-white/30 hover:text-white transition-colors text-lg font-black">×</button>
             </div>
 
             <div className="space-y-6">
-              {/* PHOTO */}
+
+              {/* ── PHOTO — en premier, optionnelle visible sur le bouton ── */}
               <div className="flex items-center gap-5">
                 <div onClick={() => fileInputRef.current?.click()}
                   className="h-16 w-16 rounded-full border-2 border-dashed border-white/20 hover:border-orange-500 bg-white/5 flex items-center justify-center cursor-pointer transition-all overflow-hidden shrink-0">
                   {avatarPreview ? <img src={avatarPreview} className="h-full w-full object-cover" alt="preview" /> : <span className="text-xl">📷</span>}
                 </div>
-                <button type="button" onClick={() => fileInputRef.current?.click()} className="text-[9px] font-black uppercase text-orange-400 hover:text-orange-300 transition-colors">
-                  Choisir une photo (optionnelle) →
+                <button type="button" onClick={() => fileInputRef.current?.click()}
+                  className="text-[9px] font-black uppercase text-orange-400 hover:text-orange-300 transition-colors text-left">
+                  Choisir une photo <span className="text-white/30 normal-case font-medium">(optionnelle)</span> →
                 </button>
-                <input ref={fileInputRef} type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) { setAvatarFile(f); setAvatarPreview(URL.createObjectURL(f)); } }} className="hidden" />
+                <input ref={fileInputRef} type="file" accept="image/*"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) { setAvatarFile(f); setAvatarPreview(URL.createObjectURL(f)); } }}
+                  className="hidden" />
               </div>
 
-              {/* IDENTITÉ */}
+              {/* ── IDENTITÉ ── */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {[['prenom','Prénom',prenom,setPrenom],['nom','Nom',nom,setNom],['fonction','Fonction',fonction,setFonction],['rsac','RSAC',rsac,setRsac]].map(([k,l,v,s]: any) => (
-                  <div key={k}>
-                    <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">{l} <span className="text-red-400">*</span></label>
-                    <input type="text" value={v} onChange={(e) => s(e.target.value)} className={inputClass(k)} />
-                  </div>
-                ))}
+                <div>
+                  <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">Prénom <span className="text-red-400">*</span></label>
+                  <input type="text" value={prenom} onChange={(e) => setPrenom(e.target.value)} className={inputClass('prenom')} />
+                </div>
+                <div>
+                  <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">Nom <span className="text-red-400">*</span></label>
+                  <input type="text" value={nom} onChange={(e) => setNom(e.target.value)} className={inputClass('nom')} />
+                </div>
+                <div>
+                  <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">Fonction <span className="text-red-400">*</span></label>
+                  <input type="text" value={fonction} onChange={(e) => setFonction(e.target.value)} className={inputClass('fonction')} />
+                </div>
+                <div>
+                  {/* ✅ RSAC Ville — optionnel */}
+                  <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">
+                    RSAC Ville <span className="text-white/20 normal-case font-medium text-[7px]">(optionnel)</span>
+                  </label>
+                  <input type="text" value={rsac} onChange={(e) => setRsac(e.target.value)}
+                    placeholder="Ex: 123 456 789" className={inputClass('rsac')} />
+                </div>
               </div>
 
-              {/* CONTACT */}
+              {/* ── CONTACT ── */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">Email <span className="text-red-400">*</span></label>
                   <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass('email')} />
                 </div>
                 <div>
-                  <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">Mobile <span className="text-red-400">*</span></label>
-                  <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass('phone')} />
+                  {/* ✅ Mobile — optionnel */}
+                  <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">
+                    Mobile <span className="text-white/20 normal-case font-medium text-[7px]">(optionnel)</span>
+                  </label>
+                  <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
+                    placeholder="06 00 00 00 00" className={inputClass('phone')} />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">Téléphone fixe <span className="text-red-400">*</span></label>
-                  <input type="tel" value={phoneFix} onChange={(e) => setPhoneFix(e.target.value)} className={inputClass('phoneFix')} />
+                  {/* ✅ Téléphone fixe — optionnel */}
+                  <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">
+                    Téléphone fixe <span className="text-white/20 normal-case font-medium text-[7px]">(optionnel)</span>
+                  </label>
+                  <input type="tel" value={phoneFix} onChange={(e) => setPhoneFix(e.target.value)}
+                    placeholder="02 00 00 00 00" className={inputClass('phoneFix')} />
                 </div>
               </div>
 
-              {/* ADRESSE */}
+              {/* ── ADRESSE ── */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="md:col-span-2">
                   <label className="text-[7px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">Adresse <span className="text-red-400">*</span></label>
@@ -252,7 +271,6 @@ export default function BusinessPage() {
   const [flippedProducts, setFlippedProducts] = useState<Record<string, boolean>>({});
   const [selectedImage, setSelectedImage]     = useState<string | null>(null);
 
-  // ── Qui commande ──
   const [userRole, setUserRole]       = useState<string>('');
   const [agencyId, setAgencyId]       = useState<string>('');
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
@@ -260,7 +278,6 @@ export default function BusinessPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [pendingProductId, setPendingProductId]   = useState<string | null>(null);
   const [agencyDefaults, setAgencyDefaults] = useState({ phone_fix: '', adresse: '', ville: '', code_postal: '' });
-
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -290,7 +307,6 @@ export default function BusinessPage() {
     setTeamMembers(merged);
   };
 
-
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -316,7 +332,6 @@ export default function BusinessPage() {
     };
     fetchProducts();
   }, []);
-
 
   const toggleFlip = (id: string) => setFlippedProducts(prev => ({ ...prev, [id]: !prev[id] }));
 
@@ -351,13 +366,11 @@ export default function BusinessPage() {
     else setOrderedBy(prev => ({ ...prev, [productId]: value }));
   };
 
-
   if (loading) return (
     <div className="min-h-screen bg-[#0f092e] flex items-center justify-center font-black text-orange-500 uppercase animate-pulse tracking-widest">
       Chargement Gamme Business...
     </div>
   );
-
 
   return (
     <div className="min-h-screen bg-[#0f092e] text-white flex flex-col relative overflow-x-hidden">
@@ -450,7 +463,7 @@ export default function BusinessPage() {
                   {needsMember && (
                     <div className="space-y-1 border-t border-white/5 pt-4">
                       <label className="text-[10px] font-black uppercase ml-2 tracking-widest flex items-center gap-1.5">
-                        <span className={memberSelected ? 'text-white/30' : 'text-red-400/80'}>nom du collaborateur</span>
+                        <span className={memberSelected ? 'text-white/30' : 'text-red-400/80'}>Nom du collaborateur</span>
                         {!memberSelected && <span className="text-red-400 text-[9px] font-bold normal-case tracking-normal">— requis pour commander</span>}
                       </label>
                       <select value={orderedBy[p.id] || ''}

@@ -7,14 +7,15 @@ import Link from 'next/link';
 
 // ── Composant Field EN DEHORS du composant principal ──
 const Field = ({
-  label, value, onChange, placeholder, type = 'text', span2 = false, prefilled = false
+  label, value, onChange, placeholder, type = 'text', span2 = false, prefilled = false, optional = false
 }: {
   label: string; value: string; onChange: (v: string) => void;
-  placeholder: string; type?: string; span2?: boolean; prefilled?: boolean;
+  placeholder: string; type?: string; span2?: boolean; prefilled?: boolean; optional?: boolean;
 }) => (
   <div className={span2 ? 'md:col-span-2' : ''}>
     <label className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1">
       {label}
+      {optional && <span className="text-white/20 normal-case font-medium text-[10px]">(optionnel)</span>}
       {prefilled && value && (
         <span className="text-blue-400/50 normal-case font-bold tracking-normal text-[10px]">· agence</span>
       )}
@@ -32,7 +33,6 @@ const Field = ({
 export default function GestionEquipe() {
   const router = useRouter();
 
-  // ── Champs formulaire ajout ──
   const [email, setEmail]           = useState('');
   const [prenom, setPrenom]         = useState('');
   const [nom, setNom]               = useState('');
@@ -43,33 +43,26 @@ export default function GestionEquipe() {
   const [ville, setVille]           = useState('');
   const [codePostal, setCodePostal] = useState('');
   const [rsac, setRsac]             = useState('');
-  const [avatarFile, setAvatarFile]             = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview]       = useState<string | null>(null);
+  const [avatarFile, setAvatarFile]       = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ── State global ──
-  const [membres, setMembres]           = useState<any[]>([]);
-  const [monAgencyId, setMonAgencyId]   = useState<string | null>(null);
-  const [loading, setLoading]           = useState(true);
-  const [submitting, setSubmitting]     = useState(false);
+  const [membres, setMembres]         = useState<any[]>([]);
+  const [monAgencyId, setMonAgencyId] = useState<string | null>(null);
+  const [loading, setLoading]         = useState(true);
+  const [submitting, setSubmitting]   = useState(false);
 
-  // ── Edition inline ──
   const [editId, setEditId]                       = useState<string | null>(null);
   const [editData, setEditData]                   = useState<any>({});
   const [editAvatarFile, setEditAvatarFile]       = useState<File | null>(null);
   const [editAvatarPreview, setEditAvatarPreview] = useState<string | null>(null);
   const editFileInputRef = useRef<HTMLInputElement>(null);
 
-  // ── Données agence pour pré-remplissage ──
   const [agencyDefaults, setAgencyDefaults] = useState({
-    phone_fix: '',
-    adresse: '',
-    ville: '',
-    code_postal: '',
+    phone_fix: '', adresse: '', ville: '', code_postal: '',
   });
 
 
-  // ─────────────────────────────────────────
   const compressImage = (file: File): Promise<File> => {
     return new Promise((resolve) => {
       const img = new Image();
@@ -107,7 +100,6 @@ export default function GestionEquipe() {
   };
 
 
-  // ─────────────────────────────────────────
   const chargerEquipe = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -139,9 +131,7 @@ export default function GestionEquipe() {
       }
 
       const { data: collabs } = await supabase
-        .from('collaborateurs')
-        .select('*')
-        .eq('agency_id', profilAdmin.agency_id);
+        .from('collaborateurs').select('*').eq('agency_id', profilAdmin.agency_id);
 
       setMembres((collabs || []).map(m => ({ ...m, _source: 'collaborateurs' })));
     }
@@ -151,7 +141,6 @@ export default function GestionEquipe() {
   useEffect(() => { chargerEquipe(); }, []);
 
 
-  // ─────────────────────────────────────────
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
     setAvatarFile(file); setAvatarPreview(URL.createObjectURL(file));
@@ -162,7 +151,6 @@ export default function GestionEquipe() {
   };
 
 
-  // ─────────────────────────────────────────
   const ajouterCollaborateur = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!monAgencyId) return;
@@ -174,13 +162,13 @@ export default function GestionEquipe() {
       full_name:   `${prenom} ${nom}`,
       email,
       fonction,
-      phone,
-      phone_fix:   phoneFix,
+      phone:       phone       || null,   // ✅ optionnel
+      phone_fix:   phoneFix    || null,   // ✅ optionnel
       adresse,
       ville,
       code_postal: codePostal,
-      rsac,
-      avatar_url:  avatarUrl,
+      rsac:        rsac        || null,   // ✅ optionnel
+      avatar_url:  avatarUrl   || null,
       agency_id:   monAgencyId,
     }]);
     if (!error) {
@@ -196,7 +184,6 @@ export default function GestionEquipe() {
   };
 
 
-  // ─────────────────────────────────────────
   const ouvrirEdition = (m: any) => {
     setEditId(m.id);
     setEditData({
@@ -224,13 +211,13 @@ export default function GestionEquipe() {
       last_name:   editData.last_name,
       full_name:   `${editData.first_name} ${editData.last_name}`,
       email:       editData.email,
-      phone:       editData.phone,
-      phone_fix:   editData.phone_fix,
+      phone:       editData.phone    || null,
+      phone_fix:   editData.phone_fix || null,
       fonction:    editData.fonction,
       adresse:     editData.adresse,
       ville:       editData.ville,
       code_postal: editData.code_postal,
-      rsac:        editData.rsac,
+      rsac:        editData.rsac     || null,
       avatar_url:  avatarUrl,
     }).eq('id', id);
     if (!error) { setEditId(null); chargerEquipe(); }
@@ -245,12 +232,12 @@ export default function GestionEquipe() {
   };
 
 
-  // ─────────────────────────────────────────
   if (loading) return (
     <div className="p-20 text-white font-black uppercase text-[13px] tracking-widest animate-pulse">
       Chargement de l'agence...
     </div>
   );
+
 
   return (
     <div className="min-h-screen bg-[#0f092e] text-white p-6 md:p-12 selection:bg-blue-500/30">
@@ -278,7 +265,7 @@ export default function GestionEquipe() {
 
           <form onSubmit={ajouterCollaborateur} className="space-y-8">
 
-            {/* PHOTO */}
+            {/* ── PHOTO — en premier, optionnelle visible sur le bouton ── */}
             <div className="flex items-center gap-6">
               <div onClick={() => fileInputRef.current?.click()}
                 className="h-20 w-20 rounded-full border-2 border-dashed border-white/20 bg-white/5 flex items-center justify-center cursor-pointer hover:border-blue-500 transition-all overflow-hidden shrink-0">
@@ -287,10 +274,9 @@ export default function GestionEquipe() {
                   : <span className="text-2xl">📷</span>}
               </div>
               <div>
-                <p className="text-[12px] font-black uppercase tracking-widest text-white/40 mb-1">Photo de profil <span className="text-white/20 normal-case font-medium">(optionnelle)</span></p>
                 <button type="button" onClick={() => fileInputRef.current?.click()}
                   className="text-[12px] font-black uppercase text-blue-400 hover:text-blue-300 transition-colors">
-                  Choisir une photo →
+                  Choisir une photo <span className="text-white/30 normal-case font-medium">(optionnelle)</span> →
                 </button>
               </div>
               <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
@@ -305,7 +291,8 @@ export default function GestionEquipe() {
                 <Field label="Prénom" value={prenom} onChange={setPrenom} placeholder="Prénom" />
                 <Field label="Nom" value={nom} onChange={setNom} placeholder="Nom" />
                 <Field label="Fonction" value={fonction} onChange={setFonction} placeholder="Négociateur, Directeur..." />
-                <Field label="RSAC" value={rsac} onChange={setRsac} placeholder="Ex: 123 456 789" />
+                {/* ✅ RSAC Ville — optionnel */}
+                <Field label="RSAC Ville" value={rsac} onChange={setRsac} placeholder="Ex: 123 456 789" optional />
               </div>
             </div>
 
@@ -316,9 +303,11 @@ export default function GestionEquipe() {
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Field label="Email professionnel" value={email} onChange={setEmail} placeholder="prenom@agence.com" type="email" />
-                <Field label="Téléphone mobile" value={phone} onChange={setPhone} placeholder="06 00 00 00 00" type="tel" />
+                {/* ✅ Mobile — optionnel */}
+                <Field label="Téléphone mobile" value={phone} onChange={setPhone} placeholder="06 00 00 00 00" type="tel" optional />
+                {/* ✅ Fixe — optionnel */}
                 <Field label="Téléphone fixe agence" value={phoneFix} onChange={setPhoneFix}
-                  placeholder="02 00 00 00 00" type="tel" prefilled span2 />
+                  placeholder="02 00 00 00 00" type="tel" prefilled span2 optional />
               </div>
             </div>
 
@@ -420,10 +409,9 @@ export default function GestionEquipe() {
                           : <span className="text-xl">📷</span>}
                       </div>
                       <div>
-                        <p className="text-[12px] font-black uppercase tracking-widest text-white/40 mb-1">Photo de profil <span className="text-white/20 normal-case font-medium">(optionnelle)</span></p>
                         <button type="button" onClick={() => editFileInputRef.current?.click()}
                           className="text-[12px] font-black uppercase text-blue-400 hover:text-blue-300 transition-colors">
-                          Changer la photo →
+                          Changer la photo <span className="text-white/30 normal-case font-medium">(optionnelle)</span> →
                         </button>
                       </div>
                       <input ref={editFileInputRef} type="file" accept="image/*" onChange={handleEditAvatarChange} className="hidden" />
@@ -435,16 +423,25 @@ export default function GestionEquipe() {
                         <span className="w-3 h-px bg-white/20"></span> Identité
                       </p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {(['first_name','last_name','fonction','rsac'] as const).map((k) => (
+                        {(['first_name','last_name','fonction'] as const).map((k) => (
                           <div key={k}>
                             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/25 mb-1 block ml-1">
-                              {k === 'first_name' ? 'Prénom' : k === 'last_name' ? 'Nom' : k === 'fonction' ? 'Fonction' : 'RSAC'}
+                              {k === 'first_name' ? 'Prénom' : k === 'last_name' ? 'Nom' : 'Fonction'}
                             </label>
                             <input type="text" value={editData[k] || ''}
                               onChange={(e) => setEditData({ ...editData, [k]: e.target.value })}
                               className="w-full bg-white/[0.06] border border-white/10 px-4 py-3 rounded-2xl outline-none focus:border-blue-500 text-sm text-white font-medium placeholder:text-white/20 transition-all" />
                           </div>
                         ))}
+                        {/* ✅ RSAC Ville — optionnel */}
+                        <div>
+                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/25 mb-1 flex items-center gap-1.5 ml-1">
+                            RSAC Ville <span className="text-white/20 normal-case font-medium text-[9px]">(optionnel)</span>
+                          </label>
+                          <input type="text" value={editData.rsac || ''}
+                            onChange={(e) => setEditData({ ...editData, rsac: e.target.value })}
+                            className="w-full bg-white/[0.06] border border-white/10 px-4 py-3 rounded-2xl outline-none focus:border-blue-500 text-sm text-white font-medium placeholder:text-white/20 transition-all" />
+                        </div>
                       </div>
                     </div>
 
@@ -454,18 +451,30 @@ export default function GestionEquipe() {
                         <span className="w-3 h-px bg-white/20"></span> Contact
                       </p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {[
-                          { k: 'email',     label: 'Email',            type: 'email' },
-                          { k: 'phone',     label: 'Mobile',           type: 'tel' },
-                          { k: 'phone_fix', label: 'Téléphone fixe',   type: 'tel' },
-                        ].map(({ k, label, type }) => (
-                          <div key={k} className={k === 'phone_fix' ? 'md:col-span-2' : ''}>
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/25 mb-1 block ml-1">{label}</label>
-                            <input type={type} value={editData[k] || ''}
-                              onChange={(e) => setEditData({ ...editData, [k]: e.target.value })}
-                              className="w-full bg-white/[0.06] border border-white/10 px-4 py-3 rounded-2xl outline-none focus:border-blue-500 text-sm text-white font-medium transition-all" />
-                          </div>
-                        ))}
+                        <div>
+                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/25 mb-1 block ml-1">Email</label>
+                          <input type="email" value={editData.email || ''}
+                            onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+                            className="w-full bg-white/[0.06] border border-white/10 px-4 py-3 rounded-2xl outline-none focus:border-blue-500 text-sm text-white font-medium transition-all" />
+                        </div>
+                        {/* ✅ Mobile — optionnel */}
+                        <div>
+                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/25 mb-1 flex items-center gap-1.5 ml-1">
+                            Mobile <span className="text-white/20 normal-case font-medium text-[9px]">(optionnel)</span>
+                          </label>
+                          <input type="tel" value={editData.phone || ''}
+                            onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
+                            className="w-full bg-white/[0.06] border border-white/10 px-4 py-3 rounded-2xl outline-none focus:border-blue-500 text-sm text-white font-medium transition-all" />
+                        </div>
+                        {/* ✅ Fixe — optionnel */}
+                        <div className="md:col-span-2">
+                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/25 mb-1 flex items-center gap-1.5 ml-1">
+                            Téléphone fixe <span className="text-white/20 normal-case font-medium text-[9px]">(optionnel)</span>
+                          </label>
+                          <input type="tel" value={editData.phone_fix || ''}
+                            onChange={(e) => setEditData({ ...editData, phone_fix: e.target.value })}
+                            className="w-full bg-white/[0.06] border border-white/10 px-4 py-3 rounded-2xl outline-none focus:border-blue-500 text-sm text-white font-medium transition-all" />
+                        </div>
                       </div>
                     </div>
 
@@ -476,9 +485,9 @@ export default function GestionEquipe() {
                       </p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {[
-                          { k: 'adresse',     label: 'Adresse',      span2: true },
-                          { k: 'ville',       label: 'Ville',        span2: false },
-                          { k: 'code_postal', label: 'Code postal',  span2: false },
+                          { k: 'adresse',     label: 'Adresse',     span2: true },
+                          { k: 'ville',       label: 'Ville',       span2: false },
+                          { k: 'code_postal', label: 'Code postal', span2: false },
                         ].map(({ k, label, span2 }) => (
                           <div key={k} className={span2 ? 'md:col-span-2' : ''}>
                             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/25 mb-1 block ml-1">{label}</label>

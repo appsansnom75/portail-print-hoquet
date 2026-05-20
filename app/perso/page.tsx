@@ -7,8 +7,7 @@ import { supabase } from '@/lib/supabase';
 import CartDrawer from '@/components/CartDrawer';
 
 
-
-// ─── MODAL FIELD — EN DEHORS DE TOUT COMPOSANT ───────────────────────────────
+// ─── MODAL FIELD ──────────────────────────────────────────────────────────────
 function ModalField({
   label, value, onChange, placeholder, type = 'text', span2 = false, prefilled = false, required = false
 }: {
@@ -23,8 +22,7 @@ function ModalField({
         {prefilled && value && <span className="text-blue-400/50 normal-case font-bold tracking-normal">· agence</span>}
       </label>
       <input
-        type={type}
-        value={value}
+        type={type} value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className="w-full bg-white/[0.06] border border-white/10 px-4 py-3 rounded-2xl outline-none focus:border-blue-500 focus:bg-white/[0.09] transition-all text-sm text-white font-medium placeholder:text-white/20"
@@ -32,7 +30,6 @@ function ModalField({
     </div>
   );
 }
-
 
 
 // ─── MODAL ZOOM IMAGE ─────────────────────────────────────────────────────────
@@ -60,33 +57,28 @@ function ImageModal({ isOpen, onClose, imageSrc, imageAlt }: {
 }
 
 
-
 // ─── MODAL CRÉER UN PROFIL ────────────────────────────────────────────────────
 function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaults }: {
-  isOpen: boolean;
-  onClose: () => void;
-  agencyId: string;
+  isOpen: boolean; onClose: () => void; agencyId: string;
   onCreated: (member: any) => void;
   agencyDefaults: { phone_fix: string; adresse: string; ville: string; code_postal: string; };
 }) {
-  const [prenom, setPrenom]           = useState('');
-  const [nom, setNom]                 = useState('');
-  const [email, setEmail]             = useState('');
-  const [phone, setPhone]             = useState('');
-  const [phoneFix, setPhoneFix]       = useState('');
-  const [fonction, setFonction]       = useState('');
-  const [rsac, setRsac]               = useState('');
-  const [adresse, setAdresse]         = useState('');
-  const [ville, setVille]             = useState('');
-  const [codePostal, setCodePostal]   = useState('');
-  const [avatarFile, setAvatarFile]   = useState<File | null>(null);
+  const [prenom, setPrenom]         = useState('');
+  const [nom, setNom]               = useState('');
+  const [email, setEmail]           = useState('');
+  const [phone, setPhone]           = useState('');       // optionnel
+  const [phoneFix, setPhoneFix]     = useState('');       // optionnel
+  const [fonction, setFonction]     = useState('');
+  const [rsac, setRsac]             = useState('');       // optionnel
+  const [adresse, setAdresse]       = useState('');
+  const [ville, setVille]           = useState('');
+  const [codePostal, setCodePostal] = useState('');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [isLoading, setIsLoading]     = useState(false);
-  const [errors, setErrors]           = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading]   = useState(false);
+  const [errors, setErrors]         = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-
-  // Pré-remplir depuis l'agence à chaque ouverture
   useEffect(() => {
     if (isOpen) {
       setPhoneFix(agencyDefaults.phone_fix);
@@ -95,7 +87,6 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
       setCodePostal(agencyDefaults.code_postal);
     }
   }, [isOpen, agencyDefaults]);
-
 
   const compressImage = (file: File): Promise<File> => {
     return new Promise((resolve) => {
@@ -121,7 +112,6 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
     });
   };
 
-
   const uploadAvatar = async (file: File): Promise<string> => {
     const compressed = await compressImage(file);
     const fileName = `${Date.now()}-${compressed.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]/g,'-')}`;
@@ -131,12 +121,10 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
     return data.publicUrl;
   };
 
-
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
     setAvatarFile(file); setAvatarPreview(URL.createObjectURL(file));
   };
-
 
   const resetForm = () => {
     setPrenom(''); setNom(''); setEmail(''); setPhone(''); setFonction(''); setRsac('');
@@ -147,23 +135,18 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
     setCodePostal(agencyDefaults.code_postal);
   };
 
-
   const validate = () => {
     const e: Record<string, string> = {};
-    if (!prenom.trim())     e.prenom     = 'Requis';
-    if (!nom.trim())        e.nom        = 'Requis';
-    if (!email.trim())      e.email      = 'Requis';
-    if (!phone.trim())      e.phone      = 'Requis';
-    if (!phoneFix.trim())   e.phoneFix   = 'Requis';
-    if (!fonction.trim())   e.fonction   = 'Requis';
-    if (!rsac.trim())       e.rsac       = 'Requis';
-    if (!adresse.trim())    e.adresse    = 'Requis';
-    if (!ville.trim())      e.ville      = 'Requis';
+    if (!prenom.trim())     e.prenom   = 'Requis';
+    if (!nom.trim())        e.nom      = 'Requis';
+    if (!email.trim())      e.email    = 'Requis';
+    if (!fonction.trim())   e.fonction = 'Requis';
+    if (!adresse.trim())    e.adresse  = 'Requis';
+    if (!ville.trim())      e.ville    = 'Requis';
     if (!codePostal.trim()) e.codePostal = 'Requis';
-    // photo optionnelle — pas de validation avatar
+    // phone, phoneFix, rsac → optionnels, pas de validation
     return e;
   };
-
 
   const handleCreate = async () => {
     const e = validate();
@@ -178,10 +161,10 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
           last_name:   nom.trim(),
           full_name:   `${prenom.trim()} ${nom.trim()}`,
           email:       email.trim(),
-          phone:       phone.trim(),
-          phone_fix:   phoneFix.trim(),
+          phone:       phone.trim() || null,
+          phone_fix:   phoneFix.trim() || null,
           fonction:    fonction.trim(),
-          rsac:        rsac.trim(),
+          rsac:        rsac.trim() || null,
           adresse:     adresse.trim(),
           ville:       ville.trim(),
           code_postal: codePostal.trim(),
@@ -192,8 +175,7 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
         .single();
       if (err) throw err;
       onCreated({ ...data, full_name: `${prenom.trim()} ${nom.trim()}`, _source: 'collaborateurs' });
-      resetForm();
-      onClose();
+      resetForm(); onClose();
     } catch (err: any) {
       setErrors({ global: err.message });
     } finally {
@@ -201,12 +183,10 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
     }
   };
 
-
   const inputClass = (key: string) =>
     `w-full bg-white/[0.06] border px-4 py-3 rounded-2xl outline-none focus:bg-white/[0.09] transition-all text-sm text-white font-medium placeholder:text-white/20 ${
       errors[key] ? 'border-red-500/60 focus:border-red-400' : 'border-white/10 focus:border-blue-500'
     }`;
-
 
   return (
     <AnimatePresence>
@@ -223,21 +203,15 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
             className="relative bg-[#16103a] border border-white/10 rounded-[32px] p-8 w-full max-w-2xl shadow-2xl z-10 max-h-[90vh] overflow-y-auto"
           >
             <div className="flex items-start justify-between mb-8">
-              <div>
-                <h3 className="text-xl font-black uppercase text-blue-500 tracking-tighter italic">Nouveau Collaborateur</h3>
-                <p className="text-[11px] font-bold text-white/25 uppercase tracking-widest mt-1">La photo de profil est optionnelle</p>
-              </div>
+              <h3 className="text-xl font-black uppercase text-blue-500 tracking-tighter italic">Nouveau Collaborateur</h3>
               <button onClick={() => { resetForm(); onClose(); }}
                 className="text-white/30 hover:text-white transition-colors text-lg font-black">×</button>
             </div>
 
             <div className="space-y-7">
 
-              {/* PHOTO — optionnelle */}
+              {/* ── PHOTO — section en premier, label "optionnelle" visible directement ── */}
               <div>
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 block">
-                  Photo de profil <span className="text-white/20 normal-case font-medium">(optionnelle)</span>
-                </label>
                 <div className="flex items-center gap-5">
                   <div onClick={() => fileInputRef.current?.click()}
                     className="h-20 w-20 rounded-full border-2 border-dashed border-white/20 hover:border-blue-500 bg-white/5 flex items-center justify-center cursor-pointer transition-all overflow-hidden shrink-0">
@@ -245,17 +219,18 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
                       ? <img src={avatarPreview} className="h-full w-full object-cover" alt="preview" />
                       : <span className="text-2xl">📷</span>}
                   </div>
-                  <div>
+                  <div className="flex flex-col gap-1">
                     <button type="button" onClick={() => fileInputRef.current?.click()}
-                      className="text-[12px] font-black uppercase text-blue-400 hover:text-blue-300 transition-colors">
-                      Choisir une photo →
+                      className="text-[12px] font-black uppercase text-blue-400 hover:text-blue-300 transition-colors text-left">
+                      Choisir une photo <span className="text-white/30 normal-case font-medium">(optionnelle)</span> →
                     </button>
+                    <p className="text-[10px] text-white/20 font-medium">JPG, PNG ou WEBP recommandé</p>
                   </div>
                   <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
                 </div>
               </div>
 
-              {/* IDENTITÉ */}
+              {/* ── IDENTITÉ ── */}
               <div className="space-y-3">
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 flex items-center gap-2">
                   <span className="w-4 h-px bg-white/20 inline-block"></span> Identité
@@ -283,8 +258,9 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
                       placeholder="Négociateur, Directeur..." className={inputClass('fonction')} />
                   </div>
                   <div>
+                    {/* ✅ RSAC Ville — optionnel */}
                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">
-                      RSAC <span className="text-red-400">*</span>
+                      RSAC Ville <span className="text-white/20 normal-case font-medium text-[9px]">(optionnel)</span>
                     </label>
                     <input type="text" value={rsac} onChange={(e) => setRsac(e.target.value)}
                       placeholder="Ex: 123 456 789" className={inputClass('rsac')} />
@@ -292,7 +268,7 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
                 </div>
               </div>
 
-              {/* CONTACT */}
+              {/* ── CONTACT ── */}
               <div className="space-y-3">
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 flex items-center gap-2">
                   <span className="w-4 h-px bg-white/20 inline-block"></span> Contact
@@ -306,15 +282,17 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
                       placeholder="prenom@agence.com" className={inputClass('email')} />
                   </div>
                   <div>
+                    {/* ✅ Téléphone mobile — optionnel */}
                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1">
-                      Téléphone mobile <span className="text-red-400">*</span>
+                      Téléphone mobile <span className="text-white/20 normal-case font-medium text-[9px]">(optionnel)</span>
                     </label>
                     <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
                       placeholder="06 00 00 00 00" className={inputClass('phone')} />
                   </div>
                   <div className="md:col-span-2">
+                    {/* ✅ Téléphone fixe — optionnel */}
                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5 ml-1 flex items-center gap-1.5">
-                      Téléphone fixe agence <span className="text-red-400">*</span>
+                      Téléphone fixe agence <span className="text-white/20 normal-case font-medium text-[9px]">(optionnel)</span>
                       {phoneFix && agencyDefaults.phone_fix && <span className="text-blue-400/50 normal-case font-bold tracking-normal">· agence</span>}
                     </label>
                     <input type="tel" value={phoneFix} onChange={(e) => setPhoneFix(e.target.value)}
@@ -323,7 +301,7 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
                 </div>
               </div>
 
-              {/* ADRESSE */}
+              {/* ── ADRESSE ── */}
               <div className="space-y-3">
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 flex items-center gap-2">
                   <span className="w-4 h-px bg-white/20 inline-block"></span> Adresse
@@ -361,7 +339,6 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
                   {errors.global}
                 </p>
               )}
-
               {Object.keys(errors).filter(k => k !== 'global').length > 0 && (
                 <p className="text-red-400 text-[12px] font-black uppercase bg-red-500/10 border border-red-500/20 px-4 py-3 rounded-xl">
                   ⚠ Veuillez remplir tous les champs obligatoires
@@ -378,6 +355,7 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
                   {isLoading ? 'Ajout en cours...' : 'Ajouter au répertoire →'}
                 </button>
               </div>
+
             </div>
           </motion.div>
         </div>
@@ -387,7 +365,6 @@ function CreateProfileModal({ isOpen, onClose, agencyId, onCreated, agencyDefaul
 }
 
 
-
 // ─── THEME ────────────────────────────────────────────────────────────────────
 const THEME = {
   category: 'Perso',
@@ -395,7 +372,6 @@ const THEME = {
   color: 'text-blue-500',
   bg: 'bg-blue-500'
 };
-
 
 
 // ─── PAGE PRINCIPALE ──────────────────────────────────────────────────────────
@@ -417,7 +393,6 @@ export default function PersoPage() {
   const [agencyDefaults, setAgencyDefaults] = useState({
     phone_fix: '', adresse: '', ville: '', code_postal: '',
   });
-
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -447,7 +422,6 @@ export default function PersoPage() {
     fetchUserData();
   }, []);
 
-
   const fetchTeamMembers = async (agId: string) => {
     const { data: admins } = await supabase
       .from('profiles')
@@ -463,7 +437,6 @@ export default function PersoPage() {
     ].sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''));
     setTeamMembers(merged);
   };
-
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -495,10 +468,8 @@ export default function PersoPage() {
     fetchProducts();
   }, []);
 
-
   const toggleFlip = (id: string) =>
     setFlippedProducts(prev => ({ ...prev, [id]: !prev[id] }));
-
 
   const handleAddToCart = (p: any) => {
     if (p.showOrderedBy && (userRole === 'admin_agence' || userRole === 'super_admin') && !orderedBy[p.id]) {
@@ -521,7 +492,6 @@ export default function PersoPage() {
     setIsCartOpen(true);
   };
 
-
   const handleMemberCreated = (newMember: any) => {
     setTeamMembers(prev =>
       [...prev, newMember].sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''))
@@ -532,7 +502,6 @@ export default function PersoPage() {
     }
   };
 
-
   const handleOrderedByChange = (productId: string, value: string) => {
     if (value === '__create__') {
       setPendingProductId(productId);
@@ -542,13 +511,11 @@ export default function PersoPage() {
     }
   };
 
-
   if (loading) return (
     <div className="min-h-screen bg-[#0f092e] flex items-center justify-center font-black text-blue-500 uppercase animate-pulse tracking-widest">
       Chargement Produits Personnalisables...
     </div>
   );
-
 
   return (
     <div className="min-h-screen bg-[#0f092e] text-white flex flex-col relative overflow-x-hidden">
@@ -617,7 +584,6 @@ export default function PersoPage() {
 
                 <div className="bg-white/[0.03] border border-white/10 rounded-[40px] p-8 pt-16 hover:bg-white/[0.05] transition-all hover:border-blue-500/30 shadow-xl">
                   <h3 className={`font-black text-base uppercase mb-6 ${THEME.color} tracking-tight`}>{p.name}</h3>
-
                   <div className="space-y-4">
                     {p.hasVariants && (
                       <div className="space-y-1">
