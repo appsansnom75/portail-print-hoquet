@@ -6,13 +6,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 
 
+
 export default function CartPage() {
   const { cart, removeFromCart, clearCart } = useCart();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirm, setShowConfirm]   = useState(false);
   const [orderSent, setOrderSent]       = useState(false);
 
-  // ✅ Accordéon mentions légales
   const [mentionsOpen, setMentionsOpen] = useState(false);
 
   const [agencyData, setAgencyData]     = useState<any>(null);
@@ -46,6 +46,7 @@ export default function CartPage() {
   const [mentionsApe, setMentionsApe]                                       = useState('');
   const [mentionsCartePro, setMentionsCartePro]                             = useState('');
   const [mentionsCarteProDelivree, setMentionsCarteProDelivree]             = useState('');
+  const [mentionsCarteProDelivreeType, setMentionsCarteProDelivreeType]     = useState('la CCI de'); // ✅ NOUVEAU
   const [mentionsCaisseGarantie, setMentionsCaisseGarantie]                 = useState('');
   const [mentionsCaisseGarantieAdresse, setMentionsCaisseGarantieAdresse]   = useState('');
   const [mentionsTva, setMentionsTva]                                       = useState('');
@@ -89,6 +90,7 @@ export default function CartPage() {
           setMentionsApe(agency.mentions_ape                                || '');
           setMentionsCartePro(agency.mentions_carte_pro                     || '');
           setMentionsCarteProDelivree(agency.mentions_carte_pro_delivree    || '');
+          setMentionsCarteProDelivreeType(agency.mentions_carte_pro_delivree_type || 'la CCI de'); // ✅ NOUVEAU
           setMentionsCaisseGarantie(agency.mentions_caisse_garantie         || '');
           setMentionsCaisseGarantieAdresse(agency.mentions_caisse_garantie_adresse || '');
           setMentionsTva(agency.mentions_tva                                || '');
@@ -129,6 +131,7 @@ export default function CartPage() {
       mentions_ape:                     mentionsApe,
       mentions_carte_pro:               mentionsCartePro,
       mentions_carte_pro_delivree:      mentionsCarteProDelivree,
+      mentions_carte_pro_delivree_type: mentionsCarteProDelivreeType, // ✅ NOUVEAU
       mentions_caisse_garantie:         mentionsCaisseGarantie,
       mentions_caisse_garantie_adresse: mentionsCaisseGarantieAdresse,
       mentions_tva:                     mentionsTva,
@@ -153,7 +156,7 @@ export default function CartPage() {
       mentionsRcs.trim() &&
       mentionsApe.trim() &&
       mentionsCartePro.trim() &&
-      mentionsCarteProDelivree.trim() &&
+      mentionsCarteProDelivree.trim() && // la valeur texte suffit pour valider
       mentionsCaisseGarantie.trim() &&
       mentionsCaisseGarantieAdresse.trim() &&
       mentionsTva.trim() &&
@@ -247,7 +250,6 @@ export default function CartPage() {
           total_ht:      fmt(totalHT),
           total_ttc:     fmt(totalTTC),
           date:          new Date().toLocaleString('fr-FR'),
-          // ✅ Tous les champs passent toujours au webhook
           mentions_mail_facturation:        mentionsMailFacturation,
           mentions_nom_societe:             mentionsNomSociete,
           mentions_ville_agence:            mentionsVilleAgence,
@@ -257,7 +259,8 @@ export default function CartPage() {
           mentions_rcs:                     mentionsRcs,
           mentions_ape:                     mentionsApe,
           mentions_carte_pro:               mentionsCartePro,
-          mentions_carte_pro_delivree:      mentionsCarteProDelivree,
+          // ✅ Make reçoit une string complète : "la préfecture de Paname"
+          mentions_carte_pro_delivree: `${mentionsCarteProDelivreeType} ${mentionsCarteProDelivree}`.trim(),
           mentions_caisse_garantie:         mentionsCaisseGarantie,
           mentions_caisse_garantie_adresse: mentionsCaisseGarantieAdresse,
           mentions_tva:                     mentionsTva,
@@ -317,7 +320,7 @@ export default function CartPage() {
         : 'border-blue-500/20 focus:border-blue-500'
     }`;
 
-  // champs mentions qui comptent pour la validation (pour le badge ⚠)
+  // Champs mentions légales dans l'accordéon (hors "Délivrée par" qui est traité séparément)
   const mentionsLegalesFields = [
     { label: 'Ville sous le logo',        val: mentionsVilleAgence,            set: setMentionsVilleAgence,            ph: 'Ex: ANGERS' },
     { label: 'URL QR Code',               val: mentionsUrlQrCode,              set: setMentionsUrlQrCode,              ph: 'Ex: https://www.guy-hoquet.com/agence-angers' },
@@ -326,14 +329,17 @@ export default function CartPage() {
     { label: 'RCS',                       val: mentionsRcs,                    set: setMentionsRcs,                    ph: 'Ex: Paris 123 456 789' },
     { label: 'Code APE',                  val: mentionsApe,                    set: setMentionsApe,                    ph: 'Ex: 6831Z' },
     { label: 'N° Carte Professionnelle',  val: mentionsCartePro,               set: setMentionsCartePro,               ph: 'Ex: CPI 7501 2016 000 012 345' },
-    { label: 'Délivrée par la CCI de',    val: mentionsCarteProDelivree,       set: setMentionsCarteProDelivree,       ph: 'Ex: Paris Île-de-France' },
+    // ✅ "Délivrée par" est retiré du tableau — géré séparément en dessous
     { label: 'Caisse de Garantie',        val: mentionsCaisseGarantie,         set: setMentionsCaisseGarantie,         ph: 'Ex: GALIAN Assurances' },
     { label: 'Adresse Caisse',            val: mentionsCaisseGarantieAdresse,  set: setMentionsCaisseGarantieAdresse,  ph: 'Ex: 89 rue de la Boétie, 75008 Paris' },
     { label: 'TVA Intracommunautaire',    val: mentionsTva,                    set: setMentionsTva,                    ph: 'Ex: FR 12 123456789' },
     { label: 'Mail RGPD',                 val: mentionsMailRgpd,               set: setMentionsMailRgpd,               ph: 'Ex: informatique-et-libertes@guy-hoquet.com' },
   ] as { label: string; val: string; set: (v: string) => void; ph: string }[];
 
-  const mentionsIncomplets = mentionsLegalesFields.filter(f => !f.val.trim()).length;
+  // Badge : compte aussi mentionsCarteProDelivree pour l'alerte
+  const mentionsIncomplets =
+    mentionsLegalesFields.filter(f => !f.val.trim()).length +
+    (mentionsCarteProDelivree.trim() ? 0 : 1);
 
 
   return (
@@ -481,7 +487,7 @@ export default function CartPage() {
 
             <div className="space-y-5">
 
-              {/* ── Mail de facturation — TOUJOURS VISIBLE ── */}
+              {/* Mail facturation */}
               <div className="space-y-1">
                 <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 flex items-center gap-2">
                   Mail de facturation <span className="text-red-400">*</span>
@@ -491,7 +497,7 @@ export default function CartPage() {
                   placeholder="Ex: compta@guy-hoquet-angers.com" className={inp(mentionsMailFacturation)} />
               </div>
 
-              {/* ── Nom société — TOUJOURS VISIBLE ── */}
+              {/* Nom société */}
               <div className="space-y-1">
                 <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 flex items-center gap-2">
                   Nom Société <span className="text-red-400">*</span>
@@ -501,23 +507,20 @@ export default function CartPage() {
                   placeholder="Ex: GUY HOQUET PARIS 1" className={inp(mentionsNomSociete)} />
               </div>
 
-              {/* ── ACCORDÉON : Mentions légales complètes ── */}
+              {/* Accordéon mentions légales complètes */}
               <div className="border border-white/10 rounded-[28px] overflow-hidden">
 
-                {/* Bouton toggle */}
                 <button type="button" onClick={() => setMentionsOpen(!mentionsOpen)}
                   className="w-full flex items-center justify-between px-6 py-4 hover:bg-white/5 transition-all">
                   <div className="flex items-center gap-3">
                     <span className="text-[11px] font-black uppercase tracking-widest text-white/40">
                       Mentions légales complètes
                     </span>
-                    {/* Badge d'alerte si des champs sont vides */}
-                    {mentionsIncomplets > 0 && (
+                    {mentionsIncomplets > 0 ? (
                       <span className="bg-red-500/20 text-red-400 border border-red-500/30 text-[10px] font-black uppercase px-2 py-0.5 rounded-full">
                         {mentionsIncomplets} champ{mentionsIncomplets > 1 ? 's' : ''} vide{mentionsIncomplets > 1 ? 's' : ''}
                       </span>
-                    )}
-                    {mentionsIncomplets === 0 && (
+                    ) : (
                       <span className="bg-green-500/10 text-green-400 border border-green-500/20 text-[10px] font-black uppercase px-2 py-0.5 rounded-full">
                         ✓ Complet
                       </span>
@@ -532,7 +535,6 @@ export default function CartPage() {
                   </motion.span>
                 </button>
 
-                {/* Contenu déroulant */}
                 <AnimatePresence initial={false}>
                   {mentionsOpen && (
                     <motion.div
@@ -543,6 +545,8 @@ export default function CartPage() {
                       className="overflow-hidden"
                     >
                       <div className="px-6 pb-6 space-y-5 border-t border-white/5 pt-5">
+
+                        {/* Champs génériques via map */}
                         {mentionsLegalesFields.map(({ label, val, set, ph }) => (
                           <div key={label} className="space-y-1">
                             <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 flex items-center gap-2">
@@ -552,11 +556,34 @@ export default function CartPage() {
                               placeholder={ph} className={inp(val)} />
                           </div>
                         ))}
+
+                        {/* ✅ DÉLIVRÉE PAR — inséré après "N° Carte Pro" (index 6) */}
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 flex items-center gap-2">
+                            Délivrée par <span className="text-red-400">*</span>
+                          </label>
+                          <div className="flex gap-2">
+                            <select
+                              value={mentionsCarteProDelivreeType}
+                              onChange={(e) => setMentionsCarteProDelivreeType(e.target.value)}
+                              className="bg-black/40 border border-white/10 rounded-2xl p-5 text-[13px] font-black outline-none focus:border-blue-500 transition-all text-white cursor-pointer appearance-none shrink-0"
+                            >
+                              <option value="la CCI de"        className="bg-[#0f092e]">la CCI de</option>
+                              <option value="la préfecture de" className="bg-[#0f092e]">la préfecture de</option>
+                            </select>
+                            <input
+                              value={mentionsCarteProDelivree}
+                              onChange={(e) => setMentionsCarteProDelivree(e.target.value)}
+                              placeholder="Ex: Paris Île-de-France"
+                              className={inp(mentionsCarteProDelivree)}
+                            />
+                          </div>
+                        </div>
+
                       </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
-
               </div>
             </div>
           </section>
