@@ -12,6 +12,9 @@ export default function CartPage() {
   const [showConfirm, setShowConfirm]   = useState(false);
   const [orderSent, setOrderSent]       = useState(false);
 
+  // ✅ Accordéon mentions légales
+  const [mentionsOpen, setMentionsOpen] = useState(false);
+
   const [agencyData, setAgencyData]     = useState<any>(null);
   const [agenceId, setAgenceId]         = useState<string | null>(null);
   const [membres, setMembres]           = useState<any[]>([]);
@@ -34,9 +37,9 @@ export default function CartPage() {
 
   // 04 - FACTURATION & LÉGALES
   const [mentionsMailFacturation, setMentionsMailFacturation]               = useState('');
+  const [mentionsNomSociete, setMentionsNomSociete]                         = useState('');
   const [mentionsVilleAgence, setMentionsVilleAgence]                       = useState('');
   const [mentionsUrlQrCode, setMentionsUrlQrCode]                           = useState('');
-  const [mentionsNomSociete, setMentionsNomSociete]                         = useState('');
   const [mentionsStatut, setMentionsStatut]                                 = useState('');
   const [mentionsCapital, setMentionsCapital]                               = useState('');
   const [mentionsRcs, setMentionsRcs]                                       = useState('');
@@ -50,7 +53,6 @@ export default function CartPage() {
 
   const totalHT  = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
   const totalTTC = totalHT * 1.2;
-
   const fmt = (n: number) => n.toFixed(2).replace('.', ',');
 
 
@@ -61,8 +63,7 @@ export default function CartPage() {
       if (!user) { setLoading(false); return; }
 
       const { data: profile } = await supabase
-        .from('profiles').select('agency_id')
-        .eq('id', user.id).single();
+        .from('profiles').select('agency_id').eq('id', user.id).single();
 
       if (profile?.agency_id) {
         setAgenceId(profile.agency_id);
@@ -79,9 +80,9 @@ export default function CartPage() {
           setPhone(agency.agence_telephone       || '');
           setPhoneFix(agency.phone_fix           || '');
           setMentionsMailFacturation(agency.mentions_mail_facturation       || agency.agence_email || '');
+          setMentionsNomSociete(agency.mentions_nom_societe                 || '');
           setMentionsVilleAgence(agency.mentions_ville_agence               || agency.ville || '');
           setMentionsUrlQrCode(agency.mentions_url_qr_code                  || '');
-          setMentionsNomSociete(agency.mentions_nom_societe                 || '');
           setMentionsStatut(agency.mentions_statut                          || '');
           setMentionsCapital(agency.mentions_capital                        || '');
           setMentionsRcs(agency.mentions_rcs                                || '');
@@ -144,9 +145,9 @@ export default function CartPage() {
 
     const mentionsOk =
       mentionsMailFacturation.trim() &&
+      mentionsNomSociete.trim() &&
       mentionsVilleAgence.trim() &&
       mentionsUrlQrCode.trim() &&
-      mentionsNomSociete.trim() &&
       mentionsStatut.trim() &&
       mentionsCapital.trim() &&
       mentionsRcs.trim() &&
@@ -246,10 +247,11 @@ export default function CartPage() {
           total_ht:      fmt(totalHT),
           total_ttc:     fmt(totalTTC),
           date:          new Date().toLocaleString('fr-FR'),
+          // ✅ Tous les champs passent toujours au webhook
           mentions_mail_facturation:        mentionsMailFacturation,
+          mentions_nom_societe:             mentionsNomSociete,
           mentions_ville_agence:            mentionsVilleAgence,
           mentions_url_qr_code:             mentionsUrlQrCode,
-          mentions_nom_societe:             mentionsNomSociete,
           mentions_statut:                  mentionsStatut,
           mentions_capital:                 mentionsCapital,
           mentions_rcs:                     mentionsRcs,
@@ -300,6 +302,7 @@ export default function CartPage() {
 
   const formValid = isFormValid();
 
+  // ── helpers styles ──────────────────────────────────────────────────────────
   const inp = (val: string) =>
     `w-full bg-black/40 border rounded-2xl p-5 text-[13px] font-black outline-none transition-all ${
       !val.trim()
@@ -313,6 +316,24 @@ export default function CartPage() {
         ? 'border-red-500/30 focus:border-red-500'
         : 'border-blue-500/20 focus:border-blue-500'
     }`;
+
+  // champs mentions qui comptent pour la validation (pour le badge ⚠)
+  const mentionsLegalesFields = [
+    { label: 'Ville sous le logo',        val: mentionsVilleAgence,            set: setMentionsVilleAgence,            ph: 'Ex: ANGERS' },
+    { label: 'URL QR Code',               val: mentionsUrlQrCode,              set: setMentionsUrlQrCode,              ph: 'Ex: https://www.guy-hoquet.com/agence-angers' },
+    { label: 'Statut Juridique',          val: mentionsStatut,                 set: setMentionsStatut,                 ph: 'Ex: SARL, SAS, EI...' },
+    { label: 'Capital Social (€)',        val: mentionsCapital,                set: setMentionsCapital,                ph: 'Ex: 10 000' },
+    { label: 'RCS',                       val: mentionsRcs,                    set: setMentionsRcs,                    ph: 'Ex: Paris 123 456 789' },
+    { label: 'Code APE',                  val: mentionsApe,                    set: setMentionsApe,                    ph: 'Ex: 6831Z' },
+    { label: 'N° Carte Professionnelle',  val: mentionsCartePro,               set: setMentionsCartePro,               ph: 'Ex: CPI 7501 2016 000 012 345' },
+    { label: 'Délivrée par la CCI de',    val: mentionsCarteProDelivree,       set: setMentionsCarteProDelivree,       ph: 'Ex: Paris Île-de-France' },
+    { label: 'Caisse de Garantie',        val: mentionsCaisseGarantie,         set: setMentionsCaisseGarantie,         ph: 'Ex: GALIAN Assurances' },
+    { label: 'Adresse Caisse',            val: mentionsCaisseGarantieAdresse,  set: setMentionsCaisseGarantieAdresse,  ph: 'Ex: 89 rue de la Boétie, 75008 Paris' },
+    { label: 'TVA Intracommunautaire',    val: mentionsTva,                    set: setMentionsTva,                    ph: 'Ex: FR 12 123456789' },
+    { label: 'Mail RGPD',                 val: mentionsMailRgpd,               set: setMentionsMailRgpd,               ph: 'Ex: informatique-et-libertes@guy-hoquet.com' },
+  ] as { label: string; val: string; set: (v: string) => void; ph: string }[];
+
+  const mentionsIncomplets = mentionsLegalesFields.filter(f => !f.val.trim()).length;
 
 
   return (
@@ -460,7 +481,7 @@ export default function CartPage() {
 
             <div className="space-y-5">
 
-              {/* ── Mail de facturation — EN PREMIER ── */}
+              {/* ── Mail de facturation — TOUJOURS VISIBLE ── */}
               <div className="space-y-1">
                 <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 flex items-center gap-2">
                   Mail de facturation <span className="text-red-400">*</span>
@@ -470,47 +491,73 @@ export default function CartPage() {
                   placeholder="Ex: compta@guy-hoquet-angers.com" className={inp(mentionsMailFacturation)} />
               </div>
 
-              {/* Ville sous logo */}
+              {/* ── Nom société — TOUJOURS VISIBLE ── */}
               <div className="space-y-1">
                 <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 flex items-center gap-2">
-                  Ville sous le logo <span className="text-red-400">*</span>
-                  {mentionsVilleAgence && <span className="text-blue-400/50 normal-case font-bold tracking-normal">· agence</span>}
+                  Nom Société <span className="text-red-400">*</span>
+                  {mentionsNomSociete && <span className="text-blue-400/50 normal-case font-bold tracking-normal">· agence</span>}
                 </label>
-                <input value={mentionsVilleAgence} onChange={(e) => setMentionsVilleAgence(e.target.value)}
-                  placeholder="Ex: ANGERS" className={inp(mentionsVilleAgence)} />
+                <input value={mentionsNomSociete} onChange={(e) => setMentionsNomSociete(e.target.value)}
+                  placeholder="Ex: GUY HOQUET PARIS 1" className={inp(mentionsNomSociete)} />
               </div>
 
-              {/* URL QR Code */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">
-                  URL QR Code <span className="text-red-400">*</span>
-                </label>
-                <input value={mentionsUrlQrCode} onChange={(e) => setMentionsUrlQrCode(e.target.value)}
-                  placeholder="Ex: https://www.guy-hoquet.com/agence-angers" className={inp(mentionsUrlQrCode)} />
-              </div>
+              {/* ── ACCORDÉON : Mentions légales complètes ── */}
+              <div className="border border-white/10 rounded-[28px] overflow-hidden">
 
-              {/* Champs légaux */}
-              {([
-                { label: 'Nom Société',              val: mentionsNomSociete,            set: setMentionsNomSociete,            ph: 'Ex: GUY HOQUET PARIS 1',                    prefilled: true },
-                { label: 'Statut Juridique',         val: mentionsStatut,                set: setMentionsStatut,                ph: 'Ex: SARL, SAS, EI...' },
-                { label: 'Capital Social (€)',       val: mentionsCapital,               set: setMentionsCapital,               ph: 'Ex: 10 000' },
-                { label: 'RCS',                      val: mentionsRcs,                   set: setMentionsRcs,                   ph: 'Ex: Paris 123 456 789' },
-                { label: 'Code APE',                 val: mentionsApe,                   set: setMentionsApe,                   ph: 'Ex: 6831Z' },
-                { label: 'N° Carte Professionnelle', val: mentionsCartePro,              set: setMentionsCartePro,              ph: 'Ex: CPI 7501 2016 000 012 345' },
-                { label: 'Délivrée par la CCI de',   val: mentionsCarteProDelivree,      set: setMentionsCarteProDelivree,      ph: 'Ex: Paris Île-de-France' },
-                { label: 'Caisse de Garantie',       val: mentionsCaisseGarantie,        set: setMentionsCaisseGarantie,        ph: 'Ex: GALIAN Assurances' },
-                { label: 'Adresse Caisse',           val: mentionsCaisseGarantieAdresse, set: setMentionsCaisseGarantieAdresse, ph: 'Ex: 89 rue de la Boétie, 75008 Paris' },
-                { label: 'TVA Intracommunautaire',   val: mentionsTva,                   set: setMentionsTva,                   ph: 'Ex: FR 12 123456789' },
-                { label: 'Mail RGPD',                val: mentionsMailRgpd,              set: setMentionsMailRgpd,              ph: 'Ex: informatique-et-libertes@guy-hoquet.com' },
-              ] as { label: string; val: string; set: (v: string) => void; ph: string; prefilled?: boolean }[]).map(({ label, val, set, ph, prefilled }) => (
-                <div key={label} className="space-y-1">
-                  <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 flex items-center gap-2">
-                    {label} <span className="text-red-400">*</span>
-                    {prefilled && val && <span className="text-blue-400/50 normal-case font-bold tracking-normal">· agence</span>}
-                  </label>
-                  <input value={val} onChange={(e) => set(e.target.value)} placeholder={ph} className={inp(val)} />
-                </div>
-              ))}
+                {/* Bouton toggle */}
+                <button type="button" onClick={() => setMentionsOpen(!mentionsOpen)}
+                  className="w-full flex items-center justify-between px-6 py-4 hover:bg-white/5 transition-all">
+                  <div className="flex items-center gap-3">
+                    <span className="text-[11px] font-black uppercase tracking-widest text-white/40">
+                      Mentions légales complètes
+                    </span>
+                    {/* Badge d'alerte si des champs sont vides */}
+                    {mentionsIncomplets > 0 && (
+                      <span className="bg-red-500/20 text-red-400 border border-red-500/30 text-[10px] font-black uppercase px-2 py-0.5 rounded-full">
+                        {mentionsIncomplets} champ{mentionsIncomplets > 1 ? 's' : ''} vide{mentionsIncomplets > 1 ? 's' : ''}
+                      </span>
+                    )}
+                    {mentionsIncomplets === 0 && (
+                      <span className="bg-green-500/10 text-green-400 border border-green-500/20 text-[10px] font-black uppercase px-2 py-0.5 rounded-full">
+                        ✓ Complet
+                      </span>
+                    )}
+                  </div>
+                  <motion.span
+                    animate={{ rotate: mentionsOpen ? 180 : 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="text-white/30 text-lg font-black"
+                  >
+                    ↓
+                  </motion.span>
+                </button>
+
+                {/* Contenu déroulant */}
+                <AnimatePresence initial={false}>
+                  {mentionsOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: 'easeInOut' }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-6 pb-6 space-y-5 border-t border-white/5 pt-5">
+                        {mentionsLegalesFields.map(({ label, val, set, ph }) => (
+                          <div key={label} className="space-y-1">
+                            <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 flex items-center gap-2">
+                              {label} <span className="text-red-400">*</span>
+                            </label>
+                            <input value={val} onChange={(e) => set(e.target.value)}
+                              placeholder={ph} className={inp(val)} />
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+              </div>
             </div>
           </section>
 
