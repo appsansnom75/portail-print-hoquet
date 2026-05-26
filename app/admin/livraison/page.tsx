@@ -27,20 +27,55 @@ export default function AdminLivraisonPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // ─── CHARGEMENT ─────────────────────────────────────────────────────────────
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase
+      setErrorMsg(null);
+
+      let { data, error } = await supabase
         .from('shipping_config')
         .select('*')
         .limit(1)
         .maybeSingle();
 
+      if (error) {
+        console.error('Erreur chargement :', error);
+        setErrorMsg('Erreur de chargement : ' + error.message);
+        setLoading(false);
+        return;
+      }
+
+      // ✅ Aucune ligne → on en crée une
+      if (!data) {
+        const { data: inserted, error: insertError } = await supabase
+          .from('shipping_config')
+          .insert({
+            paliers: [],
+            livraison_offerte_active: false,
+            livraison_offerte_date: null,
+          })
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error('Erreur création config :', insertError);
+          setErrorMsg('Erreur création config : ' + insertError.message);
+          setLoading(false);
+          return;
+        }
+
+        data = inserted;
+      }
+
       if (data) {
         setConfigId(data.id);
         setPaliers(
-          (data.paliers || []).map((p: any) => ({ ...p, id: p.id || crypto.randomUUID() }))
+          (data.paliers || []).map((p: any) => ({
+            ...p,
+            id: p.id || crypto.randomUUID(),
+          }))
         );
         setOfferteActive(!!data.livraison_offerte_active);
         setOfferteDate(data.livraison_offerte_date || '');
@@ -54,35 +89,50 @@ export default function AdminLivraisonPage() {
 
   // ─── SAUVEGARDE ─────────────────────────────────────────────────────────────
   const handleSave = async () => {
-    if (!configId) return;
+    setErrorMsg(null);
+
+    if (!configId) {
+      setErrorMsg('Config introuvable. Recharge la page.');
+      return;
+    }
+
     setSaving(true);
 
     const paliersClean = paliers.map(({ id, min_amount, max_amount, price, label }) => ({
       id,
       label,
       min_amount: Number(min_amount) || 0,
-      max_amount: max_amount === '' || max_amount === null ? null : Number(max_amount),
+      max_amount:
+        max_amount === '' || max_amount === null || max_amount === undefined
+          ? null
+          : Number(max_amount),
       price: Number(price) || 0,
     }));
 
+    const payload = {
+      paliers: paliersClean,
+      livraison_offerte_active: offerteActive,
+      livraison_offerte_date: offerteDate || null,
+      updated_at: new Date().toISOString(),
+    };
+
+    console.log('→ Sauvegarde shipping_config', { configId, payload });
+
     const { error } = await supabase
       .from('shipping_config')
-      .update({
-        paliers: paliersClean,
-        livraison_offerte_active: offerteActive,
-        livraison_offerte_date: offerteDate || null,
-        updated_at: new Date().toISOString(),
-      })
+      .update(payload)
       .eq('id', configId);
 
     setSaving(false);
 
-    if (!error) {
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
-    } else {
-      alert('Erreur lors de la sauvegarde : ' + error.message);
+    if (error) {
+      console.error('Erreur Supabase :', error);
+      setErrorMsg('Erreur sauvegarde : ' + error.message);
+      return;
     }
+
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
   };
 
   // ─── ACTIONS PALIERS ────────────────────────────────────────────────────────
@@ -108,6 +158,7 @@ export default function AdminLivraisonPage() {
   const offerteAujourdhui = offerteActive && offerteDate === todayISO;
   const fmt = (n: number) => n.toFixed(2).replace('.', ',');
 
+  // ─── ÉTATS ──────────────────────────────────────────────────────────────────
   if (loading) return (
     <div className="min-h-screen bg-[#0f092e] flex items-center justify-center text-white text-[13px] font-black uppercase italic animate-pulse">
       Chargement de la configuration...
@@ -116,10 +167,13 @@ export default function AdminLivraisonPage() {
 
   return (
     <div className="min-h-screen bg-[#0f092e] text-white pb-24">
-      {/* ── HEADER ────────────────────────────────────────────────────────────── */}
+
+      {/* ── HEADER ──────────────────────────────────────────────────────────── */}
       <header className="py-10 px-6 max-w-4xl mx-auto flex justify-between items-center border-b border-white/10 mb-12">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-500 italic mb-1">Super Admin</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-500 italic mb-1">
+            Super Admin
+          </p>
           <h1 className="text-[22px] font-black uppercase italic tracking-tighter">
             Frais de Livraison
           </h1>
@@ -140,7 +194,26 @@ export default function AdminLivraisonPage() {
 
       <main className="max-w-4xl mx-auto px-6 space-y-10">
 
-        {/* ── LIVRAISON OFFERTE ─────────────────────────────────────────────── */}
+        {/* ── ERREUR ──────────────────────────────────────────────────────────── */}
+        <AnimatePresence>
+          {errorMsg && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="bg-red-500/10 border border-red-500/30 rounded-2xl px-6 py-4 text-red-400 text-[12px] font-black uppercase"
+            >
+              ⚠ {errorMsg}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── DEBUG configId ──────────────────────────────────────────────────── */}
+        <div className="text-[10px] font-mono text-white/10 ml-2">
+          config_id: {configId || 'null — problème de chargement'}
+        </div>
+
+        {/* ── LIVRAISON OFFERTE ────────────────────────────────────────────── */}
         <section className="bg-white/[0.03] border border-white/10 rounded-[40px] p-10 space-y-6">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
@@ -148,11 +221,10 @@ export default function AdminLivraisonPage() {
                 Livraison offerte
               </h2>
               <p className="text-[11px] font-black text-white/20 uppercase tracking-widest mt-1">
-                Ce jour-ci, les frais de livraison sont automatiquement à 0€ pour tous les comptes
+                Ce jour-ci, les frais sont automatiquement 0€ pour tous les comptes
               </p>
             </div>
 
-            {/* Toggle */}
             <button
               type="button"
               onClick={() => setOfferteActive(!offerteActive)}
@@ -160,9 +232,11 @@ export default function AdminLivraisonPage() {
                 offerteActive ? 'bg-green-500' : 'bg-white/10'
               }`}
             >
-              <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all duration-300 ${
-                offerteActive ? 'left-8' : 'left-1'
-              }`} />
+              <span
+                className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all duration-300 ${
+                  offerteActive ? 'left-8' : 'left-1'
+                }`}
+              />
             </button>
           </div>
 
@@ -190,8 +264,13 @@ export default function AdminLivraisonPage() {
                       offerteAujourdhui ? 'text-green-400' : 'text-white/30'
                     }`}>
                       {offerteAujourdhui
-                        ? '✓ Livraison offerte AUJOURD\'HUI — actif pour tous les comptes'
-                        : `Livraison offerte le ${new Date(offerteDate + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`
+                        ? "✓ Livraison offerte AUJOURD'HUI — actif pour tous les comptes"
+                        : `Livraison offerte le ${new Date(offerteDate + 'T00:00:00').toLocaleDateString('fr-FR', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                          })}`
                       }
                     </p>
                   )}
@@ -201,7 +280,7 @@ export default function AdminLivraisonPage() {
           </AnimatePresence>
         </section>
 
-        {/* ── PALIERS ───────────────────────────────────────────────────────── */}
+        {/* ── PALIERS ──────────────────────────────────────────────────────── */}
         <section className="bg-white/[0.03] border border-white/10 rounded-[40px] p-10 space-y-8">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
@@ -222,11 +301,12 @@ export default function AdminLivraisonPage() {
             </button>
           </div>
 
-          {/* Légende */}
           {paliers.length > 0 && (
-            <div className="grid grid-cols-[1fr_1fr_1fr_2fr_80px] gap-4 px-2">
+            <div className="hidden md:grid grid-cols-[1fr_1fr_1fr_2fr_80px] gap-4 px-2">
               {['Min panier (€)', 'Max panier (€)', 'Frais HT (€)', 'Label (optionnel)', ''].map((h, i) => (
-                <span key={i} className="text-[10px] font-black uppercase tracking-widest text-white/20">{h}</span>
+                <span key={i} className="text-[10px] font-black uppercase tracking-widest text-white/20">
+                  {h}
+                </span>
               ))}
             </div>
           )}
@@ -242,7 +322,8 @@ export default function AdminLivraisonPage() {
                   transition={{ duration: 0.2 }}
                   className="bg-black/30 border border-white/5 rounded-[24px] p-5"
                 >
-                  <div className="grid grid-cols-[1fr_1fr_1fr_2fr_80px] gap-4 items-center">
+                  <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_2fr_80px] gap-4 items-end">
+
                     {/* Min */}
                     <div className="space-y-1">
                       <label className="text-[10px] font-black uppercase text-white/20 ml-1">Min (€)</label>
@@ -258,7 +339,9 @@ export default function AdminLivraisonPage() {
 
                     {/* Max */}
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase text-white/20 ml-1">Max (€)</label>
+                      <label className="text-[10px] font-black uppercase text-white/20 ml-1">
+                        Max (€) <span className="normal-case italic font-bold text-white/10">— vide = illimité</span>
+                      </label>
                       <input
                         type="number"
                         min={0}
@@ -297,54 +380,44 @@ export default function AdminLivraisonPage() {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex flex-col gap-1 items-center">
+                    <div className="flex md:flex-col flex-row gap-1 items-center justify-end">
                       <button
                         type="button"
                         onClick={() => moveTier(index, 'up')}
                         disabled={index === 0}
                         className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 text-white/30 hover:text-white disabled:opacity-10 transition-all text-sm font-black"
-                      >
-                        ↑
-                      </button>
+                      >↑</button>
                       <button
                         type="button"
                         onClick={() => moveTier(index, 'down')}
                         disabled={index === paliers.length - 1}
                         className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 text-white/30 hover:text-white disabled:opacity-10 transition-all text-sm font-black"
-                      >
-                        ↓
-                      </button>
+                      >↓</button>
                       <button
                         type="button"
                         onClick={() => removeTier(palier.id)}
                         className="w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white transition-all text-sm font-black"
-                      >
-                        ×
-                      </button>
+                      >×</button>
                     </div>
                   </div>
 
-                  {/* Résumé du palier */}
-                  <div className="mt-3 ml-1">
-                    <p className="text-[10px] font-black uppercase text-white/20 italic">
-                      {Number(palier.min_amount) >= 0 && palier.price !== ''
-                        ? palier.max_amount === null || palier.max_amount === ''
-                          ? `Panier ≥ ${fmt(Number(palier.min_amount))}€ → ${fmt(Number(palier.price))}€ de frais`
-                          : `Panier de ${fmt(Number(palier.min_amount))}€ à ${fmt(Number(palier.max_amount))}€ → ${fmt(Number(palier.price))}€ de frais`
-                        : 'Remplir les champs pour voir le résumé'
-                      }
-                      {palier.label ? ` · ${palier.label}` : ''}
-                    </p>
-                  </div>
+                  {/* Résumé */}
+                  <p className="mt-3 ml-1 text-[10px] font-black uppercase text-white/20 italic">
+                    {palier.price !== ''
+                      ? palier.max_amount === null || palier.max_amount === ''
+                        ? `Panier ≥ ${fmt(Number(palier.min_amount || 0))}€ → ${fmt(Number(palier.price))}€ de frais`
+                        : `Panier ${fmt(Number(palier.min_amount || 0))}€ → ${fmt(Number(palier.max_amount))}€ → ${fmt(Number(palier.price))}€ de frais`
+                      : 'Remplir les champs pour voir le résumé'
+                    }
+                    {palier.label ? ` · ${palier.label}` : ''}
+                  </p>
                 </motion.div>
               ))}
             </AnimatePresence>
 
             {paliers.length === 0 && (
               <div className="text-center py-12 border border-dashed border-white/10 rounded-[24px]">
-                <p className="text-[13px] font-black uppercase text-white/20 italic">
-                  Aucun palier configuré
-                </p>
+                <p className="text-[13px] font-black uppercase text-white/20 italic">Aucun palier configuré</p>
                 <p className="text-[11px] font-black text-white/10 uppercase mt-2">
                   Les frais de livraison seront 0€ par défaut
                 </p>
@@ -353,11 +426,11 @@ export default function AdminLivraisonPage() {
           </div>
         </section>
 
-        {/* ── PRÉVISUALISATION ──────────────────────────────────────────────── */}
+        {/* ── PRÉVISUALISATION ─────────────────────────────────────────────── */}
         {paliers.length > 0 && (
           <section className="bg-blue-600/5 border border-blue-500/20 rounded-[40px] p-10 space-y-4">
             <h2 className="text-[11px] font-black uppercase tracking-widest text-blue-400 italic">
-              Prévisualisation des règles
+              Prévisualisation des règles actives
             </h2>
 
             <div className="space-y-2">
@@ -368,12 +441,19 @@ export default function AdminLivraisonPage() {
                     key={palier.id}
                     className="flex items-center justify-between bg-black/20 rounded-2xl px-5 py-3 gap-4"
                   >
-                    <span className="text-[12px] font-black uppercase text-white/50 italic">
-                      {palier.max_amount === null || palier.max_amount === ''
-                        ? `Panier ≥ ${fmt(Number(palier.min_amount || 0))}€`
-                        : `Panier ${fmt(Number(palier.min_amount || 0))}€ → ${fmt(Number(palier.max_amount))}€`
-                      }
-                    </span>
+                    <div>
+                      <span className="text-[12px] font-black uppercase text-white/50 italic">
+                        {palier.max_amount === null || palier.max_amount === ''
+                          ? `Panier ≥ ${fmt(Number(palier.min_amount || 0))}€`
+                          : `Panier ${fmt(Number(palier.min_amount || 0))}€ → ${fmt(Number(palier.max_amount))}€`
+                        }
+                      </span>
+                      {palier.label && (
+                        <span className="ml-3 text-[10px] font-black uppercase text-white/20 italic">
+                          {palier.label}
+                        </span>
+                      )}
+                    </div>
                     <span className="text-[13px] font-black text-blue-400 tabular-nums">
                       {Number(palier.price) === 0 ? 'GRATUIT' : `${fmt(Number(palier.price))}€ HT`}
                     </span>
@@ -390,7 +470,10 @@ export default function AdminLivraisonPage() {
                 <span className={`text-[12px] font-black uppercase italic ${
                   offerteAujourdhui ? 'text-green-400' : 'text-white/30'
                 }`}>
-                  {offerteAujourdhui ? '✓ Livraison offerte AUJOURD\'HUI' : `Livraison offerte le ${new Date(offerteDate + 'T00:00:00').toLocaleDateString('fr-FR')}`}
+                  {offerteAujourdhui
+                    ? "✓ Livraison offerte AUJOURD'HUI"
+                    : `Livraison offerte le ${new Date(offerteDate + 'T00:00:00').toLocaleDateString('fr-FR')}`
+                  }
                 </span>
                 <span className="text-[13px] font-black text-green-400 tabular-nums">0,00€</span>
               </div>
@@ -398,8 +481,8 @@ export default function AdminLivraisonPage() {
           </section>
         )}
 
-        {/* ── BOUTON SAVE BAS ───────────────────────────────────────────────── */}
-        <div className="flex justify-end pt-4">
+        {/* ── BOUTON SAVE BAS ──────────────────────────────────────────────── */}
+        <div className="flex justify-end pt-4 pb-10">
           <button
             onClick={handleSave}
             disabled={saving}
