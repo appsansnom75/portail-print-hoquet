@@ -22,14 +22,14 @@ type ShippingConfig = {
 export default function CartPage() {
   const { cart, removeFromCart, clearCart } = useCart();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [orderSent, setOrderSent] = useState(false);
+  const [showConfirm, setShowConfirm]   = useState(false);
+  const [orderSent, setOrderSent]       = useState(false);
   const [mentionsOpen, setMentionsOpen] = useState(false);
 
   const [agencyData, setAgencyData] = useState<any>(null);
-  const [agenceId, setAgenceId] = useState<string | null>(null);
-  const [membres, setMembres] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [agenceId, setAgenceId]     = useState<string | null>(null);
+  const [membres, setMembres]       = useState<any[]>([]);
+  const [loading, setLoading]       = useState(true);
 
   const [shippingConfig, setShippingConfig] = useState<ShippingConfig>({
     paliers: [],
@@ -38,39 +38,43 @@ export default function CartPage() {
   });
 
   // 03 - LIVRAISON
-  const [phone, setPhone] = useState('');
-  const [phoneFix, setPhoneFix] = useState('');
-  const [address, setAddress] = useState('');
-  const [zipCode, setZipCode] = useState('');
-  const [city, setCity] = useState('');
-  const [siret, setSiret] = useState('');
+  const [phone, setPhone]         = useState('');
+  const [phoneFix, setPhoneFix]   = useState('');
+  const [address, setAddress]     = useState('');
+  const [zipCode, setZipCode]     = useState('');
+  const [city, setCity]           = useState('');
+  const [siret, setSiret]         = useState('');
 
   const [useAltAddress, setUseAltAddress] = useState(false);
-  const [altAddress, setAltAddress] = useState('');
-  const [altZipCode, setAltZipCode] = useState('');
-  const [altCity, setAltCity] = useState('');
-  const [altPhone, setAltPhone] = useState('');
-  const [altPhoneFix, setAltPhoneFix] = useState('');
+  const [altAddress, setAltAddress]       = useState('');
+  const [altZipCode, setAltZipCode]       = useState('');
+  const [altCity, setAltCity]             = useState('');
+  const [altPhone, setAltPhone]           = useState('');
+  const [altPhoneFix, setAltPhoneFix]     = useState('');
 
   // 04 - FACTURATION & LÉGALES
-  const [mentionsMailFacturation, setMentionsMailFacturation] = useState('');
-  const [mentionsNomSociete, setMentionsNomSociete] = useState('');
-  const [mentionsVilleAgence, setMentionsVilleAgence] = useState('');
-  const [mentionsUrlQrCode, setMentionsUrlQrCode] = useState('');
-  const [mentionsStatut, setMentionsStatut] = useState('');
-  const [mentionsCapital, setMentionsCapital] = useState('');
-  const [mentionsRcs, setMentionsRcs] = useState('');
-  const [mentionsApe, setMentionsApe] = useState('');
-  const [mentionsCartePro, setMentionsCartePro] = useState('');
-  const [mentionsCarteProDelivree, setMentionsCarteProDelivree] = useState('');
-  const [mentionsCarteProDelivreeType, setMentionsCarteProDelivreeType] = useState('la CCI de');
-  const [mentionsCaisseGarantie, setMentionsCaisseGarantie] = useState('');
-  const [mentionsCaisseGarantieAdresse, setMentionsCaisseGarantieAdresse] = useState('');
-  const [mentionsTva, setMentionsTva] = useState('');
-  const [mentionsMailRgpdCode, setMentionsMailRgpdCode] = useState('');
+  const [mentionsMailFacturation, setMentionsMailFacturation]               = useState('');
+  const [mentionsNomSociete, setMentionsNomSociete]                         = useState('');
+  const [mentionsVilleAgence, setMentionsVilleAgence]                       = useState('');
+  const [mentionsUrlQrCode, setMentionsUrlQrCode]                           = useState('');
+  const [mentionsStatut, setMentionsStatut]                                 = useState('');
+  const [mentionsCapital, setMentionsCapital]                               = useState('');
+  const [mentionsRcs, setMentionsRcs]                                       = useState('');
+  const [mentionsApe, setMentionsApe]                                       = useState('');
+  const [mentionsCartePro, setMentionsCartePro]                             = useState('');
+  const [mentionsCarteProDelivree, setMentionsCarteProDelivree]             = useState('');
+  const [mentionsCarteProDelivreeType, setMentionsCarteProDelivreeType]     = useState('la CCI de');
+  const [mentionsCaisseGarantie, setMentionsCaisseGarantie]                 = useState('');
+  const [mentionsCaisseGarantieAdresse, setMentionsCaisseGarantieAdresse]   = useState('');
+  const [mentionsTva, setMentionsTva]                                       = useState('');
+  const [mentionsMailRgpdCode, setMentionsMailRgpdCode]                     = useState('');
 
-  // ── CALCULS ─────────────────────────────────────────────────────────────────
-  const totalProduitsHT = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
+  // ── CALCULS ────────────────────────────────────────────────────────────────
+  // TVA s'applique UNIQUEMENT sur les produits, PAS sur la livraison
+  const totalProduitsHT  = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
+  const tvaProduitsSeuls = totalProduitsHT * 0.2;
+  const totalProduitsTTC = totalProduitsHT + tvaProduitsSeuls;
+
   const todayISO = new Date().toLocaleDateString('en-CA');
 
   const getShippingCost = (): number => {
@@ -84,20 +88,20 @@ export default function CartPage() {
     );
 
     const tier = sorted.find((palier) => {
-      const minOk = totalProduitsHT >= Number(palier.min_amount || 0);
-      const maxValue = palier.max_amount === null || palier.max_amount === undefined
+      const minOk   = totalProduitsHT >= Number(palier.min_amount || 0);
+      const maxVal  = palier.max_amount === null || palier.max_amount === undefined
         ? null : Number(palier.max_amount);
-      const maxOk = maxValue === null ? true : totalProduitsHT <= maxValue;
+      const maxOk   = maxVal === null ? true : totalProduitsHT <= maxVal;
       return minOk && maxOk;
     });
 
     return tier ? Number(tier.price || 0) : 0;
   };
 
-  const fraisLivraison   = getShippingCost();
-  const totalHT          = totalProduitsHT + fraisLivraison;
-  const tva              = totalHT * 0.2;
-  const totalTTC         = totalHT * 1.2;
+  const fraisLivraison = getShippingCost();
+
+  // ✅ Total final = TTC produits + livraison (pas de TVA sur livraison)
+  const totalFinal = totalProduitsTTC + fraisLivraison;
 
   const livraisonOfferte =
     shippingConfig.livraison_offerte_active &&
@@ -105,10 +109,9 @@ export default function CartPage() {
 
   const fmt = (n: number) => n.toFixed(2).replace('.', ',');
 
-  // ── CHARGEMENT ──────────────────────────────────────────────────────────────
+  // ── CHARGEMENT ─────────────────────────────────────────────────────────────
   useEffect(() => {
     const loadData = async () => {
-      // Shipping config
       const { data: shippingRow } = await supabase
         .from('shipping_config')
         .select('paliers, livraison_offerte_active, livraison_offerte_date')
@@ -123,7 +126,6 @@ export default function CartPage() {
         });
       }
 
-      // User + agence
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setLoading(false); return; }
 
@@ -138,28 +140,28 @@ export default function CartPage() {
 
         if (agency) {
           setAgencyData(agency);
-          setAddress(agency.adresse || '');
-          setZipCode(agency.code_postal || '');
-          setCity(agency.ville || '');
-          setSiret(agency.siret || '');
-          setPhone(agency.agence_telephone || '');
-          setPhoneFix(agency.phone_fix || '');
-          setMentionsMailFacturation(agency.mentions_mail_facturation || agency.agence_email || '');
-          setMentionsNomSociete(agency.mentions_nom_societe || '');
-          setMentionsVilleAgence(agency.mentions_ville_agence || agency.ville || '');
-          setMentionsUrlQrCode(agency.mentions_url_qr_code || '');
-          setMentionsStatut(agency.mentions_statut || '');
-          setMentionsCapital(agency.mentions_capital || '');
-          setMentionsRcs(agency.mentions_rcs || '');
-          setMentionsApe(agency.mentions_ape || '');
-          setMentionsCartePro(agency.mentions_carte_pro || '');
-          setMentionsCarteProDelivree(agency.mentions_carte_pro_delivree || '');
+          setAddress(agency.adresse              || '');
+          setZipCode(agency.code_postal          || '');
+          setCity(agency.ville                   || '');
+          setSiret(agency.siret                  || '');
+          setPhone(agency.agence_telephone       || '');
+          setPhoneFix(agency.phone_fix           || '');
+          setMentionsMailFacturation(agency.mentions_mail_facturation       || agency.agence_email || '');
+          setMentionsNomSociete(agency.mentions_nom_societe                 || '');
+          setMentionsVilleAgence(agency.mentions_ville_agence               || agency.ville || '');
+          setMentionsUrlQrCode(agency.mentions_url_qr_code                  || '');
+          setMentionsStatut(agency.mentions_statut                          || '');
+          setMentionsCapital(agency.mentions_capital                        || '');
+          setMentionsRcs(agency.mentions_rcs                                || '');
+          setMentionsApe(agency.mentions_ape                                || '');
+          setMentionsCartePro(agency.mentions_carte_pro                     || '');
+          setMentionsCarteProDelivree(agency.mentions_carte_pro_delivree    || '');
           setMentionsCarteProDelivreeType(agency.mentions_carte_pro_delivree_type || 'la CCI de');
-          setMentionsCaisseGarantie(agency.mentions_caisse_garantie || '');
+          setMentionsCaisseGarantie(agency.mentions_caisse_garantie         || '');
           setMentionsCaisseGarantieAdresse(agency.mentions_caisse_garantie_adresse || '');
-          setMentionsTva(agency.mentions_tva || '');
+          setMentionsTva(agency.mentions_tva                                || '');
           const rgpdStored = agency.mentions_mail_rgpd || '';
-          const rgpdCode = rgpdStored
+          const rgpdCode   = rgpdStored
             .replace('informatique-et-libertes-', '')
             .replace('@guyhoquet.com', '');
           setMentionsMailRgpdCode(rgpdCode);
@@ -178,61 +180,51 @@ export default function CartPage() {
     loadData();
   }, []);
 
-  // ── SYNC AGENCE ─────────────────────────────────────────────────────────────
+  // ── SYNC AGENCE ────────────────────────────────────────────────────────────
   const syncAgenceData = async () => {
     if (!agenceId) return;
     await supabase.from('agencies').update({
       ...(useAltAddress ? {} : {
-        adresse: address,
-        code_postal: zipCode,
-        ville: city,
-        agence_telephone: phone,
-        phone_fix: phoneFix,
+        adresse: address, code_postal: zipCode, ville: city,
+        agence_telephone: phone, phone_fix: phoneFix,
       }),
       siret,
-      mentions_mail_facturation: mentionsMailFacturation,
-      mentions_ville_agence: mentionsVilleAgence,
-      mentions_url_qr_code: mentionsUrlQrCode,
-      mentions_nom_societe: mentionsNomSociete,
-      mentions_statut: mentionsStatut,
-      mentions_capital: mentionsCapital,
-      mentions_rcs: mentionsRcs,
-      mentions_ape: mentionsApe,
-      mentions_carte_pro: mentionsCartePro,
-      mentions_carte_pro_delivree: mentionsCarteProDelivree,
+      mentions_mail_facturation:        mentionsMailFacturation,
+      mentions_ville_agence:            mentionsVilleAgence,
+      mentions_url_qr_code:             mentionsUrlQrCode,
+      mentions_nom_societe:             mentionsNomSociete,
+      mentions_statut:                  mentionsStatut,
+      mentions_capital:                 mentionsCapital,
+      mentions_rcs:                     mentionsRcs,
+      mentions_ape:                     mentionsApe,
+      mentions_carte_pro:               mentionsCartePro,
+      mentions_carte_pro_delivree:      mentionsCarteProDelivree,
       mentions_carte_pro_delivree_type: mentionsCarteProDelivreeType,
-      mentions_caisse_garantie: mentionsCaisseGarantie,
+      mentions_caisse_garantie:         mentionsCaisseGarantie,
       mentions_caisse_garantie_adresse: mentionsCaisseGarantieAdresse,
-      mentions_tva: mentionsTva,
+      mentions_tva:                     mentionsTva,
       mentions_mail_rgpd: `informatique-et-libertes-${mentionsMailRgpdCode}@guyhoquet.com`,
     }).eq('id', agenceId);
   };
 
-  // ── VALIDATION ──────────────────────────────────────────────────────────────
+  // ── VALIDATION ─────────────────────────────────────────────────────────────
   const isFormValid = () => {
     const livraisonOk = useAltAddress
       ? altAddress.trim() && altZipCode.trim() && altCity.trim()
       : address.trim() && zipCode.trim() && city.trim();
 
     const mentionsOk =
-      mentionsMailFacturation.trim() &&
-      mentionsNomSociete.trim() &&
-      mentionsVilleAgence.trim() &&
-      mentionsStatut.trim() &&
-      mentionsCapital.trim() &&
-      mentionsRcs.trim() &&
-      mentionsApe.trim() &&
-      mentionsCartePro.trim() &&
-      mentionsCarteProDelivree.trim() &&
-      mentionsCaisseGarantie.trim() &&
-      mentionsCaisseGarantieAdresse.trim() &&
-      mentionsTva.trim() &&
-      mentionsMailRgpdCode.trim();
+      mentionsMailFacturation.trim() && mentionsNomSociete.trim() &&
+      mentionsVilleAgence.trim() && mentionsStatut.trim() &&
+      mentionsCapital.trim() && mentionsRcs.trim() && mentionsApe.trim() &&
+      mentionsCartePro.trim() && mentionsCarteProDelivree.trim() &&
+      mentionsCaisseGarantie.trim() && mentionsCaisseGarantieAdresse.trim() &&
+      mentionsTva.trim() && mentionsMailRgpdCode.trim();
 
     return !!(siret.trim() && livraisonOk && mentionsOk);
   };
 
-  // ── ENVOI ───────────────────────────────────────────────────────────────────
+  // ── ENVOI ──────────────────────────────────────────────────────────────────
   const handleFinalSubmit = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
@@ -252,31 +244,30 @@ export default function CartPage() {
       const deliveryPhoneFix = useAltAddress ? altPhoneFix : phoneFix;
 
       const produitsListeTexte = cart
-        .map((item) => `${item.name} (x${item.qty})${item.orderedBy ? ` — ${item.orderedBy}` : ''}`)
+        .map((i) => `${i.name} (x${i.qty})${i.orderedBy ? ` — ${i.orderedBy}` : ''}`)
         .join(', ');
 
-      const itemsFormattedJSON = cart.map((item) => ({
-        name:       item.name,
-        qty:        item.qty,
-        price_unit: item.price,
-        total_row:  fmt(item.price * item.qty),
-        ordered_by: item.orderedBy || null,
+      const itemsFormattedJSON = cart.map((i) => ({
+        name: i.name, qty: i.qty,
+        price_unit: i.price,
+        total_row: fmt(i.price * i.qty),
+        ordered_by: i.orderedBy || null,
       }));
 
       const { error: insertError } = await supabase.from('orders').insert([{
-        order_number:       nextOrderId,
-        agency_name:        agencyData?.name || 'Agence',
-        client_phone:       deliveryPhone,
-        delivery_address:   deliveryAddress,
-        zip_code:           deliveryZip,
-        city:               deliveryCity,
+        order_number:      nextOrderId,
+        agency_name:       agencyData?.name || 'Agence',
+        client_phone:      deliveryPhone,
+        delivery_address:  deliveryAddress,
+        zip_code:          deliveryZip,
+        city:              deliveryCity,
         siret,
-        produits_liste:     produitsListeTexte,
-        total_ht:           totalHT,
-        shipping_ht:        fraisLivraison,
-        total_produits_ht:  totalProduitsHT,
-        items:              itemsFormattedJSON,
-        status:             'En attente',
+        produits_liste:    produitsListeTexte,
+        total_ht:          totalProduitsHT,
+        shipping_ht:       fraisLivraison,
+        total_produits_ht: totalProduitsHT,
+        items:             itemsFormattedJSON,
+        status:            'En attente',
       }]);
 
       if (insertError) throw insertError;
@@ -286,25 +277,24 @@ export default function CartPage() {
           ? membres.find((m) => (m.full_name || `${m.first_name} ${m.last_name}`) === item.orderedBy)
           : null;
         return {
-          produit:              item.name,
-          quantite:             item.qty,
-          prix_ligne:           fmt(item.price * item.qty),
-          membre:               item.orderedBy || '',
-          nominatif_prenom:     collab?.first_name || '',
-          nominatif_nom:        collab?.last_name || '',
-          nominatif_mail:       collab?.email || '',
-          nominatif_tel:        collab?.phone || '',
-          nominatif_tel_fix:    collab?.phone_fix || deliveryPhoneFix,
-          nominatif_fonction:   collab?.fonction || '',
-          nominatif_rsac:       collab?.rsac || '',
-          nominatif_adresse:    collab?.adresse || deliveryAddress,
-          nominatif_ville:      collab?.ville || deliveryCity,
-          nominatif_cp:         collab?.code_postal || deliveryZip,
-          nominatif_photo:      collab?.avatar_url || '',
+          produit:           item.name,
+          quantite:          item.qty,
+          prix_ligne:        fmt(item.price * item.qty),
+          membre:            item.orderedBy || '',
+          nominatif_prenom:  collab?.first_name  || '',
+          nominatif_nom:     collab?.last_name   || '',
+          nominatif_mail:    collab?.email       || '',
+          nominatif_tel:     collab?.phone       || '',
+          nominatif_tel_fix: collab?.phone_fix   || deliveryPhoneFix,
+          nominatif_fonction:collab?.fonction    || '',
+          nominatif_rsac:    collab?.rsac        || '',
+          nominatif_adresse: collab?.adresse     || deliveryAddress,
+          nominatif_ville:   collab?.ville       || deliveryCity,
+          nominatif_cp:      collab?.code_postal || deliveryZip,
+          nominatif_photo:   collab?.avatar_url  || '',
         };
       });
 
-      // ── MAKE — inchangé ────────────────────────────────────────────────────
       const response = await fetch('https://hook.eu1.make.com/mb6ok4o2jv41vrhd37r101wi98b1lfz4', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -319,10 +309,10 @@ export default function CartPage() {
           siret,
           items:                     itemsPayload,
           total_produits_ht:         fmt(totalProduitsHT),
+          tva_produits:              fmt(tvaProduitsSeuls),
+          total_produits_ttc:        fmt(totalProduitsTTC),
           frais_livraison:           fmt(fraisLivraison),
-          total_ht:                  fmt(totalHT),
-          tva:                       fmt(tva),
-          total_ttc:                 fmt(totalTTC),
+          total_final:               fmt(totalFinal),
           date:                      new Date().toLocaleString('fr-FR'),
           livraison_offerte:         livraisonOfferte,
           mentions_mail_facturation: mentionsMailFacturation,
@@ -351,13 +341,13 @@ export default function CartPage() {
       }
     } catch (err) {
       console.error('Erreur :', err);
-      alert('Erreur lors de la validation. Vérifie les colonnes Supabase.');
+      alert('Erreur lors de la validation.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // ── ÉTATS ───────────────────────────────────────────────────────────────────
+  // ── ÉTATS ──────────────────────────────────────────────────────────────────
   if (loading) return (
     <div className="min-h-screen bg-[#0f092e] flex items-center justify-center text-white uppercase text-[13px] animate-pulse italic font-black">
       Initialisation du bon de commande...
@@ -385,6 +375,8 @@ export default function CartPage() {
         : 'border-white/10 hover:border-blue-500/50 focus:border-blue-500'
     }`;
 
+  const inpOpt = `w-full bg-black/40 border border-white/10 hover:border-blue-500/50 focus:border-blue-500 rounded-2xl p-5 text-[13px] font-black outline-none transition-all`;
+
   const inpAlt = (val: string, required = true) =>
     `w-full bg-black/40 border rounded-2xl p-5 text-[13px] font-black outline-none transition-all ${
       required && !val.trim()
@@ -393,16 +385,16 @@ export default function CartPage() {
     }`;
 
   const mentionsLegalesFields = [
-    { label: 'Ville sous le logo',          val: mentionsVilleAgence,           set: setMentionsVilleAgence,           ph: 'Ex: ANGERS',                               required: true  },
-    { label: 'URL QR Code',                  val: mentionsUrlQrCode,             set: setMentionsUrlQrCode,             ph: 'Ex: https://www.guy-hoquet.com/agence-...',  required: false },
-    { label: 'Statut Juridique',             val: mentionsStatut,                set: setMentionsStatut,                ph: 'Ex: SARL, SAS, EI...',                     required: true  },
-    { label: 'Capital Social (€)',           val: mentionsCapital,               set: setMentionsCapital,               ph: 'Ex: 10 000',                               required: true  },
-    { label: 'RCS',                          val: mentionsRcs,                   set: setMentionsRcs,                   ph: 'Ex: Paris 123 456 789',                    required: true  },
-    { label: 'Code APE',                     val: mentionsApe,                   set: setMentionsApe,                   ph: 'Ex: 6831Z',                                required: true  },
-    { label: 'N° Carte Professionnelle',     val: mentionsCartePro,              set: setMentionsCartePro,              ph: 'Ex: CPI 7501 2016 000 012 345',             required: true  },
-    { label: 'Caisse de Garantie',           val: mentionsCaisseGarantie,        set: setMentionsCaisseGarantie,        ph: 'Ex: GALIAN Assurances',                    required: true  },
-    { label: 'Adresse Caisse',               val: mentionsCaisseGarantieAdresse, set: setMentionsCaisseGarantieAdresse, ph: 'Ex: 89 rue de la Boétie, 75008 Paris',      required: true  },
-    { label: 'TVA Intracommunautaire',       val: mentionsTva,                   set: setMentionsTva,                   ph: 'Ex: FR 12 123456789',                      required: true  },
+    { label: 'Ville sous le logo',       val: mentionsVilleAgence,           set: setMentionsVilleAgence,           ph: 'Ex: ANGERS',                              required: true  },
+    { label: 'URL QR Code',              val: mentionsUrlQrCode,             set: setMentionsUrlQrCode,             ph: 'Ex: https://www.guy-hoquet.com/agence-...', required: false },
+    { label: 'Statut Juridique',         val: mentionsStatut,                set: setMentionsStatut,                ph: 'Ex: SARL, SAS, EI...',                    required: true  },
+    { label: 'Capital Social (€)',       val: mentionsCapital,               set: setMentionsCapital,               ph: 'Ex: 10 000',                              required: true  },
+    { label: 'RCS',                      val: mentionsRcs,                   set: setMentionsRcs,                   ph: 'Ex: Paris 123 456 789',                   required: true  },
+    { label: 'Code APE',                 val: mentionsApe,                   set: setMentionsApe,                   ph: 'Ex: 6831Z',                               required: true  },
+    { label: 'N° Carte Professionnelle', val: mentionsCartePro,              set: setMentionsCartePro,              ph: 'Ex: CPI 7501 2016 000 012 345',            required: true  },
+    { label: 'Caisse de Garantie',       val: mentionsCaisseGarantie,        set: setMentionsCaisseGarantie,        ph: 'Ex: GALIAN Assurances',                   required: true  },
+    { label: 'Adresse Caisse',           val: mentionsCaisseGarantieAdresse, set: setMentionsCaisseGarantieAdresse, ph: 'Ex: 89 rue de la Boétie, 75008 Paris',     required: true  },
+    { label: 'TVA Intracommunautaire',   val: mentionsTva,                   set: setMentionsTva,                   ph: 'Ex: FR 12 123456789',                     required: true  },
   ] as { label: string; val: string; set: (v: string) => void; ph: string; required: boolean }[];
 
   const mentionsIncomplets =
@@ -413,7 +405,6 @@ export default function CartPage() {
   return (
     <div className="min-h-screen bg-[#0f092e] text-white pb-20">
 
-      {/* HEADER */}
       <header className="py-10 px-6 max-w-6xl mx-auto flex justify-between items-center border-b border-white/10 mb-12">
         <Link href="/" className="text-[13px] font-black uppercase opacity-40 hover:opacity-100 italic transition-all">← Boutique</Link>
         <h1 className="text-[11px] font-black uppercase tracking-[0.4em] italic text-blue-500">Validation Commande</h1>
@@ -422,24 +413,20 @@ export default function CartPage() {
 
       <main className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-3 gap-16">
 
-        {/* ── COLONNE GAUCHE ───────────────────────────────────────────────── */}
+        {/* ── GAUCHE ───────────────────────────────────────────────────────── */}
         <div className="lg:col-span-2 space-y-12">
 
-          {/* 01 - AGENCE */}
+          {/* 01 */}
           <section className="bg-blue-600/5 border border-blue-500/20 rounded-[45px] p-10 space-y-4">
             <h2 className="text-[11px] font-black uppercase text-blue-400 italic">01. Identification</h2>
-            <div className="space-y-2">
-              <label className="text-[12px] font-black opacity-30 italic ml-2 uppercase">Agence</label>
-              <div className="bg-black/40 border border-white/10 rounded-2xl p-5 text-[11px] font-black text-blue-400">
-                {agencyData?.name || 'Non détectée'}
-              </div>
+            <div className="bg-black/40 border border-white/10 rounded-2xl p-5 text-[11px] font-black text-blue-400">
+              {agencyData?.name || 'Non détectée'}
             </div>
           </section>
 
-          {/* 02 - RÉCAPITULATIF */}
+          {/* 02 - RÉCAP */}
           <section className="bg-white/[0.02] border border-white/10 rounded-[45px] p-10">
             <h2 className="text-[11px] font-black uppercase text-white/60 italic mb-10">02. Récapitulatif</h2>
-
             <div className="space-y-6">
               {cart.length === 0 && (
                 <p className="text-[13px] font-black uppercase text-white/20 italic text-center py-8">Panier vide</p>
@@ -470,16 +457,29 @@ export default function CartPage() {
 
               {cart.length > 0 && (
                 <div className="pt-4 space-y-2">
-                  {/* Sous-total produits */}
+
+                  {/* Produits HT */}
                   <div className="flex justify-between text-[13px] font-black uppercase italic opacity-50">
-                    <span>Sous-total produits HT</span>
+                    <span>Produits HT</span>
                     <span>{fmt(totalProduitsHT)}€</span>
                   </div>
 
-                  {/* Frais livraison — sans "HT" */}
+                  {/* TVA uniquement sur produits */}
+                  <div className="flex justify-between text-[13px] font-black uppercase italic opacity-30">
+                    <span>TVA 20% (sur produits)</span>
+                    <span>{fmt(tvaProduitsSeuls)}€</span>
+                  </div>
+
+                  {/* Sous-total TTC produits */}
+                  <div className="flex justify-between text-[13px] font-black uppercase italic opacity-50 border-t border-white/10 pt-3">
+                    <span>Sous-total TTC</span>
+                    <span>{fmt(totalProduitsTTC)}€</span>
+                  </div>
+
+                  {/* Livraison — ajoutée après TVA */}
                   <div className="flex justify-between text-[13px] font-black uppercase italic opacity-50">
                     <span className="flex items-center gap-2">
-                      Frais de livraison
+                      + Frais de livraison
                       {livraisonOfferte && (
                         <span className="text-[10px] bg-green-500/20 text-green-400 border border-green-500/30 px-2 py-0.5 rounded-full font-black uppercase">
                           Offerte aujourd&apos;hui
@@ -491,21 +491,12 @@ export default function CartPage() {
                     </span>
                   </div>
 
-                  {/* Séparateur */}
-                  <div className="border-t border-white/10 pt-3 space-y-2">
-                    <div className="flex justify-between text-[13px] font-black uppercase italic opacity-50">
-                      <span>Total HT</span>
-                      <span>{fmt(totalHT)}€</span>
-                    </div>
-                    <div className="flex justify-between text-[13px] font-black uppercase italic opacity-30">
-                      <span>TVA (20%)</span>
-                      <span>{fmt(tva)}€</span>
-                    </div>
-                    <div className="flex justify-between text-[15px] font-black uppercase italic border-t border-white/10 pt-3">
-                      <span className="text-white/60">Total TTC</span>
-                      <span className="text-blue-400">{fmt(totalTTC)}€</span>
-                    </div>
+                  {/* Total final */}
+                  <div className="flex justify-between text-[15px] font-black uppercase italic border-t border-white/10 pt-4 mt-2">
+                    <span className="text-white/70">Total à régler</span>
+                    <span className="text-blue-400">{fmt(totalFinal)}€</span>
                   </div>
+
                 </div>
               )}
             </div>
@@ -522,14 +513,13 @@ export default function CartPage() {
                   </p>
                 )}
               </div>
-
               <button
                 type="button"
                 onClick={() => setUseAltAddress(!useAltAddress)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-full border text-[11px] font-black uppercase tracking-widest transition-all ${
                   useAltAddress
                     ? 'border-blue-500 bg-blue-500/10 text-blue-400'
-                    : 'border-white/10 bg-white/5 text-white/30 hover:text-white/60 hover:border-white/20'
+                    : 'border-white/10 bg-white/5 text-white/30 hover:text-white/60'
                 }`}
               >
                 <span className={`w-2 h-2 rounded-full transition-all ${useAltAddress ? 'bg-blue-400' : 'bg-white/20'}`} />
@@ -543,10 +533,10 @@ export default function CartPage() {
                   <input placeholder="ADRESSE DE LIVRAISON *" value={address} onChange={(e) => setAddress(e.target.value)} className={inp(address)} />
                   <div className="grid grid-cols-2 gap-6">
                     <input placeholder="CODE POSTAL *" value={zipCode} onChange={(e) => setZipCode(e.target.value)} className={inp(zipCode)} />
-                    <input placeholder="VILLE *"        value={city}    onChange={(e) => setCity(e.target.value)}    className={inp(city)} />
+                    <input placeholder="VILLE *" value={city} onChange={(e) => setCity(e.target.value)} className={inp(city)} />
                   </div>
-                  <input placeholder="TÉLÉPHONE MOBILE"     value={phone}    onChange={(e) => setPhone(e.target.value)}    className="w-full bg-black/40 border border-white/10 hover:border-blue-500/50 focus:border-blue-500 rounded-2xl p-5 text-[13px] font-black outline-none transition-all" />
-                  <input placeholder="TÉLÉPHONE FIXE AGENCE" value={phoneFix} onChange={(e) => setPhoneFix(e.target.value)} className="w-full bg-black/40 border border-white/10 hover:border-blue-500/50 focus:border-blue-500 rounded-2xl p-5 text-[13px] font-black outline-none transition-all" />
+                  <input placeholder="TÉLÉPHONE MOBILE" value={phone} onChange={(e) => setPhone(e.target.value)} className={inpOpt} />
+                  <input placeholder="TÉLÉPHONE FIXE AGENCE" value={phoneFix} onChange={(e) => setPhoneFix(e.target.value)} className={inpOpt} />
                   <div className="space-y-1">
                     <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">Numéro SIRET *</label>
                     <input placeholder="Ex: 123 456 789 00012" value={siret} onChange={(e) => setSiret(e.target.value)} maxLength={17} className={inp(siret)} />
@@ -560,9 +550,9 @@ export default function CartPage() {
                   <input placeholder="ADRESSE DE LIVRAISON *" value={altAddress} onChange={(e) => setAltAddress(e.target.value)} className={inpAlt(altAddress)} />
                   <div className="grid grid-cols-2 gap-6">
                     <input placeholder="CODE POSTAL *" value={altZipCode} onChange={(e) => setAltZipCode(e.target.value)} className={inpAlt(altZipCode)} />
-                    <input placeholder="VILLE *"        value={altCity}    onChange={(e) => setAltCity(e.target.value)}    className={inpAlt(altCity)} />
+                    <input placeholder="VILLE *" value={altCity} onChange={(e) => setAltCity(e.target.value)} className={inpAlt(altCity)} />
                   </div>
-                  <input placeholder="TÉLÉPHONE MOBILE"     value={altPhone}    onChange={(e) => setAltPhone(e.target.value)}    className={inpAlt(altPhone, false)} />
+                  <input placeholder="TÉLÉPHONE MOBILE" value={altPhone} onChange={(e) => setAltPhone(e.target.value)} className={inpAlt(altPhone, false)} />
                   <input placeholder="TÉLÉPHONE FIXE AGENCE" value={altPhoneFix} onChange={(e) => setAltPhoneFix(e.target.value)} className={inpAlt(altPhoneFix, false)} />
                   <div className="space-y-1">
                     <label className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-400/50 ml-2">Numéro SIRET *</label>
@@ -581,23 +571,16 @@ export default function CartPage() {
                 Modifications sauvegardées dans vos infos agence
               </p>
             </div>
-
             <div className="space-y-5">
               <div className="space-y-1">
-                <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 flex items-center gap-2">
-                  Mail de facturation <span className="text-red-400">*</span>
-                </label>
+                <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">Mail de facturation <span className="text-red-400">*</span></label>
                 <input value={mentionsMailFacturation} onChange={(e) => setMentionsMailFacturation(e.target.value)} placeholder="Ex: compta@guy-hoquet-angers.com" className={inp(mentionsMailFacturation)} />
               </div>
-
               <div className="space-y-1">
-                <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 flex items-center gap-2">
-                  Nom Société <span className="text-red-400">*</span>
-                </label>
+                <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">Nom Société <span className="text-red-400">*</span></label>
                 <input value={mentionsNomSociete} onChange={(e) => setMentionsNomSociete(e.target.value)} placeholder="Ex: GUY HOQUET PARIS 1" className={inp(mentionsNomSociete)} />
               </div>
 
-              {/* Accordion mentions légales */}
               <div className="border border-white/10 rounded-[28px] overflow-hidden">
                 <button
                   type="button"
@@ -605,17 +588,13 @@ export default function CartPage() {
                   className="w-full flex items-center justify-between px-6 py-4 hover:bg-white/5 transition-all"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-[11px] font-black uppercase tracking-widest text-white/40">
-                      Mentions légales complètes
-                    </span>
+                    <span className="text-[11px] font-black uppercase tracking-widest text-white/40">Mentions légales complètes</span>
                     {mentionsIncomplets > 0 ? (
                       <span className="bg-red-500/20 text-red-400 border border-red-500/30 text-[10px] font-black uppercase px-2 py-0.5 rounded-full">
                         {mentionsIncomplets} champ{mentionsIncomplets > 1 ? 's' : ''} vide{mentionsIncomplets > 1 ? 's' : ''}
                       </span>
                     ) : (
-                      <span className="bg-green-500/10 text-green-400 border border-green-500/20 text-[10px] font-black uppercase px-2 py-0.5 rounded-full">
-                        ✓ Complet
-                      </span>
+                      <span className="bg-green-500/10 text-green-400 border border-green-500/20 text-[10px] font-black uppercase px-2 py-0.5 rounded-full">✓ Complet</span>
                     )}
                   </div>
                   <motion.span animate={{ rotate: mentionsOpen ? 180 : 0 }} transition={{ duration: 0.2 }} className="text-white/30 text-lg font-black">↓</motion.span>
@@ -633,21 +612,18 @@ export default function CartPage() {
                       <div className="px-6 pb-6 space-y-5 border-t border-white/5 pt-5">
                         {mentionsLegalesFields.map(({ label, val, set, ph, required }) => (
                           <div key={label} className="space-y-1">
-                            <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 flex items-center gap-2">
+                            <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">
                               {label} {required && <span className="text-red-400">*</span>}
                             </label>
                             <input
-                              value={val}
-                              onChange={(e) => set(e.target.value)}
-                              placeholder={ph}
-                              className={required ? inp(val) : 'w-full bg-black/40 border border-white/10 hover:border-blue-500/50 focus:border-blue-500 rounded-2xl p-5 text-[13px] font-black outline-none transition-all'}
+                              value={val} onChange={(e) => set(e.target.value)} placeholder={ph}
+                              className={required ? inp(val) : inpOpt}
                             />
                           </div>
                         ))}
 
-                        {/* Délivrée par */}
                         <div className="space-y-1">
-                          <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 flex items-center gap-2">
+                          <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">
                             Délivrée par <span className="text-red-400">*</span>
                           </label>
                           <div className="flex gap-2">
@@ -663,20 +639,18 @@ export default function CartPage() {
                           </div>
                         </div>
 
-                        {/* RGPD */}
                         <div className="space-y-1">
-                          <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 flex items-center gap-2">
+                          <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">
                             Mail Informatique &amp; Libertés <span className="text-red-400">*</span>
                           </label>
                           <div className={`flex items-center bg-black/40 border rounded-2xl overflow-hidden transition-all ${
-                            !mentionsMailRgpdCode.trim() ? 'border-red-500/30 hover:border-red-500/50' : 'border-white/10 focus-within:border-blue-500'
+                            !mentionsMailRgpdCode.trim() ? 'border-red-500/30' : 'border-white/10 focus-within:border-blue-500'
                           }`}>
                             <span className="text-[11px] font-mono text-white/30 pl-4 pr-1 shrink-0 select-none whitespace-nowrap">informatique-et-libertes-</span>
                             <input
                               value={mentionsMailRgpdCode}
                               onChange={(e) => setMentionsMailRgpdCode(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
-                              placeholder="XXXX"
-                              maxLength={20}
+                              placeholder="XXXX" maxLength={20}
                               className="flex-1 bg-transparent py-5 text-[13px] font-black outline-none text-white min-w-0 placeholder:text-white/20"
                             />
                             <span className="text-[11px] font-mono text-white/30 pr-4 pl-1 shrink-0 select-none whitespace-nowrap">@guyhoquet.com</span>
@@ -696,28 +670,35 @@ export default function CartPage() {
           </section>
         </div>
 
-        {/* ── COLONNE DROITE — STICKY ──────────────────────────────────────── */}
+        {/* ── DROITE STICKY ────────────────────────────────────────────────── */}
         <div className="lg:col-span-1">
           <div className="bg-white p-12 rounded-[50px] text-[#0f092e] sticky top-12 text-center shadow-2xl">
-            <h2 className="text-[13px] font-black uppercase opacity-30 italic mb-2">Total à régler</h2>
-            <p className="text-[10px] font-black uppercase opacity-20 italic mb-3 tracking-widest">
-              Livraison incluse • TTC
-            </p>
+            <h2 className="text-[13px] font-black uppercase opacity-30 italic mb-1">Total à régler</h2>
+            <p className="text-[10px] font-black uppercase opacity-20 italic mb-3 tracking-widest">Livraison incluse</p>
 
-            {/* ✅ Prix affiché = TTC livraison incluse */}
-            <span className="text-6xl font-black italic tracking-tighter">{fmt(totalTTC)}€</span>
-            <p className="text-[11px] font-black uppercase opacity-30 mt-1 tracking-widest">Toutes Taxes Comprises</p>
+            {/* ✅ Prix = TTC produits + livraison */}
+            <span className="text-6xl font-black italic tracking-tighter">{fmt(totalFinal)}€</span>
+            <p className="text-[11px] font-black uppercase opacity-30 mt-1 tracking-widest">TTC + livraison</p>
 
-            {/* Détail */}
             <div className="mt-6 bg-black/5 rounded-2xl px-6 py-5 text-left space-y-2">
               <div className="flex justify-between text-[12px] font-black uppercase opacity-40">
                 <span>Produits HT</span>
                 <span className="tabular-nums">{fmt(totalProduitsHT)}€</span>
               </div>
 
-              <div className="flex justify-between text-[12px] font-black uppercase opacity-40">
+              <div className="flex justify-between text-[12px] font-black uppercase opacity-30">
+                <span>TVA 20%</span>
+                <span className="tabular-nums">{fmt(tvaProduitsSeuls)}€</span>
+              </div>
+
+              <div className="flex justify-between text-[12px] font-black uppercase opacity-50 border-t border-black/10 pt-2">
+                <span>Sous-total TTC</span>
+                <span className="tabular-nums">{fmt(totalProduitsTTC)}€</span>
+              </div>
+
+              <div className="flex justify-between text-[12px] font-black uppercase opacity-50">
                 <span className="flex items-center gap-1">
-                  Livraison
+                  + Livraison
                   {livraisonOfferte && <span className="text-green-500 text-[9px] font-black uppercase">offerte</span>}
                 </span>
                 <span className={`tabular-nums ${livraisonOfferte ? 'text-green-500 opacity-100' : ''}`}>
@@ -725,14 +706,9 @@ export default function CartPage() {
                 </span>
               </div>
 
-              <div className="flex justify-between text-[12px] font-black uppercase opacity-40">
-                <span>TVA 20%</span>
-                <span className="tabular-nums">{fmt(tva)}€</span>
-              </div>
-
-              <div className="border-t border-black/10 pt-3 flex justify-between text-[13px] font-black uppercase">
-                <span className="opacity-60">Total TTC</span>
-                <span className="text-blue-600 tabular-nums">{fmt(totalTTC)}€</span>
+              <div className="border-t border-black/10 pt-3 flex justify-between text-[14px] font-black uppercase">
+                <span className="opacity-60">Total à régler</span>
+                <span className="text-blue-600 tabular-nums">{fmt(totalFinal)}€</span>
               </div>
             </div>
 
@@ -751,22 +727,17 @@ export default function CartPage() {
         </div>
       </main>
 
-      {/* ── MODALE CONFIRMATION ──────────────────────────────────────────────── */}
+      {/* ── MODALE ───────────────────────────────────────────────────────────── */}
       <AnimatePresence>
         {showConfirm && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="absolute inset-0 bg-[#0f092e]/95 backdrop-blur-2xl"
               onClick={() => setShowConfirm(false)}
             />
-
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
               className="relative bg-white text-[#0f092e] w-full max-w-2xl rounded-[60px] p-14 space-y-8 shadow-2xl overflow-y-auto max-h-[90vh] text-center"
             >
               <div className="absolute top-0 left-0 w-full h-2 bg-blue-600 rounded-t-[60px]" />
@@ -794,8 +765,7 @@ export default function CartPage() {
                       <div>
                         <p className="text-[13px] font-black uppercase italic leading-tight">{item.name}</p>
                         <p className="text-[11px] font-bold opacity-30 mt-0.5">
-                          x{item.qty}
-                          {item.orderedBy && <span className="text-blue-500 ml-2">— {item.orderedBy}</span>}
+                          x{item.qty}{item.orderedBy && <span className="text-blue-500 ml-2">— {item.orderedBy}</span>}
                         </p>
                       </div>
                       <span className="text-[13px] font-black shrink-0 tabular-nums">{fmt(item.price * item.qty)}€</span>
@@ -809,24 +779,24 @@ export default function CartPage() {
                     <span className="tabular-nums">{fmt(totalProduitsHT)}€</span>
                   </div>
                   <div className="flex justify-between text-[13px] font-black uppercase italic">
+                    <span className="opacity-40">TVA 20%</span>
+                    <span className="tabular-nums text-gray-400">{fmt(tvaProduitsSeuls)}€</span>
+                  </div>
+                  <div className="flex justify-between text-[13px] font-black uppercase italic">
+                    <span className="opacity-40">Sous-total TTC</span>
+                    <span className="tabular-nums">{fmt(totalProduitsTTC)}€</span>
+                  </div>
+                  <div className="flex justify-between text-[13px] font-black uppercase italic">
                     <span className="opacity-40">
-                      Livraison{livraisonOfferte ? ' (offerte aujourd\'hui)' : ''}
+                      + Livraison{livraisonOfferte ? ' (offerte aujourd\'hui)' : ''}
                     </span>
                     <span className={`tabular-nums ${livraisonOfferte ? 'text-green-500' : ''}`}>
                       {fmt(fraisLivraison)}€
                     </span>
                   </div>
-                  <div className="flex justify-between text-[13px] font-black uppercase italic">
-                    <span className="opacity-40">Total HT</span>
-                    <span className="tabular-nums">{fmt(totalHT)}€</span>
-                  </div>
-                  <div className="flex justify-between text-[13px] font-black uppercase italic">
-                    <span className="opacity-40">TVA (20%)</span>
-                    <span className="tabular-nums text-gray-400">{fmt(tva)}€</span>
-                  </div>
                   <div className="flex justify-between text-[15px] font-black uppercase italic border-t border-gray-200 pt-3">
-                    <span className="opacity-60">Total TTC</span>
-                    <span className="text-blue-600 text-2xl tabular-nums">{fmt(totalTTC)}€</span>
+                    <span className="opacity-60">Total à régler</span>
+                    <span className="text-blue-600 text-2xl tabular-nums">{fmt(totalFinal)}€</span>
                   </div>
                 </div>
               </div>
