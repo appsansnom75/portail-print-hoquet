@@ -206,10 +206,7 @@ export default function AdminLivraisonPage() {
           )}
         </AnimatePresence>
 
-        {/* ── DEBUG configId ──────────────────────────────────────────────────── */}
-        <div className="text-[10px] font-mono text-white/10 ml-2">
-          config_id: {configId || 'null — problème de chargement'}
-        </div>
+      
 
         {/* ── LIVRAISON OFFERTE ────────────────────────────────────────────── */}
         <section className="bg-white/[0.03] border border-white/10 rounded-[40px] p-10 space-y-6">
