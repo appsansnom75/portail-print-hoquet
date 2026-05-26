@@ -49,7 +49,6 @@ export default function CartPage() {
   const [mentionsCaisseGarantie, setMentionsCaisseGarantie]                 = useState('');
   const [mentionsCaisseGarantieAdresse, setMentionsCaisseGarantieAdresse]   = useState('');
   const [mentionsTva, setMentionsTva]                                       = useState('');
-  // ✅ Code RGPD uniquement
   const [mentionsMailRgpdCode, setMentionsMailRgpdCode]                     = useState('');
 
   const totalHT  = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
@@ -94,7 +93,6 @@ export default function CartPage() {
           setMentionsCaisseGarantie(agency.mentions_caisse_garantie         || '');
           setMentionsCaisseGarantieAdresse(agency.mentions_caisse_garantie_adresse || '');
           setMentionsTva(agency.mentions_tva                                || '');
-          // ✅ Extraire uniquement le code
           const rgpdStored = agency.mentions_mail_rgpd || '';
           const rgpdCode = rgpdStored
             .replace('informatique-et-libertes-', '')
@@ -140,7 +138,6 @@ export default function CartPage() {
       mentions_caisse_garantie:         mentionsCaisseGarantie,
       mentions_caisse_garantie_adresse: mentionsCaisseGarantieAdresse,
       mentions_tva:                     mentionsTva,
-      // ✅ Sauvegarde le mail complet
       mentions_mail_rgpd: `informatique-et-libertes-${mentionsMailRgpdCode}@guyhoquet.com`,
     }).eq('id', agenceId);
   };
@@ -148,14 +145,14 @@ export default function CartPage() {
 
   // ─── 3. VALIDATION ──────────────────────────────────────────────────────────
   const isFormValid = () => {
+    // ✅ phone, phoneFix et mentionsVilleAgence ne sont plus obligatoires
     const livraisonOk = useAltAddress
-      ? altAddress.trim() && altZipCode.trim() && altCity.trim() && altPhone.trim() && altPhoneFix.trim()
-      : address.trim() && zipCode.trim() && city.trim() && phone.trim() && phoneFix.trim();
+      ? altAddress.trim() && altZipCode.trim() && altCity.trim()
+      : address.trim() && zipCode.trim() && city.trim();
 
     const mentionsOk =
       mentionsMailFacturation.trim() &&
       mentionsNomSociete.trim() &&
-      mentionsVilleAgence.trim() &&
       mentionsUrlQrCode.trim() &&
       mentionsStatut.trim() &&
       mentionsCapital.trim() &&
@@ -166,7 +163,7 @@ export default function CartPage() {
       mentionsCaisseGarantie.trim() &&
       mentionsCaisseGarantieAdresse.trim() &&
       mentionsTva.trim() &&
-      mentionsMailRgpdCode.trim(); // ✅ valide sur le code uniquement
+      mentionsMailRgpdCode.trim();
 
     return !!(siret.trim() && livraisonOk && mentionsOk);
   };
@@ -265,12 +262,10 @@ export default function CartPage() {
           mentions_rcs:                     mentionsRcs,
           mentions_ape:                     mentionsApe,
           mentions_carte_pro:               mentionsCartePro,
-          // ✅ String complète pour Make
           mentions_carte_pro_delivree: `${mentionsCarteProDelivreeType} ${mentionsCarteProDelivree}`.trim(),
           mentions_caisse_garantie:         mentionsCaisseGarantie,
           mentions_caisse_garantie_adresse: mentionsCaisseGarantieAdresse,
           mentions_tva:                     mentionsTva,
-          // ✅ Mail complet pour Make
           mentions_mail_rgpd: `informatique-et-libertes-${mentionsMailRgpdCode}@guyhoquet.com`,
         }),
       });
@@ -327,7 +322,7 @@ export default function CartPage() {
         : 'border-blue-500/20 focus:border-blue-500'
     }`;
 
-  // ✅ "Mail RGPD" retiré du tableau — géré séparément
+  // ✅ mentionsVilleAgence retiré du tableau des obligatoires
   const mentionsLegalesFields = [
     { label: 'Ville sous le logo',        val: mentionsVilleAgence,            set: setMentionsVilleAgence,            ph: 'Ex: ANGERS' },
     { label: 'URL QR Code',               val: mentionsUrlQrCode,              set: setMentionsUrlQrCode,              ph: 'Ex: https://www.guy-hoquet.com/agence-angers' },
@@ -341,12 +336,11 @@ export default function CartPage() {
     { label: 'TVA Intracommunautaire',    val: mentionsTva,                    set: setMentionsTva,                    ph: 'Ex: FR 12 123456789' },
   ] as { label: string; val: string; set: (v: string) => void; ph: string }[];
 
-  // ✅ Badge compte : champs du tableau + délivrée par + mail rgpd
+  // ✅ mentionsVilleAgence retiré du badge incomplets
   const mentionsIncomplets =
-    mentionsLegalesFields.filter(f => !f.val.trim()).length +
+    mentionsLegalesFields.filter((f, i) => i !== 0 && !f.val.trim()).length +
     (mentionsCarteProDelivree.trim() ? 0 : 1) +
     (mentionsMailRgpdCode.trim() ? 0 : 1);
-
 
   return (
     <div className="min-h-screen bg-[#0f092e] text-white pb-20">
@@ -446,8 +440,9 @@ export default function CartPage() {
                     <input placeholder="CODE POSTAL *"         value={zipCode}  onChange={(e) => setZipCode(e.target.value)}   className={inp(zipCode)} />
                     <input placeholder="VILLE *"               value={city}     onChange={(e) => setCity(e.target.value)}      className={inp(city)} />
                   </div>
-                  <input placeholder="TÉLÉPHONE MOBILE *"      value={phone}    onChange={(e) => setPhone(e.target.value)}     className={inp(phone)} />
-                  <input placeholder="TÉLÉPHONE FIXE AGENCE *" value={phoneFix} onChange={(e) => setPhoneFix(e.target.value)} className={inp(phoneFix)} />
+                  {/* ✅ Téléphones plus obligatoires — border neutre */}
+                  <input placeholder="TÉLÉPHONE MOBILE"        value={phone}    onChange={(e) => setPhone(e.target.value)}     className="w-full bg-black/40 border border-white/10 hover:border-blue-500/50 focus:border-blue-500 rounded-2xl p-5 text-[13px] font-black outline-none transition-all" />
+                  <input placeholder="TÉLÉPHONE FIXE AGENCE"   value={phoneFix} onChange={(e) => setPhoneFix(e.target.value)} className="w-full bg-black/40 border border-white/10 hover:border-blue-500/50 focus:border-blue-500 rounded-2xl p-5 text-[13px] font-black outline-none transition-all" />
                   <div className="space-y-1">
                     <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">Numéro SIRET *</label>
                     <input placeholder="Ex: 123 456 789 00012" value={siret} onChange={(e) => setSiret(e.target.value)}
@@ -464,8 +459,9 @@ export default function CartPage() {
                     <input placeholder="CODE POSTAL *"          value={altZipCode} onChange={(e) => setAltZipCode(e.target.value)}   className={inpAlt(altZipCode)} />
                     <input placeholder="VILLE *"                value={altCity}    onChange={(e) => setAltCity(e.target.value)}      className={inpAlt(altCity)} />
                   </div>
-                  <input placeholder="TÉLÉPHONE MOBILE *"       value={altPhone}    onChange={(e) => setAltPhone(e.target.value)}    className={inpAlt(altPhone)} />
-                  <input placeholder="TÉLÉPHONE FIXE AGENCE *"  value={altPhoneFix} onChange={(e) => setAltPhoneFix(e.target.value)} className={inpAlt(altPhoneFix)} />
+                  {/* ✅ Téléphones plus obligatoires — border neutre */}
+                  <input placeholder="TÉLÉPHONE MOBILE"         value={altPhone}    onChange={(e) => setAltPhone(e.target.value)}    className="w-full bg-black/40 border border-blue-500/20 focus:border-blue-500 rounded-2xl p-5 text-[13px] font-black outline-none transition-all" />
+                  <input placeholder="TÉLÉPHONE FIXE AGENCE"    value={altPhoneFix} onChange={(e) => setAltPhoneFix(e.target.value)} className="w-full bg-black/40 border border-blue-500/20 focus:border-blue-500 rounded-2xl p-5 text-[13px] font-black outline-none transition-all" />
                   <div className="space-y-1">
                     <label className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-400/50 ml-2">
                       Numéro SIRET * <span className="normal-case italic font-bold text-blue-400/40 ml-1">— non sauvegardé</span>
@@ -548,8 +544,18 @@ export default function CartPage() {
                     >
                       <div className="px-6 pb-6 space-y-5 border-t border-white/5 pt-5">
 
-                        {/* Champs génériques */}
-                        {mentionsLegalesFields.map(({ label, val, set, ph }) => (
+                        {/* ✅ Ville sous le logo — non obligatoire, affichée sans astérisque */}
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 flex items-center gap-2">
+                            Ville sous le logo
+                          </label>
+                          <input value={mentionsVilleAgence} onChange={(e) => setMentionsVilleAgence(e.target.value)}
+                            placeholder="Ex: ANGERS"
+                            className="w-full bg-black/40 border border-white/10 hover:border-blue-500/50 focus:border-blue-500 rounded-2xl p-5 text-[13px] font-black outline-none transition-all" />
+                        </div>
+
+                        {/* Champs génériques obligatoires (index 1 à fin) */}
+                        {mentionsLegalesFields.slice(1).map(({ label, val, set, ph }) => (
                           <div key={label} className="space-y-1">
                             <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 flex items-center gap-2">
                               {label} <span className="text-red-400">*</span>
