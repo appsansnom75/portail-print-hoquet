@@ -6,24 +6,47 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 
+
 const ORDERS_PER_PAGE = 6;
+
 
 export default function HistoriqueCommandes() {
   const { addToCart, clearCart } = useCart();
   const router = useRouter();
 
-  const [orders, setOrders]       = useState<any[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [agencyName, setAgencyName] = useState("");
-  const [agencyData, setAgencyData] = useState<any>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [deleting, setDeleting]   = useState<string | null>(null);
 
-  // ─── Fetch commandes ─────────────────────────────────────────────
+  const [orders, setOrders]           = useState<any[]>([]);
+  const [loading, setLoading]         = useState(true);
+  const [agencyName, setAgencyName]   = useState("");
+  const [agencyData, setAgencyData]   = useState<any>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [deleting, setDeleting]       = useState<string | null>(null);
+
+
+  // ─── Helper calcul TTC robuste ────────────────────────────────────
+  // Priorité : total_ttc (nouvelle colonne) → fallback sur ancienne logique
+  const getTTC = (order: any): number => {
+    if (order.total_ttc != null && order.total_ttc > 0) return Number(order.total_ttc);
+    // Ancienne logique : (produits HT * 1.2) + livraison
+    const produitsHT   = Number(order.total_produits_ht ?? order.total_ht ?? 0);
+    const livraisonHT  = Number(order.shipping_ht ?? 0);
+    return (produitsHT + livraisonHT) * 1.2;
+  };
+
+  const getHT = (order: any): number => {
+    if (order.base_ht != null && order.base_ht > 0) return Number(order.base_ht);
+    const produitsHT  = Number(order.total_produits_ht ?? order.total_ht ?? 0);
+    const livraisonHT = Number(order.shipping_ht ?? 0);
+    return produitsHT + livraisonHT;
+  };
+
+
+  // ─── Fetch commandes ──────────────────────────────────────────────
   const fetchOrders = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+
 
       const { data: profile } = await supabase
         .from('profiles')
@@ -31,9 +54,11 @@ export default function HistoriqueCommandes() {
         .eq('id', user.id)
         .single();
 
+
       if (profile?.agencies) {
         const name = (profile.agencies as any).name;
         setAgencyName(name);
+
 
         const { data: agency } = await supabase
           .from('agencies')
@@ -41,6 +66,7 @@ export default function HistoriqueCommandes() {
           .eq('name', name)
           .single();
         setAgencyData(agency);
+
 
         const { data: history, error } = await supabase
           .from('orders')
@@ -57,14 +83,17 @@ export default function HistoriqueCommandes() {
     }
   };
 
+
   useEffect(() => { fetchOrders(); }, []);
 
-  // ─── Pagination ──────────────────────────────────────────────────
-  const totalPages  = Math.ceil(orders.length / ORDERS_PER_PAGE);
-  const startIndex  = (currentPage - 1) * ORDERS_PER_PAGE;
-  const pageOrders  = orders.slice(startIndex, startIndex + ORDERS_PER_PAGE);
 
-  // ─── RECOMMANDER ─────────────────────────────────────────────────
+  // ─── Pagination ───────────────────────────────────────────────────
+  const totalPages = Math.ceil(orders.length / ORDERS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ORDERS_PER_PAGE;
+  const pageOrders = orders.slice(startIndex, startIndex + ORDERS_PER_PAGE);
+
+
+  // ─── RECOMMANDER ──────────────────────────────────────────────────
   const handleReorder = (order: any) => {
     clearCart();
     (order.items || []).forEach((item: any) => {
@@ -81,17 +110,18 @@ export default function HistoriqueCommandes() {
     router.push('/panier');
   };
 
-  // ─── Export CSV global ───────────────────────────────────────────
+
+  // ─── Export CSV global ────────────────────────────────────────────
   const exportAllToCSV = () => {
     if (orders.length === 0) return;
-    const headers = ["Date", "Acheteur", "Articles", "Adresse", "Total HT", "Total TTC"];
+    const headers = ["Date", "Acheteur", "Articles", "Adresse", "Base HT", "Total TTC"];
     const rows = orders.map(order => [
       new Date(order.created_at).toLocaleDateString('fr-FR'),
       order.profiles?.full_name || 'Système',
-      order.produits_liste.replace(/,/g, ' |'),
-      order.delivery_address.replace(/,/g, ' '),
-      `${order.total_ht?.toFixed(2)}€`,
-      `${(order.total_ht * 1.20).toFixed(2)}€`,
+      order.produits_liste?.replace(/,/g, ' |') ?? '',
+      order.delivery_address?.replace(/,/g, ' ') ?? '',
+      `${getHT(order).toFixed(2)}€`,
+      `${getTTC(order).toFixed(2)}€`,
     ]);
     const csvContent = "data:text/csv;charset=utf-8,"
       + [headers, ...rows].map(e => e.join(",")).join("\n");
@@ -101,16 +131,17 @@ export default function HistoriqueCommandes() {
     link.click();
   };
 
-  // ─── Export CSV unitaire ─────────────────────────────────────────
+
+  // ─── Export CSV unitaire ──────────────────────────────────────────
   const exportSingleCSV = (order: any) => {
-    const headers = ["Date", "Acheteur", "Articles", "Adresse", "Total HT", "Total TTC"];
+    const headers = ["Date", "Acheteur", "Articles", "Adresse", "Base HT", "Total TTC"];
     const row = [
       new Date(order.created_at).toLocaleDateString('fr-FR'),
       order.profiles?.full_name || 'Système',
-      order.produits_liste.replace(/,/g, ' |'),
-      order.delivery_address.replace(/,/g, ' '),
-      `${order.total_ht?.toFixed(2)}€`,
-      `${(order.total_ht * 1.20).toFixed(2)}€`,
+      order.produits_liste?.replace(/,/g, ' |') ?? '',
+      order.delivery_address?.replace(/,/g, ' ') ?? '',
+      `${getHT(order).toFixed(2)}€`,
+      `${getTTC(order).toFixed(2)}€`,
     ];
     const csvContent = "data:text/csv;charset=utf-8,"
       + [headers, row].map(e => e.join(",")).join("\n");
@@ -120,18 +151,16 @@ export default function HistoriqueCommandes() {
     link.click();
   };
 
-  // ─── Supprimer définitivement ────────────────────────────────────
-  // On supprime en base ET dans le state local immédiatement
-  // → aucun retour possible même après refresh
+
+  // ─── Supprimer définitivement ─────────────────────────────────────
   const deleteOrder = async (e: React.MouseEvent, orderId: string) => {
     e.stopPropagation();
     if (!confirm("Supprimer définitivement cette commande ?")) return;
 
-    // Suppression optimiste : retrait immédiat du state
+
     setDeleting(orderId);
     setOrders(prev => {
       const next = prev.filter(o => o.id !== orderId);
-      // Si la page courante devient vide après suppression → page précédente
       const newTotalPages = Math.ceil(next.length / ORDERS_PER_PAGE);
       if (currentPage > newTotalPages && newTotalPages > 0) {
         setCurrentPage(newTotalPages);
@@ -139,21 +168,23 @@ export default function HistoriqueCommandes() {
       return next;
     });
 
-    // Suppression en base
+
     const { error } = await supabase
       .from('orders')
       .delete()
       .eq('id', orderId);
 
+
     if (error) {
-      // En cas d'erreur on recharge depuis la base
       console.error("Erreur suppression :", error);
       alert("Erreur lors de la suppression, rechargement...");
       fetchOrders();
     }
 
+
     setDeleting(null);
   };
+
 
   if (loading) return (
     <div className="p-20 text-white font-black uppercase text-center animate-pulse">
@@ -161,11 +192,13 @@ export default function HistoriqueCommandes() {
     </div>
   );
 
+
   return (
     <div className="min-h-screen bg-[#0f092e] text-white p-6 md:p-12">
       <div className="max-w-6xl mx-auto space-y-10">
 
-        {/* ── HEADER ───────────────────────────────────────────────── */}
+
+        {/* ── HEADER ──────────────────────────────────────────────── */}
         <div className="flex flex-col md:flex-row justify-between items-center md:items-end border-b border-white/10 pb-8 gap-6">
           <div>
             <h1 className="text-5xl font-black uppercase italic tracking-tighter text-blue-500">Historique</h1>
@@ -189,7 +222,8 @@ export default function HistoriqueCommandes() {
           </div>
         </div>
 
-        {/* ── LISTE DES COMMANDES ──────────────────────────────────── */}
+
+        {/* ── LISTE DES COMMANDES ─────────────────────────────────── */}
         <div className="space-y-4">
           {orders.length === 0 && (
             <p className="text-center text-[13px] font-black uppercase text-white/20 italic py-20">
@@ -197,9 +231,12 @@ export default function HistoriqueCommandes() {
             </p>
           )}
 
+
           <AnimatePresence mode="popLayout">
             {pageOrders.map((order) => {
-              const totalTTC = (order.total_ht || 0) * 1.20;
+              const totalTTC  = getTTC(order);
+              const baseHT    = getHT(order);
+
               return (
                 <motion.div
                   key={order.id}
@@ -212,6 +249,7 @@ export default function HistoriqueCommandes() {
                 >
                   <div className="flex flex-col lg:flex-row gap-8 items-start">
 
+
                     {/* Passée par */}
                     <div className="w-full lg:w-1/4 lg:border-r border-white/5 lg:pr-8 shrink-0">
                       <span className="text-[11px] font-black uppercase text-blue-500/60 block mb-1">Passée par</span>
@@ -222,6 +260,7 @@ export default function HistoriqueCommandes() {
                         {new Date(order.created_at).toLocaleDateString('fr-FR')}
                       </p>
                     </div>
+
 
                     {/* Produits */}
                     <div className="flex-1 w-full bg-white/5 rounded-2xl p-5 border border-white/5 group-hover:bg-white/10 transition-colors">
@@ -258,7 +297,7 @@ export default function HistoriqueCommandes() {
                             })
                           : (
                             <p className="text-sm font-bold text-white leading-relaxed">
-                              {order.produits_liste.split(',').join(' • ')}
+                              {order.produits_liste?.split(',').join(' • ')}
                             </p>
                           )
                         }
@@ -266,12 +305,13 @@ export default function HistoriqueCommandes() {
                       <p className="mt-4 text-[13px] text-white/40 truncate">📍 {order.delivery_address}</p>
                     </div>
 
+
                     {/* Prix + boutons */}
                     <div className="flex items-center gap-6 w-full lg:w-auto justify-between lg:justify-end shrink-0">
                       <div className="text-right border-r border-white/5 pr-6">
                         <div className="flex items-center justify-end gap-2 opacity-30">
                           <span className="text-[11px] font-black uppercase">HT</span>
-                          <span className="text-sm font-bold">{order.total_ht?.toFixed(2)}€</span>
+                          <span className="text-sm font-bold">{baseHT.toFixed(2)}€</span>
                         </div>
                         <div className="flex items-center justify-end gap-2">
                           <span className="text-[12px] font-black text-blue-500 uppercase italic">TTC</span>
@@ -298,6 +338,7 @@ export default function HistoriqueCommandes() {
                       </div>
                     </div>
 
+
                   </div>
                 </motion.div>
               );
@@ -305,10 +346,10 @@ export default function HistoriqueCommandes() {
           </AnimatePresence>
         </div>
 
-        {/* ── PAGINATION ───────────────────────────────────────────── */}
+
+        {/* ── PAGINATION ──────────────────────────────────────────── */}
         {totalPages > 1 && (
           <div className="flex items-center justify-center gap-2 pt-4">
-            {/* Bouton précédent */}
             <button
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
@@ -317,7 +358,7 @@ export default function HistoriqueCommandes() {
               ←
             </button>
 
-            {/* Pages numérotées */}
+
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
               <button
                 key={page}
@@ -332,7 +373,7 @@ export default function HistoriqueCommandes() {
               </button>
             ))}
 
-            {/* Bouton suivant */}
+
             <button
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
@@ -343,12 +384,13 @@ export default function HistoriqueCommandes() {
           </div>
         )}
 
-        {/* Indicateur page */}
+
         {totalPages > 1 && (
           <p className="text-center text-[11px] font-black uppercase opacity-20 tracking-widest -mt-4">
             Page {currentPage} / {totalPages} — {orders.length} commandes
           </p>
         )}
+
 
       </div>
     </div>
