@@ -24,6 +24,7 @@ export default function AdminLivraisonPage() {
   const [configId, setConfigId] = useState<string | null>(null);
   const [offerteActive, setOfferteActive] = useState(false);
   const [offerteDate, setOfferteDate] = useState('');
+  const [seuilMessage, setSeuilMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -41,13 +42,11 @@ export default function AdminLivraisonPage() {
         .maybeSingle();
 
       if (error) {
-        console.error('Erreur chargement :', error);
         setErrorMsg('Erreur de chargement : ' + error.message);
         setLoading(false);
         return;
       }
 
-      // ✅ Aucune ligne → on en crée une
       if (!data) {
         const { data: inserted, error: insertError } = await supabase
           .from('shipping_config')
@@ -55,12 +54,12 @@ export default function AdminLivraisonPage() {
             paliers: [],
             livraison_offerte_active: false,
             livraison_offerte_date: null,
+            livraison_offerte_seuil_message: null,
           })
           .select()
           .single();
 
         if (insertError) {
-          console.error('Erreur création config :', insertError);
           setErrorMsg('Erreur création config : ' + insertError.message);
           setLoading(false);
           return;
@@ -79,6 +78,7 @@ export default function AdminLivraisonPage() {
         );
         setOfferteActive(!!data.livraison_offerte_active);
         setOfferteDate(data.livraison_offerte_date || '');
+        setSeuilMessage(data.livraison_offerte_seuil_message || '');
       }
 
       setLoading(false);
@@ -113,10 +113,9 @@ export default function AdminLivraisonPage() {
       paliers: paliersClean,
       livraison_offerte_active: offerteActive,
       livraison_offerte_date: offerteDate || null,
+      livraison_offerte_seuil_message: seuilMessage.trim() || null,
       updated_at: new Date().toISOString(),
     };
-
-    console.log('→ Sauvegarde shipping_config', { configId, payload });
 
     const { error } = await supabase
       .from('shipping_config')
@@ -126,7 +125,6 @@ export default function AdminLivraisonPage() {
     setSaving(false);
 
     if (error) {
-      console.error('Erreur Supabase :', error);
       setErrorMsg('Erreur sauvegarde : ' + error.message);
       return;
     }
@@ -481,6 +479,39 @@ export default function AdminLivraisonPage() {
           </section>
         )}
 
+        {/* ── MESSAGE PANIER ───────────────────────────────────────────────── */}
+        <section className="bg-white/[0.03] border border-white/10 rounded-[40px] p-10 space-y-6">
+          <div>
+            <h2 className="text-[11px] font-black uppercase tracking-widest text-white/60 italic">
+              Message affiché sur le panier
+            </h2>
+            <p className="text-[11px] font-black text-white/20 uppercase tracking-widest mt-1">
+              Texte visible sous le prix total sur la page panier de chaque agence
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2 block">
+              Message livraison offerte
+            </label>
+            <input
+              type="text"
+              value={seuilMessage}
+              onChange={(e) => setSeuilMessage(e.target.value)}
+              placeholder="Ex : Livraison offerte à partir de 129€ d'achat"
+              className="w-full bg-black/40 border border-white/10 focus:border-blue-500 rounded-2xl p-5 text-[13px] font-black outline-none transition-all text-white"
+            />
+            {seuilMessage.trim() && (
+              <div className="bg-blue-500/5 border border-blue-500/20 rounded-2xl px-5 py-4">
+                <p className="text-[10px] font-black uppercase text-blue-400/50 mb-2">Aperçu sur le panier</p>
+                <p className="text-[12px] font-black uppercase italic text-white/50">
+                  {seuilMessage}
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
+
         {/* ── BOUTON SAVE BAS ──────────────────────────────────────────────── */}
         <div className="flex justify-end pt-4 pb-10">
           <button
@@ -495,6 +526,7 @@ export default function AdminLivraisonPage() {
             {saving ? 'Sauvegarde...' : saved ? '✓ Sauvegardé' : 'Sauvegarder la configuration'}
           </button>
         </div>
+
       </main>
     </div>
   );

@@ -17,6 +17,7 @@ type ShippingConfig = {
   paliers: ShippingTier[];
   livraison_offerte_active: boolean;
   livraison_offerte_date: string | null;
+  livraison_offerte_seuil_message: string | null;
 };
 
 export default function CartPage() {
@@ -35,6 +36,7 @@ export default function CartPage() {
     paliers: [],
     livraison_offerte_active: false,
     livraison_offerte_date: null,
+    livraison_offerte_seuil_message: null,
   });
 
   // 03 - LIVRAISON
@@ -70,10 +72,10 @@ export default function CartPage() {
   const [mentionsMailRgpdCode, setMentionsMailRgpdCode]                     = useState('');
 
   // ── CALCULS ────────────────────────────────────────────────────────────────
-  // TVA s'applique UNIQUEMENT sur les produits, PAS sur la livraison
-  const totalProduitsHT  = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
-  const tvaProduitsSeuls = totalProduitsHT * 0.2;
-  const totalProduitsTTC = totalProduitsHT + tvaProduitsSeuls;
+  // TVA uniquement sur les produits, PAS sur la livraison
+  const totalProduitsHT   = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
+  const tvaProduitsSeuls  = totalProduitsHT * 0.2;
+  const totalProduitsTTC  = totalProduitsHT + tvaProduitsSeuls;
 
   const todayISO = new Date().toLocaleDateString('en-CA');
 
@@ -88,10 +90,10 @@ export default function CartPage() {
     );
 
     const tier = sorted.find((palier) => {
-      const minOk   = totalProduitsHT >= Number(palier.min_amount || 0);
-      const maxVal  = palier.max_amount === null || palier.max_amount === undefined
+      const minOk  = totalProduitsHT >= Number(palier.min_amount || 0);
+      const maxVal = palier.max_amount === null || palier.max_amount === undefined
         ? null : Number(palier.max_amount);
-      const maxOk   = maxVal === null ? true : totalProduitsHT <= maxVal;
+      const maxOk  = maxVal === null ? true : totalProduitsHT <= maxVal;
       return minOk && maxOk;
     });
 
@@ -99,9 +101,7 @@ export default function CartPage() {
   };
 
   const fraisLivraison = getShippingCost();
-
-  // ✅ Total final = TTC produits + livraison (pas de TVA sur livraison)
-  const totalFinal = totalProduitsTTC + fraisLivraison;
+  const totalFinal     = totalProduitsTTC + fraisLivraison;
 
   const livraisonOfferte =
     shippingConfig.livraison_offerte_active &&
@@ -112,20 +112,23 @@ export default function CartPage() {
   // ── CHARGEMENT ─────────────────────────────────────────────────────────────
   useEffect(() => {
     const loadData = async () => {
+      // Shipping config
       const { data: shippingRow } = await supabase
         .from('shipping_config')
-        .select('paliers, livraison_offerte_active, livraison_offerte_date')
+        .select('paliers, livraison_offerte_active, livraison_offerte_date, livraison_offerte_seuil_message')
         .limit(1)
         .maybeSingle();
 
       if (shippingRow) {
         setShippingConfig({
           paliers: Array.isArray(shippingRow.paliers) ? shippingRow.paliers : [],
-          livraison_offerte_active: !!shippingRow.livraison_offerte_active,
-          livraison_offerte_date: shippingRow.livraison_offerte_date || null,
+          livraison_offerte_active:      !!shippingRow.livraison_offerte_active,
+          livraison_offerte_date:        shippingRow.livraison_offerte_date || null,
+          livraison_offerte_seuil_message: shippingRow.livraison_offerte_seuil_message || null,
         });
       }
 
+      // User
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setLoading(false); return; }
 
@@ -214,12 +217,19 @@ export default function CartPage() {
       : address.trim() && zipCode.trim() && city.trim();
 
     const mentionsOk =
-      mentionsMailFacturation.trim() && mentionsNomSociete.trim() &&
-      mentionsVilleAgence.trim() && mentionsStatut.trim() &&
-      mentionsCapital.trim() && mentionsRcs.trim() && mentionsApe.trim() &&
-      mentionsCartePro.trim() && mentionsCarteProDelivree.trim() &&
-      mentionsCaisseGarantie.trim() && mentionsCaisseGarantieAdresse.trim() &&
-      mentionsTva.trim() && mentionsMailRgpdCode.trim();
+      mentionsMailFacturation.trim()      &&
+      mentionsNomSociete.trim()           &&
+      mentionsVilleAgence.trim()          &&
+      mentionsStatut.trim()               &&
+      mentionsCapital.trim()              &&
+      mentionsRcs.trim()                  &&
+      mentionsApe.trim()                  &&
+      mentionsCartePro.trim()             &&
+      mentionsCarteProDelivree.trim()     &&
+      mentionsCaisseGarantie.trim()       &&
+      mentionsCaisseGarantieAdresse.trim()&&
+      mentionsTva.trim()                  &&
+      mentionsMailRgpdCode.trim();
 
     return !!(siret.trim() && livraisonOk && mentionsOk);
   };
@@ -248,9 +258,10 @@ export default function CartPage() {
         .join(', ');
 
       const itemsFormattedJSON = cart.map((i) => ({
-        name: i.name, qty: i.qty,
+        name:       i.name,
+        qty:        i.qty,
         price_unit: i.price,
-        total_row: fmt(i.price * i.qty),
+        total_row:  fmt(i.price * i.qty),
         ordered_by: i.orderedBy || null,
       }));
 
@@ -277,21 +288,21 @@ export default function CartPage() {
           ? membres.find((m) => (m.full_name || `${m.first_name} ${m.last_name}`) === item.orderedBy)
           : null;
         return {
-          produit:           item.name,
-          quantite:          item.qty,
-          prix_ligne:        fmt(item.price * item.qty),
-          membre:            item.orderedBy || '',
-          nominatif_prenom:  collab?.first_name  || '',
-          nominatif_nom:     collab?.last_name   || '',
-          nominatif_mail:    collab?.email       || '',
-          nominatif_tel:     collab?.phone       || '',
-          nominatif_tel_fix: collab?.phone_fix   || deliveryPhoneFix,
-          nominatif_fonction:collab?.fonction    || '',
-          nominatif_rsac:    collab?.rsac        || '',
-          nominatif_adresse: collab?.adresse     || deliveryAddress,
-          nominatif_ville:   collab?.ville       || deliveryCity,
-          nominatif_cp:      collab?.code_postal || deliveryZip,
-          nominatif_photo:   collab?.avatar_url  || '',
+          produit:            item.name,
+          quantite:           item.qty,
+          prix_ligne:         fmt(item.price * item.qty),
+          membre:             item.orderedBy || '',
+          nominatif_prenom:   collab?.first_name   || '',
+          nominatif_nom:      collab?.last_name    || '',
+          nominatif_mail:     collab?.email        || '',
+          nominatif_tel:      collab?.phone        || '',
+          nominatif_tel_fix:  collab?.phone_fix    || deliveryPhoneFix,
+          nominatif_fonction: collab?.fonction     || '',
+          nominatif_rsac:     collab?.rsac         || '',
+          nominatif_adresse:  collab?.adresse      || deliveryAddress,
+          nominatif_ville:    collab?.ville        || deliveryCity,
+          nominatif_cp:       collab?.code_postal  || deliveryZip,
+          nominatif_photo:    collab?.avatar_url   || '',
         };
       });
 
@@ -339,15 +350,15 @@ export default function CartPage() {
       } else {
         throw new Error('Erreur Webhook Make');
       }
-    } catch (err) {
-      console.error('Erreur :', err);
-      alert('Erreur lors de la validation.');
+    } catch (err: any) {
+      console.error('Erreur complète :', err);
+      alert(`Erreur : ${err?.message || JSON.stringify(err)}`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // ── ÉTATS ──────────────────────────────────────────────────────────────────
+  // ── ÉTATS SPÉCIAUX ─────────────────────────────────────────────────────────
   if (loading) return (
     <div className="min-h-screen bg-[#0f092e] flex items-center justify-center text-white uppercase text-[13px] animate-pulse italic font-black">
       Initialisation du bon de commande...
@@ -385,16 +396,16 @@ export default function CartPage() {
     }`;
 
   const mentionsLegalesFields = [
-    { label: 'Ville sous le logo',       val: mentionsVilleAgence,           set: setMentionsVilleAgence,           ph: 'Ex: ANGERS',                              required: true  },
+    { label: 'Ville sous le logo',       val: mentionsVilleAgence,           set: setMentionsVilleAgence,           ph: 'Ex: ANGERS',                               required: true  },
     { label: 'URL QR Code',              val: mentionsUrlQrCode,             set: setMentionsUrlQrCode,             ph: 'Ex: https://www.guy-hoquet.com/agence-...', required: false },
-    { label: 'Statut Juridique',         val: mentionsStatut,                set: setMentionsStatut,                ph: 'Ex: SARL, SAS, EI...',                    required: true  },
-    { label: 'Capital Social (€)',       val: mentionsCapital,               set: setMentionsCapital,               ph: 'Ex: 10 000',                              required: true  },
-    { label: 'RCS',                      val: mentionsRcs,                   set: setMentionsRcs,                   ph: 'Ex: Paris 123 456 789',                   required: true  },
-    { label: 'Code APE',                 val: mentionsApe,                   set: setMentionsApe,                   ph: 'Ex: 6831Z',                               required: true  },
-    { label: 'N° Carte Professionnelle', val: mentionsCartePro,              set: setMentionsCartePro,              ph: 'Ex: CPI 7501 2016 000 012 345',            required: true  },
-    { label: 'Caisse de Garantie',       val: mentionsCaisseGarantie,        set: setMentionsCaisseGarantie,        ph: 'Ex: GALIAN Assurances',                   required: true  },
-    { label: 'Adresse Caisse',           val: mentionsCaisseGarantieAdresse, set: setMentionsCaisseGarantieAdresse, ph: 'Ex: 89 rue de la Boétie, 75008 Paris',     required: true  },
-    { label: 'TVA Intracommunautaire',   val: mentionsTva,                   set: setMentionsTva,                   ph: 'Ex: FR 12 123456789',                     required: true  },
+    { label: 'Statut Juridique',         val: mentionsStatut,                set: setMentionsStatut,                ph: 'Ex: SARL, SAS, EI...',                     required: true  },
+    { label: 'Capital Social (€)',       val: mentionsCapital,               set: setMentionsCapital,               ph: 'Ex: 10 000',                               required: true  },
+    { label: 'RCS',                      val: mentionsRcs,                   set: setMentionsRcs,                   ph: 'Ex: Paris 123 456 789',                    required: true  },
+    { label: 'Code APE',                 val: mentionsApe,                   set: setMentionsApe,                   ph: 'Ex: 6831Z',                                required: true  },
+    { label: 'N° Carte Professionnelle', val: mentionsCartePro,              set: setMentionsCartePro,              ph: 'Ex: CPI 7501 2016 000 012 345',             required: true  },
+    { label: 'Caisse de Garantie',       val: mentionsCaisseGarantie,        set: setMentionsCaisseGarantie,        ph: 'Ex: GALIAN Assurances',                    required: true  },
+    { label: 'Adresse Caisse',           val: mentionsCaisseGarantieAdresse, set: setMentionsCaisseGarantieAdresse, ph: 'Ex: 89 rue de la Boétie, 75008 Paris',      required: true  },
+    { label: 'TVA Intracommunautaire',   val: mentionsTva,                   set: setMentionsTva,                   ph: 'Ex: FR 12 123456789',                      required: true  },
   ] as { label: string; val: string; set: (v: string) => void; ph: string; required: boolean }[];
 
   const mentionsIncomplets =
@@ -416,7 +427,7 @@ export default function CartPage() {
         {/* ── GAUCHE ───────────────────────────────────────────────────────── */}
         <div className="lg:col-span-2 space-y-12">
 
-          {/* 01 */}
+          {/* 01 - IDENTIFICATION */}
           <section className="bg-blue-600/5 border border-blue-500/20 rounded-[45px] p-10 space-y-4">
             <h2 className="text-[11px] font-black uppercase text-blue-400 italic">01. Identification</h2>
             <div className="bg-black/40 border border-white/10 rounded-2xl p-5 text-[11px] font-black text-blue-400">
@@ -457,26 +468,18 @@ export default function CartPage() {
 
               {cart.length > 0 && (
                 <div className="pt-4 space-y-2">
-
-                  {/* Produits HT */}
                   <div className="flex justify-between text-[13px] font-black uppercase italic opacity-50">
                     <span>Produits HT</span>
                     <span>{fmt(totalProduitsHT)}€</span>
                   </div>
-
-                  {/* TVA uniquement sur produits */}
                   <div className="flex justify-between text-[13px] font-black uppercase italic opacity-30">
                     <span>TVA 20% (sur produits)</span>
                     <span>{fmt(tvaProduitsSeuls)}€</span>
                   </div>
-
-                  {/* Sous-total TTC produits */}
                   <div className="flex justify-between text-[13px] font-black uppercase italic opacity-50 border-t border-white/10 pt-3">
                     <span>Sous-total TTC</span>
                     <span>{fmt(totalProduitsTTC)}€</span>
                   </div>
-
-                  {/* Livraison — ajoutée après TVA */}
                   <div className="flex justify-between text-[13px] font-black uppercase italic opacity-50">
                     <span className="flex items-center gap-2">
                       + Frais de livraison
@@ -490,13 +493,10 @@ export default function CartPage() {
                       {fmt(fraisLivraison)}€
                     </span>
                   </div>
-
-                  {/* Total final */}
                   <div className="flex justify-between text-[15px] font-black uppercase italic border-t border-white/10 pt-4 mt-2">
                     <span className="text-white/70">Total à régler</span>
                     <span className="text-blue-400">{fmt(totalFinal)}€</span>
                   </div>
-
                 </div>
               )}
             </div>
@@ -581,6 +581,7 @@ export default function CartPage() {
                 <input value={mentionsNomSociete} onChange={(e) => setMentionsNomSociete(e.target.value)} placeholder="Ex: GUY HOQUET PARIS 1" className={inp(mentionsNomSociete)} />
               </div>
 
+              {/* Accordéon mentions légales */}
               <div className="border border-white/10 rounded-[28px] overflow-hidden">
                 <button
                   type="button"
@@ -615,13 +616,11 @@ export default function CartPage() {
                             <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">
                               {label} {required && <span className="text-red-400">*</span>}
                             </label>
-                            <input
-                              value={val} onChange={(e) => set(e.target.value)} placeholder={ph}
-                              className={required ? inp(val) : inpOpt}
-                            />
+                            <input value={val} onChange={(e) => set(e.target.value)} placeholder={ph} className={required ? inp(val) : inpOpt} />
                           </div>
                         ))}
 
+                        {/* Délivrée par */}
                         <div className="space-y-1">
                           <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">
                             Délivrée par <span className="text-red-400">*</span>
@@ -639,6 +638,7 @@ export default function CartPage() {
                           </div>
                         </div>
 
+                        {/* Mail RGPD */}
                         <div className="space-y-1">
                           <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">
                             Mail Informatique &amp; Libertés <span className="text-red-400">*</span>
@@ -650,7 +650,8 @@ export default function CartPage() {
                             <input
                               value={mentionsMailRgpdCode}
                               onChange={(e) => setMentionsMailRgpdCode(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
-                              placeholder="XXXX" maxLength={20}
+                              placeholder="XXXX"
+                              maxLength={20}
                               className="flex-1 bg-transparent py-5 text-[13px] font-black outline-none text-white min-w-0 placeholder:text-white/20"
                             />
                             <span className="text-[11px] font-mono text-white/30 pr-4 pl-1 shrink-0 select-none whitespace-nowrap">@guyhoquet.com</span>
@@ -676,36 +677,40 @@ export default function CartPage() {
             <h2 className="text-[13px] font-black uppercase opacity-30 italic mb-1">Total à régler</h2>
             <p className="text-[10px] font-black uppercase opacity-20 italic mb-3 tracking-widest">Livraison incluse</p>
 
-            {/* ✅ Prix = TTC produits + livraison */}
             <span className="text-6xl font-black italic tracking-tighter">{fmt(totalFinal)}€</span>
             <p className="text-[11px] font-black uppercase opacity-30 mt-1 tracking-widest">TTC + livraison</p>
+
+            {/* ✅ Message seuil livraison offerte */}
+            {shippingConfig.livraison_offerte_seuil_message && (
+              <p className="text-[11px] font-black uppercase opacity-40 mt-3 italic leading-relaxed max-w-[240px] mx-auto">
+                {shippingConfig.livraison_offerte_seuil_message}
+              </p>
+            )}
 
             <div className="mt-6 bg-black/5 rounded-2xl px-6 py-5 text-left space-y-2">
               <div className="flex justify-between text-[12px] font-black uppercase opacity-40">
                 <span>Produits HT</span>
                 <span className="tabular-nums">{fmt(totalProduitsHT)}€</span>
               </div>
-
               <div className="flex justify-between text-[12px] font-black uppercase opacity-30">
                 <span>TVA 20%</span>
                 <span className="tabular-nums">{fmt(tvaProduitsSeuls)}€</span>
               </div>
-
               <div className="flex justify-between text-[12px] font-black uppercase opacity-50 border-t border-black/10 pt-2">
                 <span>Sous-total TTC</span>
                 <span className="tabular-nums">{fmt(totalProduitsTTC)}€</span>
               </div>
-
               <div className="flex justify-between text-[12px] font-black uppercase opacity-50">
                 <span className="flex items-center gap-1">
                   + Livraison
-                  {livraisonOfferte && <span className="text-green-500 text-[9px] font-black uppercase">offerte</span>}
+                  {livraisonOfferte && (
+                    <span className="text-green-500 text-[9px] font-black uppercase">offerte</span>
+                  )}
                 </span>
                 <span className={`tabular-nums ${livraisonOfferte ? 'text-green-500 opacity-100' : ''}`}>
                   {fmt(fraisLivraison)}€
                 </span>
               </div>
-
               <div className="border-t border-black/10 pt-3 flex justify-between text-[14px] font-black uppercase">
                 <span className="opacity-60">Total à régler</span>
                 <span className="text-blue-600 tabular-nums">{fmt(totalFinal)}€</span>
@@ -727,7 +732,7 @@ export default function CartPage() {
         </div>
       </main>
 
-      {/* ── MODALE ───────────────────────────────────────────────────────────── */}
+      {/* ── MODALE CONFIRMATION ──────────────────────────────────────────────── */}
       <AnimatePresence>
         {showConfirm && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
@@ -788,7 +793,7 @@ export default function CartPage() {
                   </div>
                   <div className="flex justify-between text-[13px] font-black uppercase italic">
                     <span className="opacity-40">
-                      + Livraison{livraisonOfferte ? ' (offerte aujourd\'hui)' : ''}
+                      + Livraison{livraisonOfferte ? " (offerte aujourd'hui)" : ''}
                     </span>
                     <span className={`tabular-nums ${livraisonOfferte ? 'text-green-500' : ''}`}>
                       {fmt(fraisLivraison)}€
