@@ -679,7 +679,7 @@ export default function CartPage() {
             <p className="text-[10px] font-black uppercase opacity-20 italic mb-3 tracking-widest">Livraison incluse</p>
 
             <span className="text-6xl font-black italic tracking-tighter">{fmt(totalTTC)}€</span>
-            <p className="text-[11px] font-black uppercase opacity-30 mt-1 tracking-widest">TTC + livraison</p>
+            <p className="text-[11px] font-black uppercase opacity-30 mt-1 tracking-widest">TTC</p>
 
             {shippingConfig.livraison_offerte_seuil_message && (
               <p className="text-[11px] font-black uppercase opacity-40 mt-3 italic leading-relaxed max-w-[240px] mx-auto">
