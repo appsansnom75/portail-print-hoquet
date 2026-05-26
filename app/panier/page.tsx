@@ -39,7 +39,6 @@ export default function CartPage() {
     livraison_offerte_seuil_message: null,
   });
 
-  // 03 - LIVRAISON
   const [phone, setPhone]         = useState('');
   const [phoneFix, setPhoneFix]   = useState('');
   const [address, setAddress]     = useState('');
@@ -54,7 +53,6 @@ export default function CartPage() {
   const [altPhone, setAltPhone]           = useState('');
   const [altPhoneFix, setAltPhoneFix]     = useState('');
 
-  // 04 - FACTURATION & LÉGALES
   const [mentionsMailFacturation, setMentionsMailFacturation]               = useState('');
   const [mentionsNomSociete, setMentionsNomSociete]                         = useState('');
   const [mentionsVilleAgence, setMentionsVilleAgence]                       = useState('');
@@ -72,10 +70,8 @@ export default function CartPage() {
   const [mentionsMailRgpdCode, setMentionsMailRgpdCode]                     = useState('');
 
   // ── CALCULS ────────────────────────────────────────────────────────────────
-  // TVA uniquement sur les produits, PAS sur la livraison
-  const totalProduitsHT   = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
-  const tvaProduitsSeuls  = totalProduitsHT * 0.2;
-  const totalProduitsTTC  = totalProduitsHT + tvaProduitsSeuls;
+  // Nouvelle logique : TVA 20% sur (produits HT + livraison HT)
+  const totalProduitsHT = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
 
   const todayISO = new Date().toLocaleDateString('en-CA');
 
@@ -101,7 +97,9 @@ export default function CartPage() {
   };
 
   const fraisLivraison = getShippingCost();
-  const totalFinal     = totalProduitsTTC + fraisLivraison;
+  const baseHT         = totalProduitsHT + fraisLivraison; // base HT totale
+  const tva            = baseHT * 0.2;                     // TVA sur tout le HT
+  const totalTTC       = baseHT + tva;                     // TTC final
 
   const livraisonOfferte =
     shippingConfig.livraison_offerte_active &&
@@ -112,7 +110,6 @@ export default function CartPage() {
   // ── CHARGEMENT ─────────────────────────────────────────────────────────────
   useEffect(() => {
     const loadData = async () => {
-      // Shipping config
       const { data: shippingRow } = await supabase
         .from('shipping_config')
         .select('paliers, livraison_offerte_active, livraison_offerte_date, livraison_offerte_seuil_message')
@@ -121,14 +118,13 @@ export default function CartPage() {
 
       if (shippingRow) {
         setShippingConfig({
-          paliers: Array.isArray(shippingRow.paliers) ? shippingRow.paliers : [],
-          livraison_offerte_active:      !!shippingRow.livraison_offerte_active,
-          livraison_offerte_date:        shippingRow.livraison_offerte_date || null,
+          paliers:                         Array.isArray(shippingRow.paliers) ? shippingRow.paliers : [],
+          livraison_offerte_active:        !!shippingRow.livraison_offerte_active,
+          livraison_offerte_date:          shippingRow.livraison_offerte_date || null,
           livraison_offerte_seuil_message: shippingRow.livraison_offerte_seuil_message || null,
         });
       }
 
-      // User
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setLoading(false); return; }
 
@@ -217,18 +213,18 @@ export default function CartPage() {
       : address.trim() && zipCode.trim() && city.trim();
 
     const mentionsOk =
-      mentionsMailFacturation.trim()      &&
-      mentionsNomSociete.trim()           &&
-      mentionsVilleAgence.trim()          &&
-      mentionsStatut.trim()               &&
-      mentionsCapital.trim()              &&
-      mentionsRcs.trim()                  &&
-      mentionsApe.trim()                  &&
-      mentionsCartePro.trim()             &&
-      mentionsCarteProDelivree.trim()     &&
-      mentionsCaisseGarantie.trim()       &&
-      mentionsCaisseGarantieAdresse.trim()&&
-      mentionsTva.trim()                  &&
+      mentionsMailFacturation.trim()       &&
+      mentionsNomSociete.trim()            &&
+      mentionsVilleAgence.trim()           &&
+      mentionsStatut.trim()                &&
+      mentionsCapital.trim()               &&
+      mentionsRcs.trim()                   &&
+      mentionsApe.trim()                   &&
+      mentionsCartePro.trim()              &&
+      mentionsCarteProDelivree.trim()      &&
+      mentionsCaisseGarantie.trim()        &&
+      mentionsCaisseGarantieAdresse.trim() &&
+      mentionsTva.trim()                   &&
       mentionsMailRgpdCode.trim();
 
     return !!(siret.trim() && livraisonOk && mentionsOk);
@@ -274,9 +270,11 @@ export default function CartPage() {
         city:              deliveryCity,
         siret,
         produits_liste:    produitsListeTexte,
-        total_ht:          totalProduitsHT,
-        shipping_ht:       fraisLivraison,
         total_produits_ht: totalProduitsHT,
+        shipping_ht:       fraisLivraison,
+        base_ht:           baseHT,
+        tva:               tva,
+        total_ttc:         totalTTC,
         items:             itemsFormattedJSON,
         status:            'En attente',
       }]);
@@ -320,10 +318,10 @@ export default function CartPage() {
           siret,
           items:                     itemsPayload,
           total_produits_ht:         fmt(totalProduitsHT),
-          tva_produits:              fmt(tvaProduitsSeuls),
-          total_produits_ttc:        fmt(totalProduitsTTC),
           frais_livraison:           fmt(fraisLivraison),
-          total_final:               fmt(totalFinal),
+          base_ht:                   fmt(baseHT),
+          tva:                       fmt(tva),
+          total_ttc:                 fmt(totalTTC),
           date:                      new Date().toLocaleString('fr-FR'),
           livraison_offerte:         livraisonOfferte,
           mentions_mail_facturation: mentionsMailFacturation,
@@ -468,34 +466,39 @@ export default function CartPage() {
 
               {cart.length > 0 && (
                 <div className="pt-4 space-y-2">
+                  {/* 1. Produits HT */}
                   <div className="flex justify-between text-[13px] font-black uppercase italic opacity-50">
                     <span>Produits HT</span>
-                    <span>{fmt(totalProduitsHT)}€</span>
+                    <span className="tabular-nums">{fmt(totalProduitsHT)}€</span>
                   </div>
-                  <div className="flex justify-between text-[13px] font-black uppercase italic opacity-30">
-                    <span>TVA 20% (sur produits)</span>
-                    <span>{fmt(tvaProduitsSeuls)}€</span>
-                  </div>
-                  <div className="flex justify-between text-[13px] font-black uppercase italic opacity-50 border-t border-white/10 pt-3">
-                    <span>Sous-total TTC</span>
-                    <span>{fmt(totalProduitsTTC)}€</span>
-                  </div>
+                  {/* 2. Livraison HT — juste après les produits */}
                   <div className="flex justify-between text-[13px] font-black uppercase italic opacity-50">
                     <span className="flex items-center gap-2">
-                      + Frais de livraison
+                      + Livraison HT
                       {livraisonOfferte && (
                         <span className="text-[10px] bg-green-500/20 text-green-400 border border-green-500/30 px-2 py-0.5 rounded-full font-black uppercase">
                           Offerte aujourd&apos;hui
                         </span>
                       )}
                     </span>
-                    <span className={livraisonOfferte ? 'text-green-400 opacity-100' : ''}>
+                    <span className={`tabular-nums ${livraisonOfferte ? 'text-green-400 opacity-100' : ''}`}>
                       {fmt(fraisLivraison)}€
                     </span>
                   </div>
+                  {/* 3. Base HT = produits + livraison */}
+                  <div className="flex justify-between text-[13px] font-black uppercase italic opacity-50 border-t border-white/10 pt-3">
+                    <span>Base HT totale</span>
+                    <span className="tabular-nums">{fmt(baseHT)}€</span>
+                  </div>
+                  {/* 4. TVA 20% sur base HT */}
+                  <div className="flex justify-between text-[13px] font-black uppercase italic opacity-30">
+                    <span>TVA 20%</span>
+                    <span className="tabular-nums">{fmt(tva)}€</span>
+                  </div>
+                  {/* 5. Total TTC */}
                   <div className="flex justify-between text-[15px] font-black uppercase italic border-t border-white/10 pt-4 mt-2">
-                    <span className="text-white/70">Total à régler</span>
-                    <span className="text-blue-400">{fmt(totalFinal)}€</span>
+                    <span className="text-white/70">Total TTC</span>
+                    <span className="text-blue-400 tabular-nums">{fmt(totalTTC)}€</span>
                   </div>
                 </div>
               )}
@@ -620,7 +623,6 @@ export default function CartPage() {
                           </div>
                         ))}
 
-                        {/* Délivrée par */}
                         <div className="space-y-1">
                           <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">
                             Délivrée par <span className="text-red-400">*</span>
@@ -638,7 +640,6 @@ export default function CartPage() {
                           </div>
                         </div>
 
-                        {/* Mail RGPD */}
                         <div className="space-y-1">
                           <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">
                             Mail Informatique &amp; Libertés <span className="text-red-400">*</span>
@@ -677,10 +678,9 @@ export default function CartPage() {
             <h2 className="text-[13px] font-black uppercase opacity-30 italic mb-1">Total à régler</h2>
             <p className="text-[10px] font-black uppercase opacity-20 italic mb-3 tracking-widest">Livraison incluse</p>
 
-            <span className="text-6xl font-black italic tracking-tighter">{fmt(totalFinal)}€</span>
+            <span className="text-6xl font-black italic tracking-tighter">{fmt(totalTTC)}€</span>
             <p className="text-[11px] font-black uppercase opacity-30 mt-1 tracking-widest">TTC + livraison</p>
 
-            {/* ✅ Message seuil livraison offerte */}
             {shippingConfig.livraison_offerte_seuil_message && (
               <p className="text-[11px] font-black uppercase opacity-40 mt-3 italic leading-relaxed max-w-[240px] mx-auto">
                 {shippingConfig.livraison_offerte_seuil_message}
@@ -692,28 +692,28 @@ export default function CartPage() {
                 <span>Produits HT</span>
                 <span className="tabular-nums">{fmt(totalProduitsHT)}€</span>
               </div>
-              <div className="flex justify-between text-[12px] font-black uppercase opacity-30">
-                <span>TVA 20%</span>
-                <span className="tabular-nums">{fmt(tvaProduitsSeuls)}€</span>
-              </div>
-              <div className="flex justify-between text-[12px] font-black uppercase opacity-50 border-t border-black/10 pt-2">
-                <span>Sous-total TTC</span>
-                <span className="tabular-nums">{fmt(totalProduitsTTC)}€</span>
-              </div>
-              <div className="flex justify-between text-[12px] font-black uppercase opacity-50">
+              <div className="flex justify-between text-[12px] font-black uppercase opacity-40">
                 <span className="flex items-center gap-1">
-                  + Livraison
+                  + Livraison HT
                   {livraisonOfferte && (
-                    <span className="text-green-500 text-[9px] font-black uppercase">offerte</span>
+                    <span className="text-green-500 text-[9px] font-black uppercase ml-1">offerte</span>
                   )}
                 </span>
                 <span className={`tabular-nums ${livraisonOfferte ? 'text-green-500 opacity-100' : ''}`}>
                   {fmt(fraisLivraison)}€
                 </span>
               </div>
+              <div className="flex justify-between text-[12px] font-black uppercase opacity-50 border-t border-black/10 pt-2">
+                <span>Base HT totale</span>
+                <span className="tabular-nums">{fmt(baseHT)}€</span>
+              </div>
+              <div className="flex justify-between text-[12px] font-black uppercase opacity-30">
+                <span>TVA 20%</span>
+                <span className="tabular-nums">{fmt(tva)}€</span>
+              </div>
               <div className="border-t border-black/10 pt-3 flex justify-between text-[14px] font-black uppercase">
-                <span className="opacity-60">Total à régler</span>
-                <span className="text-blue-600 tabular-nums">{fmt(totalFinal)}€</span>
+                <span className="opacity-60">Total TTC</span>
+                <span className="text-blue-600 tabular-nums">{fmt(totalTTC)}€</span>
               </div>
             </div>
 
@@ -784,24 +784,24 @@ export default function CartPage() {
                     <span className="tabular-nums">{fmt(totalProduitsHT)}€</span>
                   </div>
                   <div className="flex justify-between text-[13px] font-black uppercase italic">
-                    <span className="opacity-40">TVA 20%</span>
-                    <span className="tabular-nums text-gray-400">{fmt(tvaProduitsSeuls)}€</span>
-                  </div>
-                  <div className="flex justify-between text-[13px] font-black uppercase italic">
-                    <span className="opacity-40">Sous-total TTC</span>
-                    <span className="tabular-nums">{fmt(totalProduitsTTC)}€</span>
-                  </div>
-                  <div className="flex justify-between text-[13px] font-black uppercase italic">
                     <span className="opacity-40">
-                      + Livraison{livraisonOfferte ? " (offerte aujourd'hui)" : ''}
+                      + Livraison HT{livraisonOfferte ? " (offerte aujourd'hui)" : ''}
                     </span>
                     <span className={`tabular-nums ${livraisonOfferte ? 'text-green-500' : ''}`}>
                       {fmt(fraisLivraison)}€
                     </span>
                   </div>
+                  <div className="flex justify-between text-[13px] font-black uppercase italic border-t border-gray-200 pt-2">
+                    <span className="opacity-40">Base HT totale</span>
+                    <span className="tabular-nums">{fmt(baseHT)}€</span>
+                  </div>
+                  <div className="flex justify-between text-[13px] font-black uppercase italic">
+                    <span className="opacity-40">TVA 20%</span>
+                    <span className="tabular-nums text-gray-400">{fmt(tva)}€</span>
+                  </div>
                   <div className="flex justify-between text-[15px] font-black uppercase italic border-t border-gray-200 pt-3">
-                    <span className="opacity-60">Total à régler</span>
-                    <span className="text-blue-600 text-2xl tabular-nums">{fmt(totalFinal)}€</span>
+                    <span className="opacity-60">Total TTC</span>
+                    <span className="text-blue-600 text-2xl tabular-nums">{fmt(totalTTC)}€</span>
                   </div>
                 </div>
               </div>
