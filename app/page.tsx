@@ -123,7 +123,7 @@ export default function HomePage() {
                 {hasItems && <span className="absolute -top-1.5 -right-1.5 h-3 w-3 bg-green-500 rounded-full border-2 border-[#0f092e] animate-bounce"></span>}
               </Link>
 
-              <span className="text-white/10 shrink-0">|</span>
+              <span className="text-white/10 shrink-0"></span>
 
               <Link
                 href="https://guyhoquet-print.fr/modification-mdp"
