@@ -122,21 +122,22 @@ export default function HomePage() {
                 {hasItems && <span className="absolute -top-1.5 -right-1.5 h-3 w-3 bg-green-500 rounded-full border-2 border-[#0f092e] animate-bounce"></span>}
               </Link>
 
-              {/* MODIFIER MOT DE PASSE */}
-              <Link
-                href="https://guyhoquet-print.fr/modification-mdp"
-                className="text-[12px] font-black uppercase tracking-widest text-white/40 hover:text-white px-2 py-3 transition-colors"
-              >
-                Modifier mon mot de passe
-              </Link>
-
-              {/* DÉCONNEXION */}
-              <button
-                onClick={handleLogout}
-                className="text-[12px] font-black uppercase tracking-widest text-red-500/40 hover:text-red-500 px-2 py-3 transition-colors"
-              >
-                Déconnexion
-              </button>
+              {/* MODIFIER MDP + DÉCONNEXION groupés sur la même ligne */}
+              <div className="flex items-center gap-1">
+                <Link
+                  href="https://guyhoquet-print.fr/modification-mdp"
+                  className="text-[12px] font-black uppercase tracking-widest text-white/40 hover:text-white px-3 py-3 transition-colors whitespace-nowrap"
+                >
+                  Modifier mon mot de passe
+                </Link>
+                <span className="text-white/10 text-xs">|</span>
+                <button
+                  onClick={handleLogout}
+                  className="text-[12px] font-black uppercase tracking-widest text-red-500/40 hover:text-red-500 px-3 py-3 transition-colors whitespace-nowrap"
+                >
+                  Déconnexion
+                </button>
+              </div>
 
             </div>
           </div>
