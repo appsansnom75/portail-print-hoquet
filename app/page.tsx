@@ -6,6 +6,7 @@ import { useCart } from '@/context/CartContext';
 import { supabase } from '@/lib/supabase';
 import CartDrawer from '@/components/CartDrawer';
 
+
 export default function HomePage() {
   const [agencyName, setAgencyName] = useState("");
   const [userName, setUserName]     = useState("");
@@ -115,15 +116,29 @@ export default function HomePage() {
                   )}
                 </>
               )}
+
               <Link href="/panier" className="relative bg-white/5 border border-white/10 hover:bg-white/10 text-white text-[12px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all">
                 Panier ({cart.length})
                 {hasItems && <span className="absolute -top-1.5 -right-1.5 h-3 w-3 bg-green-500 rounded-full border-2 border-[#0f092e] animate-bounce"></span>}
               </Link>
-              <button onClick={handleLogout} className="text-[12px] font-black uppercase tracking-widest text-red-500/40 hover:text-red-500 px-2 py-3 transition-colors">
-                Quitter
-              </button>
-            </div>
 
+              {/* MODIFIER MOT DE PASSE */}
+              <Link
+                href="https://guyhoquet-print.fr/modification-mdp"
+                className="text-[12px] font-black uppercase tracking-widest text-white/40 hover:text-white px-2 py-3 transition-colors"
+              >
+                Modifier mon mot de passe
+              </Link>
+
+              {/* DÉCONNEXION */}
+              <button
+                onClick={handleLogout}
+                className="text-[12px] font-black uppercase tracking-widest text-red-500/40 hover:text-red-500 px-2 py-3 transition-colors"
+              >
+                Déconnexion
+              </button>
+
+            </div>
           </div>
         </div>
       </div>
@@ -185,27 +200,18 @@ export default function HomePage() {
       {/* FOOTER */}
       <footer className="py-12 border-t border-white/5 bg-black/20 mt-auto">
         <div className="max-w-5xl mx-auto px-6 flex flex-col items-center gap-4 text-center">
-
           <p className="text-xs font-bold text-white leading-relaxed">
             Besoin d'aide ? Suivi de commande, facturation, devis, fichiers ou toute autre question ?
           </p>
-
           <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6">
-            <a
-              href="tel:0241870078"
-              className="text-sm font-black text-white hover:text-blue-400 transition-colors tracking-widest"
-            >
+            <a href="tel:0241870078" className="text-sm font-black text-white hover:text-blue-400 transition-colors tracking-widest">
               02 41 87 00 78
             </a>
             <span className="hidden sm:block w-px h-4 bg-white/20"></span>
-            <a
-              href="mailto:webtoprint@imprimerie-connivence.com"
-              className="text-xs font-bold text-white hover:text-blue-400 transition-colors"
-            >
+            <a href="mailto:webtoprint@imprimerie-connivence.com" className="text-xs font-bold text-white hover:text-blue-400 transition-colors">
               webtoprint@imprimerie-connivence.com
             </a>
           </div>
-
         </div>
       </footer>
 
