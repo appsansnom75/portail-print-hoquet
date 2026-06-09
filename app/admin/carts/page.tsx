@@ -4,6 +4,32 @@ export const dynamic = 'force-dynamic'
 
 const ADMIN_PASSWORD = 'admin123'
 
+const COLOR_MAP: Record<string, string> = {
+  'text-blue-500':   '#3b82f6',
+  'text-green-500':  '#22c55e',
+  'text-purple-500': '#a855f7',
+  'text-red-500':    '#ef4444',
+  'text-yellow-500': '#eab308',
+  'text-orange-500': '#f97316',
+  'text-pink-500':   '#ec4899',
+  'text-white':      '#ffffff',
+}
+
+function fmt(n: number) {
+  return n.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'
+}
+
+function formatDate(dateStr: string) {
+  const d = new Date(dateStr)
+  return d.toLocaleDateString('fr-FR', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 export default async function AdminCartsPage({
   searchParams,
 }: {
@@ -57,9 +83,6 @@ export default async function AdminCartsPage({
     (o) => Array.isArray(o.items) && o.items.length > 0
   )
 
-  const fmt = (n: number) =>
-    n.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'
-
   return (
     <div className="min-h-screen bg-[#0f092e] text-white p-10 font-sans">
       <div className="max-w-6xl mx-auto space-y-10">
@@ -75,7 +98,9 @@ export default async function AdminCartsPage({
             </p>
           </div>
           <div className="bg-blue-500/10 border border-blue-500/20 px-5 py-2.5 rounded-full">
-            <span className="text-blue-400 font-black text-sm">{drafts.length} panier{drafts.length > 1 ? 's' : ''}</span>
+            <span className="text-blue-400 font-black text-sm">
+              {drafts.length} panier{drafts.length > 1 ? 's' : ''}
+            </span>
           </div>
         </div>
 
@@ -93,11 +118,8 @@ export default async function AdminCartsPage({
               const hoursAgo = Math.floor((Date.now() - lastActivity.getTime()) / 3600000)
               const isOld = hoursAgo > 48
 
-              // ── Calcul du total HT du panier ──────────────────────────
               const totalHT = order.items.reduce((acc: number, item: any) => {
-                const price = Number(item.price ?? 0)
-                const qty   = Number(item.qty ?? item.quantity ?? 0)
-                return acc + price * qty
+                return acc + Number(item.price ?? 0) * Number(item.qty ?? item.quantity ?? 0)
               }, 0)
 
               return (
@@ -115,6 +137,12 @@ export default async function AdminCartsPage({
                         {order.agency_name ?? '—'}
                       </p>
                       <p className="text-white/30 text-[12px]">{order.client_email ?? '—'}</p>
+
+                      {/* DATE DU PANIER */}
+                      <p className="text-white/20 text-[11px] font-medium mt-1">
+                        🕐 {formatDate(order.updated_at ?? order.created_at)}
+                      </p>
+
                       <div className={`inline-flex items-center gap-2 mt-2 px-3 py-1 rounded-full text-[10px] font-black uppercase ${
                         isOld ? 'bg-orange-500/10 text-orange-400' : 'bg-white/5 text-white/30'
                       }`}>
@@ -133,11 +161,15 @@ export default async function AdminCartsPage({
                       <p className="text-[10px] font-black uppercase tracking-widest text-white/20 mb-3">
                         {order.items.length} article{order.items.length > 1 ? 's' : ''} dans le panier
                       </p>
+
                       <div className="grid gap-2">
                         {order.items.map((item: any, i: number) => {
-                          const price    = Number(item.price ?? 0)
-                          const qty      = Number(item.qty ?? item.quantity ?? 0)
+                          const price      = Number(item.price ?? 0)
+                          const qty        = Number(item.qty ?? item.quantity ?? 0)
                           const totalLigne = price * qty
+                          const itemColor  = item.color
+                            ? (COLOR_MAP[item.color.toLowerCase()] ?? '#ffffff')
+                            : '#e2e8f0'
 
                           return (
                             <div
@@ -146,14 +178,12 @@ export default async function AdminCartsPage({
                             >
                               <div className="flex items-center gap-3 flex-1 min-w-0">
                                 <span className="text-blue-500/60 text-xs">📦</span>
-                                <span className="text-[13px] font-bold text-white/80 truncate">
+                                <span
+                                  className="text-[13px] font-bold truncate"
+                                  style={{ color: itemColor }}
+                                >
                                   {item.productName ?? item.name ?? '—'}
                                 </span>
-                                {item.color && (
-                                  <span className="text-[10px] font-black text-white/20 uppercase bg-white/5 px-2 py-0.5 rounded-full shrink-0">
-                                    {item.color}
-                                  </span>
-                                )}
                                 {item.orderedBy && (
                                   <span className="text-[10px] font-black text-blue-500/50 uppercase shrink-0">
                                     → {item.orderedBy}
