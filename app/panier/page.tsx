@@ -69,7 +69,7 @@ export default function CartPage() {
   const [mentionsTva, setMentionsTva]                                       = useState('');
   const [mentionsMailRgpdCode, setMentionsMailRgpdCode]                     = useState('');
 
-  // ── CALCULS ────────────────────────────────────────────────────────────────
+  // â”€â”€ CALCULS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Nouvelle logique : TVA 20% sur (produits HT + livraison HT)
   const totalProduitsHT = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
 
@@ -107,7 +107,7 @@ export default function CartPage() {
 
   const fmt = (n: number) => n.toFixed(2).replace('.', ',');
 
-  // ── CHARGEMENT ─────────────────────────────────────────────────────────────
+  // â”€â”€ CHARGEMENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     const loadData = async () => {
       const { data: shippingRow } = await supabase
@@ -179,7 +179,7 @@ export default function CartPage() {
     loadData();
   }, []);
 
-  // ── SYNC AGENCE ────────────────────────────────────────────────────────────
+  // â”€â”€ SYNC AGENCE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const syncAgenceData = async () => {
     if (!agenceId) return;
     await supabase.from('agencies').update({
@@ -206,7 +206,7 @@ export default function CartPage() {
     }).eq('id', agenceId);
   };
 
-  // ── VALIDATION ─────────────────────────────────────────────────────────────
+  // â”€â”€ VALIDATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const isFormValid = () => {
     const livraisonOk = useAltAddress
       ? altAddress.trim() && altZipCode.trim() && altCity.trim()
@@ -230,7 +230,7 @@ export default function CartPage() {
     return !!(siret.trim() && livraisonOk && mentionsOk);
   };
 
-  // ── ENVOI ──────────────────────────────────────────────────────────────────
+  // â”€â”€ ENVOI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleFinalSubmit = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
@@ -250,7 +250,7 @@ export default function CartPage() {
       const deliveryPhoneFix = useAltAddress ? altPhoneFix : phoneFix;
 
       const produitsListeTexte = cart
-        .map((i) => `${i.name} (x${i.qty})${i.orderedBy ? ` — ${i.orderedBy}` : ''}`)
+        .map((i) => `${i.name} (x${i.qty})${i.orderedBy ? ` â€” ${i.orderedBy}` : ''}`)
         .join(', ');
 
       const itemsFormattedJSON = cart.map((i) => ({
@@ -349,14 +349,14 @@ export default function CartPage() {
         throw new Error('Erreur Webhook Make');
       }
     } catch (err: any) {
-      console.error('Erreur complète :', err);
+      console.error('Erreur complÃ¨te :', err);
       alert(`Erreur : ${err?.message || JSON.stringify(err)}`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // ── ÉTATS SPÉCIAUX ─────────────────────────────────────────────────────────
+  // â”€â”€ Ã‰TATS SPÃ‰CIAUX â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (loading) return (
     <div className="min-h-screen bg-[#0f092e] flex items-center justify-center text-white uppercase text-[13px] animate-pulse italic font-black">
       Initialisation du bon de commande...
@@ -367,7 +367,7 @@ export default function CartPage() {
     <div className="min-h-screen bg-[#0f092e] flex flex-col items-center justify-center text-center p-6 text-white font-black italic uppercase">
       <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
         <h2 className="text-6xl mb-6 text-blue-500 tracking-tighter">Transmission OK</h2>
-        <p className="text-[13px] mb-12 opacity-50">Ta commande est enregistrée et envoyée en production.</p>
+        <p className="text-[13px] mb-12 opacity-50">Ta commande est enregistrÃ©e et envoyÃ©e en production.</p>
         <Link href="/" className="bg-white text-[#0f092e] px-12 py-6 rounded-full text-[13px] hover:bg-blue-500 hover:text-white transition-all shadow-2xl">
           Retour Boutique
         </Link>
@@ -397,12 +397,12 @@ export default function CartPage() {
     { label: 'Ville sous le logo',       val: mentionsVilleAgence,           set: setMentionsVilleAgence,           ph: 'Ex: ANGERS',                               required: true  },
     { label: 'URL QR Code',              val: mentionsUrlQrCode,             set: setMentionsUrlQrCode,             ph: 'Ex: https://www.guy-hoquet.com/agence-...', required: false },
     { label: 'Statut Juridique',         val: mentionsStatut,                set: setMentionsStatut,                ph: 'Ex: SARL, SAS, EI...',                     required: true  },
-    { label: 'Capital Social (€)',       val: mentionsCapital,               set: setMentionsCapital,               ph: 'Ex: 10 000',                               required: true  },
+    { label: 'Capital Social (â‚¬)',       val: mentionsCapital,               set: setMentionsCapital,               ph: 'Ex: 10 000',                               required: true  },
     { label: 'RCS',                      val: mentionsRcs,                   set: setMentionsRcs,                   ph: 'Ex: Paris 123 456 789',                    required: true  },
     { label: 'Code APE',                 val: mentionsApe,                   set: setMentionsApe,                   ph: 'Ex: 6831Z',                                required: true  },
-    { label: 'N° Carte Professionnelle', val: mentionsCartePro,              set: setMentionsCartePro,              ph: 'Ex: CPI 7501 2016 000 012 345',             required: true  },
+    { label: 'NÂ° Carte Professionnelle', val: mentionsCartePro,              set: setMentionsCartePro,              ph: 'Ex: CPI 7501 2016 000 012 345',             required: true  },
     { label: 'Caisse de Garantie',       val: mentionsCaisseGarantie,        set: setMentionsCaisseGarantie,        ph: 'Ex: GALIAN Assurances',                    required: true  },
-    { label: 'Adresse Caisse',           val: mentionsCaisseGarantieAdresse, set: setMentionsCaisseGarantieAdresse, ph: 'Ex: 89 rue de la Boétie, 75008 Paris',      required: true  },
+    { label: 'Adresse Caisse',           val: mentionsCaisseGarantieAdresse, set: setMentionsCaisseGarantieAdresse, ph: 'Ex: 89 rue de la BoÃ©tie, 75008 Paris',      required: true  },
     { label: 'TVA Intracommunautaire',   val: mentionsTva,                   set: setMentionsTva,                   ph: 'Ex: FR 12 123456789',                      required: true  },
   ] as { label: string; val: string; set: (v: string) => void; ph: string; required: boolean }[];
 
@@ -415,27 +415,27 @@ export default function CartPage() {
     <div className="min-h-screen bg-[#0f092e] text-white pb-20">
 
       <header className="py-10 px-6 max-w-6xl mx-auto flex justify-between items-center border-b border-white/10 mb-12">
-        <Link href="/" className="text-[13px] font-black uppercase opacity-40 hover:opacity-100 italic transition-all">← Boutique</Link>
+        <Link href="/" className="text-[13px] font-black uppercase opacity-40 hover:opacity-100 italic transition-all">â† Boutique</Link>
         <h1 className="text-[11px] font-black uppercase tracking-[0.4em] italic text-blue-500">Validation Commande</h1>
         <div className="w-24" />
       </header>
 
       <main className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-3 gap-16">
 
-        {/* ── GAUCHE ───────────────────────────────────────────────────────── */}
+        {/* â”€â”€ GAUCHE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <div className="lg:col-span-2 space-y-12">
 
           {/* 01 - IDENTIFICATION */}
           <section className="bg-blue-600/5 border border-blue-500/20 rounded-[45px] p-10 space-y-4">
             <h2 className="text-[11px] font-black uppercase text-blue-400 italic">01. Identification</h2>
             <div className="bg-black/40 border border-white/10 rounded-2xl p-5 text-[11px] font-black text-blue-400">
-              {agencyData?.name || 'Non détectée'}
+              {agencyData?.name || 'Non dÃ©tectÃ©e'}
             </div>
           </section>
 
-          {/* 02 - RÉCAP */}
+          {/* 02 - RÃ‰CAP */}
           <section className="bg-white/[0.02] border border-white/10 rounded-[45px] p-10">
-            <h2 className="text-[11px] font-black uppercase text-white/60 italic mb-10">02. Récapitulatif</h2>
+            <h2 className="text-[11px] font-black uppercase text-white/60 italic mb-10">02. RÃ©capitulatif</h2>
             <div className="space-y-6">
               {cart.length === 0 && (
                 <p className="text-[13px] font-black uppercase text-white/20 italic text-center py-8">Panier vide</p>
@@ -445,21 +445,21 @@ export default function CartPage() {
                 <div key={item.cartLineId} className="flex justify-between items-start border-b border-white/5 pb-6 gap-4">
                   <div className="flex flex-col gap-1 flex-grow">
                     <span className="text-[13px] font-black uppercase tracking-tight italic">{item.name}</span>
-                    <span className="text-[12px] text-white/30 font-black italic">Quantité : {item.qty}</span>
+                    <span className="text-[12px] text-white/30 font-black italic">QuantitÃ© : {item.qty}</span>
                     {item.orderedBy && (
-                      <span className="text-[12px] text-blue-400 font-black uppercase mt-1">👤 {item.orderedBy}</span>
+                      <span className="text-[12px] text-blue-400 font-black uppercase mt-1">ðŸ‘¤ {item.orderedBy}</span>
                     )}
                   </div>
                   <div className="flex items-center gap-4 shrink-0">
                     <div className="text-right">
-                      <p className="text-[14px] font-black italic">{fmt(item.price * item.qty)}€</p>
+                      <p className="text-[14px] font-black italic">{fmt(item.price * item.qty)}â‚¬</p>
                       <p className="text-[11px] font-black opacity-30 uppercase">HT</p>
                     </div>
                     <button
                       type="button"
                       onClick={() => removeFromCart(item.cartLineId)}
                       className="w-8 h-8 rounded-full bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white flex items-center justify-center transition-all text-sm font-black"
-                    >×</button>
+                    >Ã—</button>
                   </div>
                 </div>
               ))}
@@ -469,9 +469,9 @@ export default function CartPage() {
                   {/* 1. Produits HT */}
                   <div className="flex justify-between text-[13px] font-black uppercase italic opacity-50">
                     <span>Produits HT</span>
-                    <span className="tabular-nums">{fmt(totalProduitsHT)}€</span>
+                    <span className="tabular-nums">{fmt(totalProduitsHT)}â‚¬</span>
                   </div>
-                  {/* 2. Livraison HT — juste après les produits */}
+                  {/* 2. Livraison HT â€” juste aprÃ¨s les produits */}
                   <div className="flex justify-between text-[13px] font-black uppercase italic opacity-50">
                     <span className="flex items-center gap-2">
                       + Livraison HT
@@ -482,23 +482,23 @@ export default function CartPage() {
                       )}
                     </span>
                     <span className={`tabular-nums ${livraisonOfferte ? 'text-green-400 opacity-100' : ''}`}>
-                      {fmt(fraisLivraison)}€
+                      {fmt(fraisLivraison)}â‚¬
                     </span>
                   </div>
                   {/* 3. Base HT = produits + livraison */}
                   <div className="flex justify-between text-[13px] font-black uppercase italic opacity-50 border-t border-white/10 pt-3">
                     <span>Base HT totale</span>
-                    <span className="tabular-nums">{fmt(baseHT)}€</span>
+                    <span className="tabular-nums">{fmt(baseHT)}â‚¬</span>
                   </div>
                   {/* 4. TVA 20% sur base HT */}
                   <div className="flex justify-between text-[13px] font-black uppercase italic opacity-30">
                     <span>TVA 20%</span>
-                    <span className="tabular-nums">{fmt(tva)}€</span>
+                    <span className="tabular-nums">{fmt(tva)}â‚¬</span>
                   </div>
                   {/* 5. Total TTC */}
                   <div className="flex justify-between text-[15px] font-black uppercase italic border-t border-white/10 pt-4 mt-2">
                     <span className="text-white/70">Total TTC</span>
-                    <span className="text-blue-400 tabular-nums">{fmt(totalTTC)}€</span>
+                    <span className="text-blue-400 tabular-nums">{fmt(totalTTC)}â‚¬</span>
                   </div>
                 </div>
               )}
@@ -512,7 +512,7 @@ export default function CartPage() {
                 <h2 className="text-[11px] font-black uppercase text-white/60 italic">03. Informations de Livraison</h2>
                 {!useAltAddress && (
                   <p className="text-[11px] font-black text-white/20 uppercase tracking-widest mt-1">
-                    Modifications sauvegardées dans vos infos agence
+                    Modifications sauvegardÃ©es dans vos infos agence
                   </p>
                 )}
               </div>
@@ -526,7 +526,7 @@ export default function CartPage() {
                 }`}
               >
                 <span className={`w-2 h-2 rounded-full transition-all ${useAltAddress ? 'bg-blue-400' : 'bg-white/20'}`} />
-                {useAltAddress ? '✓ Adresse différente' : '+ Adresse différente'}
+                {useAltAddress ? 'âœ“ Adresse diffÃ©rente' : '+ Adresse diffÃ©rente'}
               </button>
             </div>
 
@@ -538,27 +538,27 @@ export default function CartPage() {
                     <input placeholder="CODE POSTAL *" value={zipCode} onChange={(e) => setZipCode(e.target.value)} className={inp(zipCode)} />
                     <input placeholder="VILLE *" value={city} onChange={(e) => setCity(e.target.value)} className={inp(city)} />
                   </div>
-                  <input placeholder="TÉLÉPHONE MOBILE" value={phone} onChange={(e) => setPhone(e.target.value)} className={inpOpt} />
-                  <input placeholder="TÉLÉPHONE FIXE AGENCE" value={phoneFix} onChange={(e) => setPhoneFix(e.target.value)} className={inpOpt} />
+                  <input placeholder="TÃ‰LÃ‰PHONE MOBILE" value={phone} onChange={(e) => setPhone(e.target.value)} className={inpOpt} />
+                  <input placeholder="TÃ‰LÃ‰PHONE FIXE AGENCE" value={phoneFix} onChange={(e) => setPhoneFix(e.target.value)} className={inpOpt} />
                   <div className="space-y-1">
-                    <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">Numéro SIRET *</label>
+                    <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">NumÃ©ro SIRET *</label>
                     <input placeholder="Ex: 123 456 789 00012" value={siret} onChange={(e) => setSiret(e.target.value)} maxLength={17} className={inp(siret)} />
                   </div>
                 </>
               ) : (
                 <div className="space-y-6 border border-blue-500/20 bg-blue-600/5 rounded-[30px] p-6">
                   <p className="text-[11px] font-black uppercase text-blue-400/60 tracking-widest">
-                    Adresse unique pour cette commande — non sauvegardée
+                    Adresse unique pour cette commande â€” non sauvegardÃ©e
                   </p>
                   <input placeholder="ADRESSE DE LIVRAISON *" value={altAddress} onChange={(e) => setAltAddress(e.target.value)} className={inpAlt(altAddress)} />
                   <div className="grid grid-cols-2 gap-6">
                     <input placeholder="CODE POSTAL *" value={altZipCode} onChange={(e) => setAltZipCode(e.target.value)} className={inpAlt(altZipCode)} />
                     <input placeholder="VILLE *" value={altCity} onChange={(e) => setAltCity(e.target.value)} className={inpAlt(altCity)} />
                   </div>
-                  <input placeholder="TÉLÉPHONE MOBILE" value={altPhone} onChange={(e) => setAltPhone(e.target.value)} className={inpAlt(altPhone, false)} />
-                  <input placeholder="TÉLÉPHONE FIXE AGENCE" value={altPhoneFix} onChange={(e) => setAltPhoneFix(e.target.value)} className={inpAlt(altPhoneFix, false)} />
+                  <input placeholder="TÃ‰LÃ‰PHONE MOBILE" value={altPhone} onChange={(e) => setAltPhone(e.target.value)} className={inpAlt(altPhone, false)} />
+                  <input placeholder="TÃ‰LÃ‰PHONE FIXE AGENCE" value={altPhoneFix} onChange={(e) => setAltPhoneFix(e.target.value)} className={inpAlt(altPhoneFix, false)} />
                   <div className="space-y-1">
-                    <label className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-400/50 ml-2">Numéro SIRET *</label>
+                    <label className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-400/50 ml-2">NumÃ©ro SIRET *</label>
                     <input placeholder="Ex: 123 456 789 00012" value={siret} onChange={(e) => setSiret(e.target.value)} maxLength={17} className={inpAlt(siret)} />
                   </div>
                 </div>
@@ -569,9 +569,9 @@ export default function CartPage() {
           {/* 04 - FACTURATION */}
           <section className="bg-white/[0.02] border border-white/10 rounded-[45px] p-10 space-y-8">
             <div>
-              <h2 className="text-[11px] font-black uppercase text-white/60 italic">04. Informations Facturation & Légales</h2>
+              <h2 className="text-[11px] font-black uppercase text-white/60 italic">04. Informations Facturation & LÃ©gales</h2>
               <p className="text-[11px] font-black text-white/20 uppercase tracking-widest mt-1">
-                Modifications sauvegardées dans vos infos agence
+                Modifications sauvegardÃ©es dans vos infos agence
               </p>
             </div>
             <div className="space-y-5">
@@ -580,11 +580,11 @@ export default function CartPage() {
                 <input value={mentionsMailFacturation} onChange={(e) => setMentionsMailFacturation(e.target.value)} placeholder="Ex: compta@guy-hoquet-angers.com" className={inp(mentionsMailFacturation)} />
               </div>
               <div className="space-y-1">
-                <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">Nom Société <span className="text-red-400">*</span></label>
+                <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">Nom SociÃ©tÃ© <span className="text-red-400">*</span></label>
                 <input value={mentionsNomSociete} onChange={(e) => setMentionsNomSociete(e.target.value)} placeholder="Ex: GUY HOQUET PARIS 1" className={inp(mentionsNomSociete)} />
               </div>
 
-              {/* Accordéon mentions légales */}
+              {/* AccordÃ©on mentions lÃ©gales */}
               <div className="border border-white/10 rounded-[28px] overflow-hidden">
                 <button
                   type="button"
@@ -592,16 +592,16 @@ export default function CartPage() {
                   className="w-full flex items-center justify-between px-6 py-4 hover:bg-white/5 transition-all"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-[11px] font-black uppercase tracking-widest text-white/40">Mentions légales complètes</span>
+                    <span className="text-[11px] font-black uppercase tracking-widest text-white/40">Mentions lÃ©gales complÃ¨tes</span>
                     {mentionsIncomplets > 0 ? (
                       <span className="bg-red-500/20 text-red-400 border border-red-500/30 text-[10px] font-black uppercase px-2 py-0.5 rounded-full">
                         {mentionsIncomplets} champ{mentionsIncomplets > 1 ? 's' : ''} vide{mentionsIncomplets > 1 ? 's' : ''}
                       </span>
                     ) : (
-                      <span className="bg-green-500/10 text-green-400 border border-green-500/20 text-[10px] font-black uppercase px-2 py-0.5 rounded-full">✓ Complet</span>
+                      <span className="bg-green-500/10 text-green-400 border border-green-500/20 text-[10px] font-black uppercase px-2 py-0.5 rounded-full">âœ“ Complet</span>
                     )}
                   </div>
-                  <motion.span animate={{ rotate: mentionsOpen ? 180 : 0 }} transition={{ duration: 0.2 }} className="text-white/30 text-lg font-black">↓</motion.span>
+                  <motion.span animate={{ rotate: mentionsOpen ? 180 : 0 }} transition={{ duration: 0.2 }} className="text-white/30 text-lg font-black">â†“</motion.span>
                 </button>
 
                 <AnimatePresence initial={false}>
@@ -625,7 +625,7 @@ export default function CartPage() {
 
                         <div className="space-y-1">
                           <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">
-                            Délivrée par <span className="text-red-400">*</span>
+                            DÃ©livrÃ©e par <span className="text-red-400">*</span>
                           </label>
                           <div className="flex gap-2">
                             <select
@@ -634,15 +634,15 @@ export default function CartPage() {
                               className="bg-black/40 border border-white/10 rounded-2xl p-5 text-[13px] font-black outline-none focus:border-blue-500 transition-all text-white cursor-pointer appearance-none shrink-0"
                             >
                               <option value="la CCI de" className="bg-[#0f092e]">la CCI de</option>
-                              <option value="la préfecture de" className="bg-[#0f092e]">la préfecture de</option>
+                              <option value="la prÃ©fecture de" className="bg-[#0f092e]">la prÃ©fecture de</option>
                             </select>
-                            <input value={mentionsCarteProDelivree} onChange={(e) => setMentionsCarteProDelivree(e.target.value)} placeholder="Ex: Paris Île-de-France" className={inp(mentionsCarteProDelivree)} />
+                            <input value={mentionsCarteProDelivree} onChange={(e) => setMentionsCarteProDelivree(e.target.value)} placeholder="Ex: Paris ÃŽle-de-France" className={inp(mentionsCarteProDelivree)} />
                           </div>
                         </div>
 
                         <div className="space-y-1">
                           <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">
-                            Mail Informatique &amp; Libertés <span className="text-red-400">*</span>
+                            Mail Informatique &amp; LibertÃ©s <span className="text-red-400">*</span>
                           </label>
                           <div className={`flex items-center bg-black/40 border rounded-2xl overflow-hidden transition-all ${
                             !mentionsMailRgpdCode.trim() ? 'border-red-500/30' : 'border-white/10 focus-within:border-blue-500'
@@ -659,7 +659,7 @@ export default function CartPage() {
                           </div>
                           {mentionsMailRgpdCode.trim() && (
                             <p className="text-[11px] text-blue-400/60 font-bold ml-2 mt-1">
-                              ✓ informatique-et-libertes-{mentionsMailRgpdCode}@guyhoquet.com
+                              âœ“ informatique-et-libertes-{mentionsMailRgpdCode}@guyhoquet.com
                             </p>
                           )}
                         </div>
@@ -672,13 +672,13 @@ export default function CartPage() {
           </section>
         </div>
 
-        {/* ── DROITE STICKY ────────────────────────────────────────────────── */}
+        {/* â”€â”€ DROITE STICKY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <div className="lg:col-span-1">
           <div className="bg-white p-12 rounded-[50px] text-[#0f092e] sticky top-12 text-center shadow-2xl">
-            <h2 className="text-[13px] font-black uppercase opacity-30 italic mb-1">Total à régler</h2>
+            <h2 className="text-[13px] font-black uppercase opacity-30 italic mb-1">Total Ã  rÃ©gler</h2>
             <p className="text-[10px] font-black uppercase opacity-20 italic mb-3 tracking-widest">Livraison incluse</p>
 
-            <span className="text-6xl font-black italic tracking-tighter">{fmt(totalTTC)}€</span>
+            <span className="text-6xl font-black italic tracking-tighter">{fmt(totalTTC)}â‚¬</span>
             <p className="text-[11px] font-black uppercase opacity-30 mt-1 tracking-widest">TTC</p>
 
             {shippingConfig.livraison_offerte_seuil_message && (
@@ -690,7 +690,7 @@ export default function CartPage() {
             <div className="mt-6 bg-black/5 rounded-2xl px-6 py-5 text-left space-y-2">
               <div className="flex justify-between text-[12px] font-black uppercase opacity-40">
                 <span>Produits HT</span>
-                <span className="tabular-nums">{fmt(totalProduitsHT)}€</span>
+                <span className="tabular-nums">{fmt(totalProduitsHT)}â‚¬</span>
               </div>
               <div className="flex justify-between text-[12px] font-black uppercase opacity-40">
                 <span className="flex items-center gap-1">
@@ -700,20 +700,20 @@ export default function CartPage() {
                   )}
                 </span>
                 <span className={`tabular-nums ${livraisonOfferte ? 'text-green-500 opacity-100' : ''}`}>
-                  {fmt(fraisLivraison)}€
+                  {fmt(fraisLivraison)}â‚¬
                 </span>
               </div>
               <div className="flex justify-between text-[12px] font-black uppercase opacity-50 border-t border-black/10 pt-2">
                 <span>Base HT totale</span>
-                <span className="tabular-nums">{fmt(baseHT)}€</span>
+                <span className="tabular-nums">{fmt(baseHT)}â‚¬</span>
               </div>
               <div className="flex justify-between text-[12px] font-black uppercase opacity-30">
                 <span>TVA 20%</span>
-                <span className="tabular-nums">{fmt(tva)}€</span>
+                <span className="tabular-nums">{fmt(tva)}â‚¬</span>
               </div>
               <div className="border-t border-black/10 pt-3 flex justify-between text-[14px] font-black uppercase">
                 <span className="opacity-60">Total TTC</span>
-                <span className="text-blue-600 tabular-nums">{fmt(totalTTC)}€</span>
+                <span className="text-blue-600 tabular-nums">{fmt(totalTTC)}â‚¬</span>
               </div>
             </div>
 
@@ -726,13 +726,13 @@ export default function CartPage() {
               disabled={cart.length === 0 || !formValid}
               className="w-full mt-6 py-7 bg-blue-600 text-white rounded-3xl font-black uppercase text-[13px] hover:bg-[#0f092e] transition-all shadow-xl disabled:opacity-20 disabled:cursor-not-allowed"
             >
-              {!formValid && cart.length > 0 ? 'Formulaire incomplet' : 'Vérifier la commande'}
+              {!formValid && cart.length > 0 ? 'Formulaire incomplet' : 'VÃ©rifier la commande'}
             </button>
           </div>
         </div>
       </main>
 
-      {/* ── MODALE CONFIRMATION ──────────────────────────────────────────────── */}
+      {/* â”€â”€ MODALE CONFIRMATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <AnimatePresence>
         {showConfirm && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
@@ -748,7 +748,7 @@ export default function CartPage() {
               <div className="absolute top-0 left-0 w-full h-2 bg-blue-600 rounded-t-[60px]" />
               <h3 className="text-3xl font-black uppercase italic text-blue-600 tracking-tighter">Confirmation Finale</h3>
               <p className="text-[13px] font-black opacity-40 uppercase italic">
-                Toute commande validée part directement en production.
+                Toute commande validÃ©e part directement en production.
               </p>
 
               <div className="bg-gray-50 rounded-[35px] p-8 space-y-4 text-left">
@@ -770,10 +770,10 @@ export default function CartPage() {
                       <div>
                         <p className="text-[13px] font-black uppercase italic leading-tight">{item.name}</p>
                         <p className="text-[11px] font-bold opacity-30 mt-0.5">
-                          x{item.qty}{item.orderedBy && <span className="text-blue-500 ml-2">— {item.orderedBy}</span>}
+                          x{item.qty}{item.orderedBy && <span className="text-blue-500 ml-2">â€” {item.orderedBy}</span>}
                         </p>
                       </div>
-                      <span className="text-[13px] font-black shrink-0 tabular-nums">{fmt(item.price * item.qty)}€</span>
+                      <span className="text-[13px] font-black shrink-0 tabular-nums">{fmt(item.price * item.qty)}â‚¬</span>
                     </div>
                   ))}
                 </div>
@@ -781,27 +781,27 @@ export default function CartPage() {
                 <div className="border-t border-gray-200 pt-4 space-y-2">
                   <div className="flex justify-between text-[13px] font-black uppercase italic">
                     <span className="opacity-40">Produits HT</span>
-                    <span className="tabular-nums">{fmt(totalProduitsHT)}€</span>
+                    <span className="tabular-nums">{fmt(totalProduitsHT)}â‚¬</span>
                   </div>
                   <div className="flex justify-between text-[13px] font-black uppercase italic">
                     <span className="opacity-40">
                       + Livraison HT{livraisonOfferte ? " (offerte aujourd'hui)" : ''}
                     </span>
                     <span className={`tabular-nums ${livraisonOfferte ? 'text-green-500' : ''}`}>
-                      {fmt(fraisLivraison)}€
+                      {fmt(fraisLivraison)}â‚¬
                     </span>
                   </div>
                   <div className="flex justify-between text-[13px] font-black uppercase italic border-t border-gray-200 pt-2">
                     <span className="opacity-40">Base HT totale</span>
-                    <span className="tabular-nums">{fmt(baseHT)}€</span>
+                    <span className="tabular-nums">{fmt(baseHT)}â‚¬</span>
                   </div>
                   <div className="flex justify-between text-[13px] font-black uppercase italic">
                     <span className="opacity-40">TVA 20%</span>
-                    <span className="tabular-nums text-gray-400">{fmt(tva)}€</span>
+                    <span className="tabular-nums text-gray-400">{fmt(tva)}â‚¬</span>
                   </div>
                   <div className="flex justify-between text-[15px] font-black uppercase italic border-t border-gray-200 pt-3">
                     <span className="opacity-60">Total TTC</span>
-                    <span className="text-blue-600 text-2xl tabular-nums">{fmt(totalTTC)}€</span>
+                    <span className="text-blue-600 text-2xl tabular-nums">{fmt(totalTTC)}â‚¬</span>
                   </div>
                 </div>
               </div>
