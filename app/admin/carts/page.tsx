@@ -2,22 +2,34 @@ import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { createClient } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 
+
 export default async function AdminCartsPage() {
+
+  console.log('🔍 AdminCartsPage — début')
 
   // 1. Vérifie session avec le client SSR (cookies)
   const supabase = await createSupabaseServerClient()
+  console.log('✅ supabase créé')
+
   const { data: { user } } = await supabase.auth.getUser()
+  console.log('👤 user:', user?.id ?? 'null — redirect vers /login')
+
   if (!user) redirect('/login')
 
   // 2. Vérifie le rôle super_admin via service_role
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  console.log('🔑 SERVICE_ROLE_KEY présente :', serviceKey ? '✅ oui' : '❌ non')
 
   const adminSupabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
+  console.log('✅ adminSupabase créé')
 
-  const { data: adminUser } = await adminSupabase.auth.admin.getUserById(user.id)
+  const { data: adminUser, error: adminError } = await adminSupabase.auth.admin.getUserById(user.id)
+  console.log('👑 role:', adminUser?.user?.app_metadata?.role)
+  console.log('❗ adminError:', adminError)
+
   const role = adminUser?.user?.app_metadata?.role
 
   // DEBUG TEMPORAIRE — à supprimer après
@@ -29,28 +41,35 @@ export default async function AdminCartsPage() {
         <p><strong>role détecté :</strong> {role ?? 'undefined/null'}</p>
         <p><strong>SERVICE_ROLE_KEY présente :</strong> {serviceKey ? '✅ oui' : '❌ non — clé manquante !'}</p>
         <p><strong>app_metadata brut :</strong> {JSON.stringify(adminUser?.user?.app_metadata)}</p>
+        <p><strong>adminError :</strong> {adminError ? JSON.stringify(adminError) : 'aucune'}</p>
       </div>
     )
   }
 
+  console.log('✅ role super_admin confirmé — chargement des données')
+
   // 3. Récupère les paniers draft
-  const { data: drafts } = await adminSupabase
+  const { data: drafts, error: draftsError } = await adminSupabase
     .from('orders')
     .select('*')
     .eq('status', 'draft')
     .order('updated_at', { ascending: false })
+
+  console.log('🛒 drafts count:', drafts?.length ?? 0, '| error:', draftsError)
 
   // 4. Commandes En attente depuis +3 jours
   const threeDaysAgo = new Date(
     Date.now() - 3 * 24 * 60 * 60 * 1000
   ).toISOString()
 
-  const { data: pending } = await adminSupabase
+  const { data: pending, error: pendingError } = await adminSupabase
     .from('orders')
     .select('*')
     .eq('status', 'En attente')
     .lt('created_at', threeDaysAgo)
     .order('created_at', { ascending: true })
+
+  console.log('⏳ pending count:', pending?.length ?? 0, '| error:', pendingError)
 
   return (
     <div className="p-8 max-w-6xl mx-auto font-sans">
