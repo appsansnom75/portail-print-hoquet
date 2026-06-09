@@ -2,79 +2,93 @@ import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { createClient } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 
+export const dynamic = 'force-dynamic'
 
-export default async function AdminCartsPage() {
+const ADMIN_PASSWORD = 'motdepasse123' // ← change ça
 
-  console.log('🔍 AdminCartsPage — début')
+export default async function AdminCartsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ pwd?: string }>
+}) {
+  const params = await searchParams
+  const pwd = params?.pwd
 
-  // 1. Vérifie session avec le client SSR (cookies)
-  const supabase = await createSupabaseServerClient()
-  console.log('✅ supabase créé')
-
-  const { data: { user } } = await supabase.auth.getUser()
-  console.log('👤 user:', user?.id ?? 'null — redirect vers /login')
-
-  if (!user) redirect('/login')
-
-  // 2. Vérifie le rôle super_admin via service_role
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  console.log('🔑 SERVICE_ROLE_KEY présente :', serviceKey ? '✅ oui' : '❌ non')
-
-  const adminSupabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-  console.log('✅ adminSupabase créé')
-
-  const { data: adminUser, error: adminError } = await adminSupabase.auth.admin.getUserById(user.id)
-  console.log('👑 role:', adminUser?.user?.app_metadata?.role)
-  console.log('❗ adminError:', adminError)
-
-  const role = adminUser?.user?.app_metadata?.role
-
-  // DEBUG TEMPORAIRE — à supprimer après
-  if (role !== 'super_admin') {
+  // Vérification mot de passe via query param ?pwd=xxxx
+  if (pwd !== ADMIN_PASSWORD) {
     return (
-      <div style={{ padding: 40, fontFamily: 'monospace' }}>
-        <h2>❌ Accès refusé — debug info</h2>
-        <p><strong>user.id :</strong> {user.id}</p>
-        <p><strong>role détecté :</strong> {role ?? 'undefined/null'}</p>
-        <p><strong>SERVICE_ROLE_KEY présente :</strong> {serviceKey ? '✅ oui' : '❌ non — clé manquante !'}</p>
-        <p><strong>app_metadata brut :</strong> {JSON.stringify(adminUser?.user?.app_metadata)}</p>
-        <p><strong>adminError :</strong> {adminError ? JSON.stringify(adminError) : 'aucune'}</p>
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        fontFamily: 'sans-serif',
+        gap: 16
+      }}>
+        <h2>🔒 Accès protégé</h2>
+        <form method="GET">
+          <input
+            type="password"
+            name="pwd"
+            placeholder="Mot de passe"
+            style={{
+              padding: '10px 16px',
+              fontSize: 16,
+              border: '1px solid #ccc',
+              borderRadius: 8,
+              marginRight: 8
+            }}
+          />
+          <button
+            type="submit"
+            style={{
+              padding: '10px 20px',
+              fontSize: 16,
+              background: '#2563eb',
+              color: 'white',
+              border: 'none',
+              borderRadius: 8,
+              cursor: 'pointer'
+            }}
+          >
+            Accéder
+          </button>
+        </form>
+        {pwd !== undefined && <p style={{ color: 'red' }}>❌ Mot de passe incorrect</p>}
       </div>
     )
   }
 
-  console.log('✅ role super_admin confirmé — chargement des données')
+  // Récupère les données
+  const adminSupabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
 
-  // 3. Récupère les paniers draft
-  const { data: drafts, error: draftsError } = await adminSupabase
+  // Paniers draft
+  const { data: drafts } = await adminSupabase
     .from('orders')
     .select('*')
     .eq('status', 'draft')
     .order('updated_at', { ascending: false })
 
-  console.log('🛒 drafts count:', drafts?.length ?? 0, '| error:', draftsError)
-
-  // 4. Commandes En attente depuis +3 jours
+  // Commandes En attente depuis +3 jours
   const threeDaysAgo = new Date(
     Date.now() - 3 * 24 * 60 * 60 * 1000
   ).toISOString()
 
-  const { data: pending, error: pendingError } = await adminSupabase
+  const { data: pending } = await adminSupabase
     .from('orders')
     .select('*')
     .eq('status', 'En attente')
     .lt('created_at', threeDaysAgo)
     .order('created_at', { ascending: true })
 
-  console.log('⏳ pending count:', pending?.length ?? 0, '| error:', pendingError)
-
   return (
     <div className="p-8 max-w-6xl mx-auto font-sans">
       <h1 className="text-3xl font-bold mb-2">🛒 Admin — Paniers & Commandes</h1>
-      <p className="text-gray-500 mb-10 text-sm">Accessible uniquement aux super admins</p>
+      <p className="text-gray-500 mb-10 text-sm">Vue d'ensemble des paniers et commandes en attente</p>
 
       {/* PANIERS DRAFT */}
       <section className="mb-14">
