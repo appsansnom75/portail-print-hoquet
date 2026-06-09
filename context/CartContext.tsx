@@ -118,19 +118,23 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         orderedBy: i.orderedBy || null,
       }));
 
+      // Delete ancien draft puis insert nouveau
       await supabase
         .from('orders')
-        .upsert(
-          {
-            user_id: userId,
-            status: 'draft',
-            agency_name: agency?.name ?? null,
-            client_email: agency?.agence_email ?? null,
-            items: itemsFormatted,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: 'user_id,status' }
-        );
+        .delete()
+        .eq('user_id', userId)
+        .eq('status', 'draft');
+
+      await supabase
+        .from('orders')
+        .insert({
+          user_id: userId,
+          status: 'draft',
+          agency_name: agency?.name ?? null,
+          client_email: agency?.agence_email ?? null,
+          items: itemsFormatted,
+          updated_at: new Date().toISOString(),
+        });
     };
 
     const timeout = setTimeout(syncDraft, 2000);
