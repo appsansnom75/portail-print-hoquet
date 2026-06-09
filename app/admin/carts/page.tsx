@@ -10,6 +10,8 @@ export default async function AdminCartsPage() {
   if (!user) redirect('/login')
 
   // 2. Vérifie le rôle super_admin via service_role
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
   const adminSupabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -18,7 +20,18 @@ export default async function AdminCartsPage() {
   const { data: adminUser } = await adminSupabase.auth.admin.getUserById(user.id)
   const role = adminUser?.user?.app_metadata?.role
 
-  if (role !== 'super_admin') redirect('/')
+  // DEBUG TEMPORAIRE — à supprimer après
+  if (role !== 'super_admin') {
+    return (
+      <div style={{ padding: 40, fontFamily: 'monospace' }}>
+        <h2>❌ Accès refusé — debug info</h2>
+        <p><strong>user.id :</strong> {user.id}</p>
+        <p><strong>role détecté :</strong> {role ?? 'undefined/null'}</p>
+        <p><strong>SERVICE_ROLE_KEY présente :</strong> {serviceKey ? '✅ oui' : '❌ non — clé manquante !'}</p>
+        <p><strong>app_metadata brut :</strong> {JSON.stringify(adminUser?.user?.app_metadata)}</p>
+      </div>
+    )
+  }
 
   // 3. Récupère les paniers draft
   const { data: drafts } = await adminSupabase
