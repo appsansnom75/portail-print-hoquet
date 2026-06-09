@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 
 export const dynamic = 'force-dynamic'
 
-const ADMIN_PASSWORD = 'admin123' // ← change ça
+const ADMIN_PASSWORD = 'admin123'
 
 export default async function AdminCartsPage({
   searchParams,
@@ -47,7 +47,6 @@ export default async function AdminCartsPage({
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  // Uniquement les paniers draft avec au moins 1 article
   const { data: allDrafts } = await adminSupabase
     .from('orders')
     .select('*')
@@ -57,6 +56,9 @@ export default async function AdminCartsPage({
   const drafts = (allDrafts ?? []).filter(
     (o) => Array.isArray(o.items) && o.items.length > 0
   )
+
+  const fmt = (n: number) =>
+    n.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'
 
   return (
     <div className="min-h-screen bg-[#0f092e] text-white p-10 font-sans">
@@ -91,6 +93,13 @@ export default async function AdminCartsPage({
               const hoursAgo = Math.floor((Date.now() - lastActivity.getTime()) / 3600000)
               const isOld = hoursAgo > 48
 
+              // ── Calcul du total HT du panier ──────────────────────────
+              const totalHT = order.items.reduce((acc: number, item: any) => {
+                const price = Number(item.price ?? 0)
+                const qty   = Number(item.qty ?? item.quantity ?? 0)
+                return acc + price * qty
+              }, 0)
+
               return (
                 <div
                   key={order.id}
@@ -111,7 +120,7 @@ export default async function AdminCartsPage({
                       }`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${isOld ? 'bg-orange-400' : 'bg-green-400'}`}></span>
                         {hoursAgo < 1
-                          ? 'Actif à l\'instant'
+                          ? "Actif à l'instant"
                           : hoursAgo < 24
                           ? `Il y a ${hoursAgo}h`
                           : `Il y a ${Math.floor(hoursAgo / 24)}j`
@@ -119,45 +128,57 @@ export default async function AdminCartsPage({
                       </div>
                     </div>
 
-                    {/* ARTICLES */}
+                    {/* ARTICLES + TOTAL */}
                     <div className="flex-1">
                       <p className="text-[10px] font-black uppercase tracking-widest text-white/20 mb-3">
                         {order.items.length} article{order.items.length > 1 ? 's' : ''} dans le panier
                       </p>
                       <div className="grid gap-2">
-                        {order.items.map((item: any, i: number) => (
-                          <div
-                            key={i}
-                            className="flex items-center justify-between bg-black/20 px-4 py-2.5 rounded-2xl border border-white/5"
-                          >
-                            <div className="flex items-center gap-3">
-                              <span className="text-blue-500/60 text-xs">📦</span>
-                              <span className="text-[13px] font-bold text-white/80">
-                                {item.productName ?? item.name ?? '—'}
-                              </span>
-                              {item.color && (
-                                <span className="text-[10px] font-black text-white/20 uppercase bg-white/5 px-2 py-0.5 rounded-full">
-                                  {item.color}
+                        {order.items.map((item: any, i: number) => {
+                          const price    = Number(item.price ?? 0)
+                          const qty      = Number(item.qty ?? item.quantity ?? 0)
+                          const totalLigne = price * qty
+
+                          return (
+                            <div
+                              key={i}
+                              className="flex items-center justify-between bg-black/20 px-4 py-2.5 rounded-2xl border border-white/5"
+                            >
+                              <div className="flex items-center gap-3 flex-1 min-w-0">
+                                <span className="text-blue-500/60 text-xs">📦</span>
+                                <span className="text-[13px] font-bold text-white/80 truncate">
+                                  {item.productName ?? item.name ?? '—'}
                                 </span>
-                              )}
-                              {item.orderedBy && (
-                                <span className="text-[10px] font-black text-blue-500/50 uppercase">
-                                  → {item.orderedBy}
+                                {item.color && (
+                                  <span className="text-[10px] font-black text-white/20 uppercase bg-white/5 px-2 py-0.5 rounded-full shrink-0">
+                                    {item.color}
+                                  </span>
+                                )}
+                                {item.orderedBy && (
+                                  <span className="text-[10px] font-black text-blue-500/50 uppercase shrink-0">
+                                    → {item.orderedBy}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-4 shrink-0 ml-4">
+                                <span className="text-[12px] font-black text-white/40">
+                                  × {qty}
                                 </span>
-                              )}
+                                <span className="text-[13px] font-black text-blue-400 tabular-nums">
+                                  {fmt(totalLigne)}
+                                </span>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-4 shrink-0">
-                              <span className="text-[12px] font-black text-white/40">
-                                × {item.qty ?? item.quantity}
-                              </span>
-                              {item.price && (
-                                <span className="text-[12px] font-black text-blue-400">
-                                  {item.price} €
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        ))}
+                          )
+                        })}
+                      </div>
+
+                      {/* TOTAL HT */}
+                      <div className="flex justify-end mt-4 pt-4 border-t border-white/5">
+                        <div className="flex items-center gap-4">
+                          <span className="text-[11px] font-black uppercase text-white/20 tracking-widest">Total HT</span>
+                          <span className="text-[18px] font-black text-white tabular-nums">{fmt(totalHT)}</span>
+                        </div>
                       </div>
                     </div>
 
