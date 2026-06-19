@@ -158,7 +158,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* GRILLE — 2 en haut, 3 en bas */}
+      {/* GRILLE — 2 en haut, 3 en bas — INCHANGÉ */}
       <main className="flex-grow container mx-auto max-w-5xl px-6 py-20 space-y-8">
 
         {/* LIGNE 1 */}
@@ -207,23 +207,22 @@ export default function HomePage() {
           </Link>
         </div>
 
-        {/* ─── BANNIÈRE PROMO ─────────────────────────────────── */}
+        {/* ── BANNIÈRE PROMO — réduite ── */}
         {promoBanner && (
           <a
             href={promoBanner.link_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="block mt-4 rounded-3xl overflow-hidden border border-white/5 hover:border-white/20 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(0,0,0,0.4)] group"
+            className="block rounded-2xl overflow-hidden border border-white/5 hover:border-white/20 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(0,0,0,0.4)] group"
           >
             <img
               src={promoBanner.image_url}
               alt="Offre spéciale"
-              className="w-full h-auto max-h-[300px] object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-              style={{ aspectRatio: '1000/300', objectPosition: 'center' }}
+              className="w-full object-cover transition-transform duration-500 group-hover:scale-[1.01]"
+              style={{ maxHeight: '160px', objectPosition: 'center' }}
             />
           </a>
         )}
-        {/* ────────────────────────────────────────────────────── */}
 
       </main>
 
