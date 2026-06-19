@@ -158,8 +158,26 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* GRILLE — 2 en haut, 3 en bas — INCHANGÉ */}
       <main className="flex-grow container mx-auto max-w-5xl px-6 py-20 space-y-8">
+
+        {/* ── BANNIÈRE PROMO — au dessus des blocs ── */}
+        {promoBanner && (
+          <div className="flex justify-center">
+            <a
+              href={promoBanner.link_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-2/3 rounded-2xl overflow-hidden border border-white/5 hover:border-white/20 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(0,0,0,0.4)] group"
+            >
+              <img
+                src={promoBanner.image_url}
+                alt="Offre spéciale"
+                className="w-full h-auto transition-transform duration-500 group-hover:scale-[1.01]"
+                style={{ aspectRatio: '1000/300', objectFit: 'cover' }}
+              />
+            </a>
+          </div>
+        )}
 
         {/* LIGNE 1 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -206,25 +224,6 @@ export default function HomePage() {
             </div>
           </Link>
         </div>
-
-        {/* ── BANNIÈRE PROMO — ratio 1000x300 respecté, taille réduite via max-width ── */}
-        {promoBanner && (
-          <div className="flex justify-center">
-            <a
-              href={promoBanner.link_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block w-2/3 rounded-2xl overflow-hidden border border-white/5 hover:border-white/20 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(0,0,0,0.4)] group"
-            >
-              <img
-                src={promoBanner.image_url}
-                alt="Offre spéciale"
-                className="w-full h-auto transition-transform duration-500 group-hover:scale-[1.01]"
-                style={{ aspectRatio: '1000/300', objectFit: 'cover' }}
-              />
-            </a>
-          </div>
-        )}
 
       </main>
 
