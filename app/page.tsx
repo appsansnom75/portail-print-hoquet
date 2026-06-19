@@ -12,6 +12,7 @@ export default function HomePage() {
   const [role, setRole]             = useState("");
   const [loading, setLoading]       = useState(true);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [promoBanner, setPromoBanner] = useState<{ image_url: string; link_url: string; active: boolean } | null>(null);
   const { cart } = useCart();
   const router = useRouter();
 
@@ -36,7 +37,18 @@ export default function HomePage() {
       }
       setLoading(false);
     };
+
+    const fetchPromoBanner = async () => {
+      const { data } = await supabase
+        .from('promo_banner')
+        .select('image_url, link_url, active')
+        .eq('active', true)
+        .single();
+      if (data) setPromoBanner(data);
+    };
+
     fetchUserAndAgency();
+    fetchPromoBanner();
   }, [router]);
 
   const handleLogout = async () => {
@@ -91,7 +103,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* BOUTONS — tous sur une seule ligne, pas de wrap */}
+            {/* BOUTONS */}
             <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
               {!loading && (
                 <>
@@ -151,7 +163,6 @@ export default function HomePage() {
 
         {/* LIGNE 1 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-
           <Link href="/perso" className="group">
             <div className="h-44 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-blue-600/10 group-hover:border-blue-500/40 group-hover:-translate-y-1 shadow-2xl">
               <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-blue-400 transition-colors">Produits personnalisables</span>
@@ -167,12 +178,10 @@ export default function HomePage() {
               <span className="text-[11px] font-black text-white/20 uppercase tracking-[0.3em] group-hover:text-green-500/50">Catalogue Direct</span>
             </div>
           </Link>
-
         </div>
 
         {/* LIGNE 2 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-
           <Link href="/hoquet" className="group">
             <div className="h-44 bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 rounded-3xl flex flex-col items-center justify-center p-8 text-center transition-all duration-500 group-hover:bg-orange-600/10 group-hover:border-orange-500/40 group-hover:-translate-y-1 shadow-2xl">
               <span className="font-black text-xs uppercase tracking-widest text-white/80 group-hover:text-orange-400 transition-colors">Gamme Business</span>
@@ -196,8 +205,26 @@ export default function HomePage() {
               <span className="text-[11px] font-black text-white/20 uppercase tracking-[0.3em] group-hover:text-purple-500/50">Offres Ephémères</span>
             </div>
           </Link>
-
         </div>
+
+        {/* ─── BANNIÈRE PROMO ─────────────────────────────────── */}
+        {promoBanner && (
+          <a
+            href={promoBanner.link_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block mt-4 rounded-3xl overflow-hidden border border-white/5 hover:border-white/20 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(0,0,0,0.4)] group"
+          >
+            <img
+              src={promoBanner.image_url}
+              alt="Offre spéciale"
+              className="w-full h-auto max-h-[300px] object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+              style={{ aspectRatio: '1000/300', objectPosition: 'center' }}
+            />
+          </a>
+        )}
+        {/* ────────────────────────────────────────────────────── */}
+
       </main>
 
       {/* FOOTER */}
