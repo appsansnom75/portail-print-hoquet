@@ -158,9 +158,10 @@ export default function HomePage() {
         </div>
       </div>
 
-      <main className="flex-grow container mx-auto max-w-5xl px-6 py-20 space-y-8">
+      {/* ─── MAIN : pt réduit en haut, pb conservé ─── */}
+      <main className="flex-grow container mx-auto max-w-5xl px-6 pt-8 pb-20 space-y-8">
 
-        {/* ── BANNIÈRE PROMO — au dessus des blocs ── */}
+        {/* BANNIÈRE PROMO — en haut */}
         {promoBanner && (
           <div className="flex justify-center">
             <a
