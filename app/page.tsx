@@ -86,28 +86,43 @@ export default function HomePage() {
       {/* NAV STICKY */}
       <div className="sticky top-0 z-50 border-y border-white/5 bg-[#0f092e]/80 backdrop-blur-xl">
         <div className="max-w-6xl mx-auto px-4 py-3">
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col items-center gap-2">
 
-            {/* LIGNE 1 : Session */}
-            <div className="flex justify-center lg:justify-start">
-              <div className="flex items-center gap-4 bg-white/[0.03] px-5 py-2.5 rounded-full border border-white/5">
+            {/* LIGNE 1 : Session + Modifier mdp + Déconnexion */}
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              {/* Session info */}
+              <div className="flex items-center gap-3 bg-white/[0.03] px-5 py-2.5 rounded-full border border-white/5">
                 <span className={`h-2 w-2 rounded-full shrink-0 ${loading ? 'bg-white/20' : 'bg-green-500 shadow-[0_0_10px_#22c55e]'}`}></span>
-                <div className="flex items-center gap-3">
-                  <span className="text-[12px] font-black uppercase tracking-widest text-white/30 italic">Session :</span>
-                  {loading ? (
-                    <span className="text-[13px] font-black uppercase text-white/20 animate-pulse italic">Initialisation...</span>
-                  ) : (
-                    <span className="text-[13px] font-black uppercase text-white/90 tracking-tight whitespace-nowrap">
-                      {userName} <span className="text-blue-500/50 mx-1">@</span> <span className="text-blue-400">{agencyName}</span>
-                    </span>
-                  )}
-                </div>
+                <span className="text-[12px] font-black uppercase tracking-widest text-white/30 italic">Session :</span>
+                {loading ? (
+                  <span className="text-[13px] font-black uppercase text-white/20 animate-pulse italic">Initialisation...</span>
+                ) : (
+                  <span className="text-[13px] font-black uppercase text-white/90 tracking-tight whitespace-nowrap">
+                    {userName} <span className="text-blue-500/50 mx-1">@</span> <span className="text-blue-400">{agencyName}</span>
+                  </span>
+                )}
               </div>
+
+              {/* Modifier mdp */}
+              <Link
+                href="https://guyhoquet-print.fr/modification-mdp"
+                className="text-[11px] font-black uppercase tracking-widest text-white/30 hover:text-white px-2 py-2.5 transition-colors whitespace-nowrap">
+                Modifier mon mdp
+              </Link>
+
+              <span className="text-white/10">|</span>
+
+              {/* Déconnexion */}
+              <button
+                onClick={handleLogout}
+                className="text-[11px] font-black uppercase tracking-widest text-red-500/30 hover:text-red-500 px-2 py-2.5 transition-colors whitespace-nowrap">
+                Déconnexion
+              </button>
             </div>
 
-            {/* LIGNE 2 : Boutons avec wrap automatique */}
+            {/* LIGNE 2 : Boutons navigation — wrap automatique */}
             {!loading && (
-              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2">
+              <div className="flex flex-wrap items-center justify-center gap-2">
 
                 {role === 'super_admin' && (
                   <Link href="/admin-portal"
@@ -137,34 +152,19 @@ export default function HomePage() {
                   </Link>
                 )}
 
-                {/* ── Historique ── */}
-                <Link href="/historique"
+                <Link
+                  href="https://guyhoquet-print.fr/dashboard/commandes"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="bg-white/5 border border-white/10 hover:border-blue-500/50 text-white/70 hover:text-white text-[11px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl transition-all whitespace-nowrap">
-                  Historique
+                  Historique de commandes
                 </Link>
 
-                {/* ── Panier ── */}
                 <Link href="/panier"
                   className="relative bg-white/5 border border-white/10 hover:bg-white/10 text-white text-[11px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl transition-all whitespace-nowrap">
                   Panier ({cart.length})
                   {hasItems && <span className="absolute -top-1.5 -right-1.5 h-3 w-3 bg-green-500 rounded-full border-2 border-[#0f092e] animate-bounce"></span>}
                 </Link>
-
-                <div className="hidden lg:block w-px h-5 bg-white/10"></div>
-
-                <Link
-                  href="https://guyhoquet-print.fr/modification-mdp"
-                  className="text-[11px] font-black uppercase tracking-widest text-white/40 hover:text-white px-2 py-2.5 transition-colors whitespace-nowrap">
-                  Modifier mon mdp
-                </Link>
-
-                <span className="text-white/10">|</span>
-
-                <button
-                  onClick={handleLogout}
-                  className="text-[11px] font-black uppercase tracking-widest text-red-500/40 hover:text-red-500 px-2 py-2.5 transition-colors whitespace-nowrap">
-                  Déconnexion
-                </button>
 
               </div>
             )}
