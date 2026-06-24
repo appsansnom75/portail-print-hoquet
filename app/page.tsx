@@ -85,83 +85,98 @@ export default function HomePage() {
 
       {/* NAV STICKY */}
       <div className="sticky top-0 z-50 border-y border-white/5 bg-[#0f092e]/80 backdrop-blur-xl">
-        <div className="max-w-6xl mx-auto px-6 py-4">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
+        <div className="max-w-6xl mx-auto px-4 py-3">
+          <div className="flex flex-col gap-3">
 
-            {/* SESSION INFO */}
-            <div className="flex items-center gap-4 bg-white/[0.03] px-5 py-2.5 rounded-full border border-white/5 shrink-0">
-              <span className={`h-2 w-2 rounded-full shrink-0 ${loading ? 'bg-white/20' : 'bg-green-500 shadow-[0_0_10px_#22c55e]'}`}></span>
-              <div className="flex items-center gap-3">
-                <span className="text-[12px] font-black uppercase tracking-widest text-white/30 italic">Session :</span>
-                {loading ? (
-                  <span className="text-[13px] font-black uppercase text-white/20 animate-pulse italic">Initialisation...</span>
-                ) : (
-                  <span className="text-[13px] font-black uppercase text-white/90 tracking-tight whitespace-nowrap">
-                    {userName} <span className="text-blue-500/50 mx-1">@</span> <span className="text-blue-400">{agencyName}</span>
-                  </span>
-                )}
+            {/* LIGNE 1 : Session */}
+            <div className="flex justify-center lg:justify-start">
+              <div className="flex items-center gap-4 bg-white/[0.03] px-5 py-2.5 rounded-full border border-white/5">
+                <span className={`h-2 w-2 rounded-full shrink-0 ${loading ? 'bg-white/20' : 'bg-green-500 shadow-[0_0_10px_#22c55e]'}`}></span>
+                <div className="flex items-center gap-3">
+                  <span className="text-[12px] font-black uppercase tracking-widest text-white/30 italic">Session :</span>
+                  {loading ? (
+                    <span className="text-[13px] font-black uppercase text-white/20 animate-pulse italic">Initialisation...</span>
+                  ) : (
+                    <span className="text-[13px] font-black uppercase text-white/90 tracking-tight whitespace-nowrap">
+                      {userName} <span className="text-blue-500/50 mx-1">@</span> <span className="text-blue-400">{agencyName}</span>
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
-            {/* BOUTONS */}
-            <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
-              {!loading && (
-                <>
-                  {role === 'super_admin' && (
-                    <Link href="/admin-portal" className="shrink-0 bg-white text-[#0f092e] hover:bg-blue-500 hover:text-white text-[11px] font-black uppercase tracking-widest px-5 py-3 rounded-xl transition-all shadow-xl active:scale-95 border border-white whitespace-nowrap">
-                      Dashboard Produits
-                    </Link>
-                  )}
-                  {role === 'super_admin' && (
-                    <Link href="/profil" className="shrink-0 bg-white/5 border border-white/10 hover:border-blue-500/50 text-white/70 hover:text-white text-[11px] font-black uppercase tracking-widest px-5 py-3 rounded-xl transition-all active:scale-95 whitespace-nowrap">
-                      Mon Profil Admin
-                    </Link>
-                  )}
-                  {role === 'admin_agence' && (
-                    <Link href="/profil" className="shrink-0 bg-white/5 border border-white/10 hover:border-blue-500/50 text-white/70 hover:text-white text-[11px] font-black uppercase tracking-widest px-5 py-3 rounded-xl transition-all active:scale-95 whitespace-nowrap">
-                      Infos Agence
-                    </Link>
-                  )}
-                  {role !== 'super_admin' && (
-                    <Link href="/dashboard/equipe" className="shrink-0 bg-blue-600/10 border border-blue-500/20 hover:bg-blue-600/20 text-blue-400 text-[11px] font-black uppercase tracking-widest px-5 py-3 rounded-xl transition-all whitespace-nowrap">
-                      Équipe
-                    </Link>
-                  )}
-                </>
-              )}
+            {/* LIGNE 2 : Boutons avec wrap automatique */}
+            {!loading && (
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2">
 
-              <Link href="/panier" className="relative shrink-0 bg-white/5 border border-white/10 hover:bg-white/10 text-white text-[11px] font-black uppercase tracking-widest px-5 py-3 rounded-xl transition-all whitespace-nowrap">
-                Panier ({cart.length})
-                {hasItems && <span className="absolute -top-1.5 -right-1.5 h-3 w-3 bg-green-500 rounded-full border-2 border-[#0f092e] animate-bounce"></span>}
-              </Link>
+                {role === 'super_admin' && (
+                  <Link href="/admin-portal"
+                    className="bg-white text-[#0f092e] hover:bg-blue-500 hover:text-white text-[11px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl transition-all shadow-xl active:scale-95 border border-white whitespace-nowrap">
+                    Dashboard Produits
+                  </Link>
+                )}
 
-              <span className="text-white/10 shrink-0"></span>
+                {role === 'super_admin' && (
+                  <Link href="/profil"
+                    className="bg-white/5 border border-white/10 hover:border-blue-500/50 text-white/70 hover:text-white text-[11px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl transition-all active:scale-95 whitespace-nowrap">
+                    Mon Profil Admin
+                  </Link>
+                )}
 
-              <Link
-                href="https://guyhoquet-print.fr/modification-mdp"
-                className="shrink-0 text-[11px] font-black uppercase tracking-widest text-white/40 hover:text-white px-2 py-3 transition-colors whitespace-nowrap"
-              >
-                Modifier mon mdp
-              </Link>
+                {role === 'admin_agence' && (
+                  <Link href="/profil"
+                    className="bg-white/5 border border-white/10 hover:border-blue-500/50 text-white/70 hover:text-white text-[11px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl transition-all active:scale-95 whitespace-nowrap">
+                    Infos Agence
+                  </Link>
+                )}
 
-              <span className="text-white/10 shrink-0">|</span>
+                {role !== 'super_admin' && (
+                  <Link href="/dashboard/equipe"
+                    className="bg-blue-600/10 border border-blue-500/20 hover:bg-blue-600/20 text-blue-400 text-[11px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl transition-all whitespace-nowrap">
+                    Équipe
+                  </Link>
+                )}
 
-              <button
-                onClick={handleLogout}
-                className="shrink-0 text-[11px] font-black uppercase tracking-widest text-red-500/40 hover:text-red-500 px-2 py-3 transition-colors whitespace-nowrap"
-              >
-                Déconnexion
-              </button>
-            </div>
+                {/* ── Historique ── */}
+                <Link href="/historique"
+                  className="bg-white/5 border border-white/10 hover:border-blue-500/50 text-white/70 hover:text-white text-[11px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl transition-all whitespace-nowrap">
+                  Historique
+                </Link>
+
+                {/* ── Panier ── */}
+                <Link href="/panier"
+                  className="relative bg-white/5 border border-white/10 hover:bg-white/10 text-white text-[11px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl transition-all whitespace-nowrap">
+                  Panier ({cart.length})
+                  {hasItems && <span className="absolute -top-1.5 -right-1.5 h-3 w-3 bg-green-500 rounded-full border-2 border-[#0f092e] animate-bounce"></span>}
+                </Link>
+
+                <div className="hidden lg:block w-px h-5 bg-white/10"></div>
+
+                <Link
+                  href="https://guyhoquet-print.fr/modification-mdp"
+                  className="text-[11px] font-black uppercase tracking-widest text-white/40 hover:text-white px-2 py-2.5 transition-colors whitespace-nowrap">
+                  Modifier mon mdp
+                </Link>
+
+                <span className="text-white/10">|</span>
+
+                <button
+                  onClick={handleLogout}
+                  className="text-[11px] font-black uppercase tracking-widest text-red-500/40 hover:text-red-500 px-2 py-2.5 transition-colors whitespace-nowrap">
+                  Déconnexion
+                </button>
+
+              </div>
+            )}
 
           </div>
         </div>
       </div>
 
-      {/* ─── MAIN : pt réduit en haut, pb conservé ─── */}
+      {/* MAIN */}
       <main className="flex-grow container mx-auto max-w-5xl px-6 pt-8 pb-20 space-y-8">
 
-        {/* BANNIÈRE PROMO — en haut */}
+        {/* BANNIÈRE PROMO */}
         {promoBanner && (
           <div className="flex justify-center">
             <a
