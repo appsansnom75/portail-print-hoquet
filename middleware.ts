@@ -2,6 +2,36 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  // --- BLOCAGE MAINTENANCE (vérifié en premier) ---
+  const basicAuth = request.headers.get('authorization')
+
+  if (basicAuth) {
+    const authValue = basicAuth.split(' ')[1] || ''
+    const [user, pwd] = atob(authValue).split(':')
+
+    if (
+      user !== process.env.BASIC_AUTH_USER ||
+      pwd !== process.env.BASIC_AUTH_PASSWORD
+    ) {
+      return new Response('Site en maintenance', {
+        status: 401,
+        headers: {
+          'WWW-Authenticate': 'Basic realm="Maintenance"',
+          'Content-Type': 'text/plain; charset=utf-8',
+        },
+      })
+    }
+  } else {
+    return new Response('Site en maintenance', {
+      status: 401,
+      headers: {
+        'WWW-Authenticate': 'Basic realm="Maintenance"',
+        'Content-Type': 'text/plain; charset=utf-8',
+      },
+    })
+  }
+
+  // --- LOGIQUE SUPABASE EXISTANTE (inchangée) ---
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -39,5 +69,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [], // ← plus aucune route bloquée
+  matcher: ['/((?!_next|favicon.ico|.*\\..*).*)'],
 }
