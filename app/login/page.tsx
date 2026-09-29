@@ -140,16 +140,16 @@ export default function LoginPage() {
 
         </form>
 
-        {/* DEMANDE DE COMPTE / DEMANDE D'IDENTIFIANT */}
-        <div className="mt-6 text-center text-xs text-white/50 leading-relaxed border-t border-white/5 pt-6">
-          Pour toute demande de création de compte ou d'identifiant, veuillez contacter{' '}
+        {/* DEMANDE DE COMPTE / IDENTIFIANT */}
+        <p className="mt-6 text-center text-xs text-white/80 leading-relaxed">
+          Pour toute demande de création de compte/identifiant, veuillez contacter{' '}
           <a
             href="mailto:webtoprint@imprimerie-connivence.com"
-            className="text-blue-400 hover:text-blue-300 underline font-medium transition-colors"
+            className="text-blue-400 hover:text-blue-300 underline font-semibold transition-colors block mt-1"
           >
             webtoprint@imprimerie-connivence.com
           </a>
-        </div>
+        </p>
 
         <div className="mt-8 text-center">
           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/10 italic">
